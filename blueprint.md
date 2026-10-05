@@ -14,6 +14,15 @@ A personal fork of T3 Code with extra features, themes and built-in skills. Cust
 - **Effects come from the libraries.dev family** (`border-beam`, `voice-glow`, `bot-avatars`, `liquid-gooey`). All four are MIT on npm. The paid Studio/Pro tier is optional and not needed.
 - **Voice input goes through a provider interface.** Clide (macOS only) is one provider. An OpenAI-compatible transcription server or the browser mic is another. Voice must work without Clide installed.
 
+Decided 2026-10-05 (session 2, by the human):
+
+- **CI.** Upstream's 18 workflows were moved to `.github/upstream-workflows/` (reference only, inert). One new `.github/workflows/ci.yml` runs only commands verified locally on Node 24: format check, lint, typecheck for six packages, and tests for three. No release, deploy, mobile or bot workflows, and nothing that needs secrets.
+- **Usage graph (v1 item 3) extends upstream's existing Usage panel.** No second panel. The gap against the wishlist (activity heatmap, cost over time, tool-call graphs, per-thread views) is in `HANDOFF.md`. No code until that is reviewed.
+- **Effort colors are keyed on tiers, not provider level names.** Tiers: none, low, medium, high, xhigh, max. A provider-to-tier table maps each provider's levels onto them (see "Chatbox outline"). Do not hard-code provider level names in the beam config.
+- **Voice: no code yet.** Upstream's voice-input controller is summarized in `HANDOFF.md` so the provider-interface decision can be made with facts.
+- **Upstream doc links** that pointed at headings in the old `AGENTS.md` now point at `docs/upstream-AGENTS.md`.
+- **Node**: `.nvmrc` pins `24`. `.cursor/rules/cursor-cloud.mdc` is kept unedited; where it disagrees with `AGENTS.md` is logged in `HANDOFF.md`.
+
 ## v1 scope (in order)
 
 1. **Agent-friendly repo**: `AGENTS.md`, `HANDOFF.md`, `docs/`.
@@ -35,6 +44,7 @@ Self-host AFFiNE with Docker. Open it in T3's built-in browser panel. Build the 
 | ---------------------------------------------- | --------------------- | ------------------------------------------------------------------ |
 | Usage meter in input tab                       | core UI               | after the graph exists                                             |
 | Chatbox outline shader tied to thinking effort | core UI               | touches the composer; see "Chatbox outline" section                |
+| Quota-low red flash on the chat outline        | core UI               | requested 2026-10-05; see "Quota-low warning"                      |
 | Bento customizable dashboard (chats, PRs)      | core UI               | drag layout                                                        |
 | Skill studio                                   | side panel + tools    |                                                                    |
 | Better frontend / unique skills                | built-in skills       |                                                                    |
@@ -63,15 +73,50 @@ Goal: the composer's outline glows or animates, and its intensity reflects the t
 | CSS `@property` + `conic-gradient` | write ourselves | CSS                                                                       | Zero dependencies. Must register `@property` with an `<angle>` syntax or the spin does nothing.                                                                                                                                                                                                  |
 | `react-native-animated-glow`       | MIT             | React Native + Skia                                                       | For the mobile app only.                                                                                                                                                                                                                                                                         |
 
-**Color per thinking effort (draft; tune after seeing it).** Cool to warm as effort rises. Keep it in one config object so users can edit it. `duration` is the cycle time in seconds, so lower = faster. Map whatever effort levels the composer actually exposes (verify the names per provider).
+**Color per thinking-effort tier (draft; tune after seeing it).** Cool to warm as effort rises. The first column is a **tier**, not a provider's level name: each provider's levels are mapped to a tier by the table below, so the config never hard-codes provider vocabulary. Keep it in one config object so users can edit it. `duration` is the cycle time in seconds, so lower = faster. The `xhigh` row is interpolated from its neighbors and has never been seen rendered.
 
-| Effort | colorVariant | size          | strength | duration | extra                                                |
-| ------ | ------------ | ------------- | -------- | -------- | ---------------------------------------------------- |
-| none   | n/a          | n/a           | n/a      | n/a      | `active={false}`; thin static border                 |
-| low    | `mono`       | `pulse-inner` | 0.5      | 2.3      | calm breathing                                       |
-| medium | `ocean`      | `md`          | 0.8      | 1.96     | blue-purple                                          |
-| high   | `sunset`     | `md`          | 1        | 1.5      | orange-red                                           |
-| max    | `colorful`   | `md`          | 1        | 1.1      | wider `hueRange` (about 60), a bit more `saturation` |
+| Tier   | colorVariant | size          | strength | duration | extra                                                                                                                         |
+| ------ | ------------ | ------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| none   | n/a          | n/a           | n/a      | n/a      | `active={false}`; thin static border                                                                                          |
+| low    | `mono`       | `pulse-inner` | 0.5      | 2.3      | calm breathing                                                                                                                |
+| medium | `ocean`      | `md`          | 0.8      | 1.96     | blue-purple                                                                                                                   |
+| high   | `sunset`     | `md`          | 1        | 1.5      | orange-red                                                                                                                    |
+| xhigh  | `sunset`     | `md`          | 1        | 1.3      | **draft, interpolated.** Variants cannot blend, so it keeps `sunset`; `hueRange` and `saturation` about halfway to max's bump |
+| max    | `colorful`   | `md`          | 1        | 1.1      | wider `hueRange` (about 60), a bit more `saturation`                                                                          |
+
+**Provider → tier.** Read from the source on 2026-10-05 (snapshot `3e6b450`). Not seen rendered, except that the composer I loaded showed the Codex model `GPT-6-Astra` at `Medium`. The Claude set matches what the human described seeing in the composer.
+
+| Provider (driver)      | Option id                                             | Levels the code knows                                                                                                                                                                                                 | Maps to                                                                                                               |
+| ---------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Claude (`claudeAgent`) | `effort`                                              | Per model, from `apps/server/src/provider/model-manifest.json`: low, medium, high, xhigh ("Extra High"), max; some models add `ultracode`; most add the keyword level (below); the oldest profile has only low to max | low→low, medium→medium, high→high, xhigh→xhigh, max→max, `ultracode`→max (ultra-prefixed), keyword level→max          |
+| Codex                  | `reasoningEffort`                                     | Runtime list from Codex `model/list`. Labels the adapter knows: none, minimal, low, medium, high, xhigh ("Extra High"), max, ultra                                                                                    | none→none, minimal→low, low→low, medium→medium, high→high, xhigh→xhigh, max→max, ultra→max; anything else by position |
+| OpenCode               | `variant` (labeled "Reasoning")                       | Each model's variants at runtime. Fallback when a model lists none: low, medium, high, xhigh                                                                                                                          | Known names as above; other variant names by position                                                                 |
+| Pi                     | `thinking`                                            | off, minimal, low, medium, high, xhigh, max (`Layers/piThinkingCapabilities.ts`)                                                                                                                                      | off→none, minimal→low, the rest one-to-one                                                                            |
+| Grok                   | `reasoningEffort`                                     | Whatever tokens the agent advertises at runtime (any `^[a-z0-9][a-z0-9._-]{0,31}$`)                                                                                                                                   | Known names as above; others by position                                                                              |
+| Cursor                 | SDK model param (`effort`, `reasoning` or `thinking`) | Runtime (`provider/cursorSdkModel.ts`)                                                                                                                                                                                | Known names as above; others by position                                                                              |
+| ACP registry           | the agent's own session config option                 | Runtime                                                                                                                                                                                                               | Known names as above; others by position                                                                              |
+| Antigravity            | none                                                  | The thinking level is part of the model ID; there is no separate effort option                                                                                                                                        | neutral default                                                                                                       |
+
+Mapping rules (decided by the human): off or none → none; minimal or low → low; medium → medium; high → high; extra high → xhigh; max, and any keyword-style level whose name starts with "ultra", → max; an unknown level → the nearest tier by its position in that provider's own list; a provider with no effort setting → neutral default. How "nearest by position" is computed and what "neutral default" renders are not defined yet (see Open questions).
+
+Display level versus API level: for some Claude profiles the manifest's `effortMap` sends a different value to the API than the picker shows (for example `xhigh`→`max` on one profile, `max`→`high` on another, and `ultracode`→`xhigh`). The tables above use the level the picker shows.
+
+### How the composer handles the keyword level
+
+Claude's picker has one top level that is not a saved setting. Typing the keyword in the prompt text triggers it. **This file never spells the keyword**: typing it into a T3 or Claude prompt triggers the behavior described here. Search for it with a regex that splits the word, for example a character class around one of its letters. Read from the code on 2026-10-05; not exercised in a running composer.
+
+- **Detection** is a case-insensitive whole-word regex over the prompt text: `packages/shared/src/model.ts:302` (the function name contains the keyword). It matches the word anywhere in the prompt, not only at the start.
+- **When it runs.** `apps/web/src/components/chat/ChatComposer.tsx:2275-2291` memoizes `getComposerPromptInjectionState(prompt)` (`composerProviderState.tsx:62`), so it re-evaluates on every prompt change. Typing or deleting the word flips it live.
+- **Only on models that list it.** The state counts only if the model's first select option has the level in `promptInjectedValues` (`composerProviderState.tsx:142-144`; the field is in `packages/contracts/src/model.ts:29`). The manifest lists it on most Claude profiles. Codex, Pi, OpenCode and the others never trigger it.
+- **What the UI does when detected.**
+  - The picker shows the keyword level whatever the saved level is (`TraitsPicker.tsx:175-186`).
+  - The composer gets a frame class and the model icon gets a chroma class (`composerProviderState.tsx:152-158`; both class names contain the keyword). The CSS is at `apps/web/src/index.css:2075-2118`: a **static** gradient ring, with no animation and no reduced-motion handling.
+- **Two ways in.**
+  - _Picked in the picker._ Choosing the level does not save an option. It edits the prompt: an empty prompt becomes `"<Keyword>:\n"`, otherwise the prompt is prefixed with that line (`TraitsPicker.tsx:346-352`, prefix constant at `:93`, `applyClaudePromptEffortPrefix` at `packages/shared/src/model.ts:510`). The prefix is skipped when the prompt starts with a slash command (`/name`), and it is never doubled. Picking any other level strips the prefix and saves that level (`TraitsPicker.tsx:355-359`).
+  - _Typed in the body._ The picker control is disabled with a message telling the user to remove the word (`TraitsPicker.tsx:182-183`, `:408-426`).
+- **On send.** The web client re-applies the prefix when the effort resolves to the keyword level (`ChatView.tsx:782-791`), and the Claude adapter does it again server-side at two call sites (`apps/server/src/orchestration-v2/Adapters/ClaudeAdapterV2.ts:7187` and `:7396`, using `promptEffort` from `apps/server/src/claudeModelOptions.ts:51`). In the manifest the level's `effortMap` entry is `null`, which means no explicit API effort for it. Prompt-history recall strips the prefix (`composerPromptHistory.ts:119`).
+- **Not determined.** Whether the UI can ever store the keyword as the saved option value, as opposed to only the text prefix. `resolveDescriptorChoiceValue` (`packages/shared/src/model.ts:119-141`) maps a stored keyword value back to the model's default level when descriptors resolve.
+- **What the beam could react to** (facts, not a decision): the pure function of the prompt text above; `getComposerProviderState(...).composerFrameClassName`; or the picker's prompt-controlled flag (`TraitsPicker.tsx:176`). Because the signal comes from the text, a beam keyed on it would change as the user types. The composer already has a static outline treatment for this level, which overlaps the planned beam.
 
 If four palettes are not enough or exact hex per effort is wanted, vendor `border-beam` into the repo (MIT, keep the license) and add a `colors` prop like `voice-glow` has. Do not use a CSS `hue-rotate` hack unless it looks right.
 
@@ -85,6 +130,15 @@ If four palettes are not enough or exact hex per effort is wanted, vendor `borde
 - Ship a static fallback for engines without `@property`.
 
 **Spike first.** Prototype two options on an isolated page. Pick by look and frame rate on the target machines. Record the result in `HANDOFF.md`.
+
+### Quota-low warning (requested 2026-10-05; not built)
+
+The human's request: when the usage of the provider drops below 20%, make the chat outline shader flash **red**. Not implemented: this session is repo hygiene only, and the composer outline is v2. Read from the code, not exercised:
+
+- **The data already exists.** Each provider reports quota windows as `ServerProviderUsageWindow`: `usedPercent` (0 to 100), `resetsAt`, `windowDurationMins` and a `label` (`packages/contracts/src/providerUsageLimits.ts:20-26`). A provider can report several windows. The composer already renders them (`apps/web/src/components/chat/ComposerUsageLimits.tsx`); shared logic is in `packages/shared/src/usageLimits.ts`. Accounts that cannot report windows at all exist (the contract's own note at `:46`), so the rule has to stay silent when there are none.
+- **Red is not available in `border-beam`.** It only has the four palettes and no custom hex colors (see the candidates table). Red needs the vendored-with-a-`colors`-prop route described above, or an original shader.
+- **Flashing is motion.** It has to honor `prefers-reduced-motion` (static red border instead). Upstream's own rule is "no continuously repainting animations; they peg the GPU on high-refresh displays" (`docs/upstream-AGENTS.md`, "Taste"). A flash that runs for as long as quota stays low runs into that rule.
+- **It competes for the composer.** Only one animated effect on the composer at a time (see "Composer FX slot").
 
 ## Composer FX slot
 
@@ -141,25 +195,32 @@ Merging upstream. Building our own database or block engine. Forking Obsidian (p
 - Which Discord Application ID and art assets for presence?
 - What name and branding for the desktop app?
 - Do friends run the desktop build, or `npx` of the fork?
-- Which exact effort levels does the composer expose per provider (for the color table)?
 - Port and default settings for the Clide Local API.
 
-### Found in the code, 2026-10-05 (snapshot `3e6b450`; facts recorded, decisions open)
+### Effort tiers and the beam
 
-- **Effort vocabularies differ per provider, and so does the option id.** The contract treats effort as an open string (`packages/contracts/src/providerRuntime.ts`). The picker is `apps/web/src/components/chat/TraitsPicker.tsx`. Read from source, not seen in a running app:
-  - Claude, option `effort`, per model in `apps/server/src/provider/model-manifest.json`. Sets seen: `low,medium,high,max`; `+ultrathink`; `+xhigh,ultrathink`; `+xhigh,ultracode,ultrathink`. `ultrathink` is injected into the prompt and is not an API effort level (`effortMap: null`). `ultracode` maps to `xhigh`.
-  - Codex, option `reasoningEffort`, from the live `model/list` response at runtime. Labels the adapter knows: `none, minimal, low, medium, high, xhigh, max, ultra` (`Layers/CodexProvider.ts`).
-  - OpenCode, option `variant` (labeled "Reasoning"), from each model's variants. Fallback: `low, medium, high, xhigh`.
-  - Pi, option `thinking`: `off, minimal, low, medium, high, xhigh, max` (`Layers/piThinkingCapabilities.ts`).
-  - Grok, option `reasoningEffort`: whatever the agent advertises at runtime.
-  - Cursor: from SDK model parameters at runtime (`effort` / `reasoning` / `thinking`, `cursorSdkModel.ts`).
-  - Antigravity: thinking levels are part of the model ID; there is no separate effort option.
-  - ACP registry: whatever the agent's session config exposes.
-  - Questions: how do `minimal`, `xhigh`, `ultra`, `ultrathink` and `ultracode` map onto the 5-row beam table (none/low/medium/high/max)? What do providers with runtime-only vocabularies, or no effort option, show?
-- **Upstream already has a Usage panel** (`docs/user/usage.md`, `apps/server/src/usage/`): tokens, cache savings, model breakdown, estimated cost and trends across providers. Does v1 item 3 extend that panel, or build a separate one?
-- **Upstream already has a voice-input controller** (`docs/internals/voice-input.md`, `packages/client-runtime/src/voice-input/`). Transcription currently runs only on iOS, locally, and edits the draft without sending it. Should the Polaris voice provider interface plug into this controller as a transcriber, or stay separate?
-- **Upstream CI comes with the fork**: 18 workflows in `.github/workflows/` (release, relay deploy, mobile EAS, PR vouch/triage bots). Keep, disable, or delete them before pushing to a new remote?
-- **`.cursor/rules/cursor-cloud.mdc`** is a Cursor-Cloud-only setup note (with `.mdc` frontmatter), not a copy of `AGENTS.md`, so it was left as is rather than symlinked. Parts of it disagree with upstream's own rules (it says `npm run dev` auto-wires `VITE_HTTP_URL`). Keep, delete, or replace it?
-- **Links into `AGENTS.md` anchors now dangle.** `CONTRIBUTING.md`, `docs/README.md` and `docs/operations/development.md` link to `AGENTS.md#documentation` / `#test-data`, which only existed in upstream's file. Repo-relative links inside `docs/upstream-AGENTS.md` now resolve from `docs/`. Fix these upstream docs, or leave them untouched?
-- **Node version**: `engines` requires Node `^24.13.1`. This machine ran Node 26.8.1, and install and checks worked with an "Unsupported engine" warning. Add a `.nvmrc` / `.node-version` for friends?
+Facts are under "Chatbox outline" above. These are still open.
+
+- What does "neutral default" render for a provider with no effort setting (Antigravity)? A tier, a separate look, or no glow?
+- How is "nearest tier by position in that provider's own list" computed? One candidate, which is my interpretation and not decided: for a list of n levels, take the level's 0-based index i, drop levels already mapped by name, and map the rest by i/(n-1) onto the order low, medium, high, xhigh, max. Confirm or replace it.
+- Should the beam follow the level the picker shows, or the level actually sent to the API? They differ for some Claude profiles (the manifest's `effortMap`), and `ultracode` is sent as `xhigh` but maps to the max tier by the rule above.
+- Should the beam react while the user types the keyword level (the signal comes from the prompt text and flips on every keystroke), only after send, or not at all?
+- The composer already draws a static gradient ring for the keyword level. Keep it, replace it with the beam's max tier, or suppress it while the beam is active?
+
+### Quota-low flash
+
+- "Below 20%": do you mean 20% of quota **remaining** (`usedPercent` above 80)? That is how I read it, but it could also mean under 20% used.
+- When a provider reports several windows (for example a short rolling window and a weekly one), which one counts: any of them, the shortest, or the most used?
+- Does it apply to the provider of the active thread only, or to any provider?
+- How long does it flash: a few flashes when the threshold is crossed, or until the quota resets? The second conflicts with upstream's no-continuous-animation rule.
+- Does it override the effort-tier beam while active, or share the slot some other way?
+- Is the 20% threshold fixed or a setting?
+
+### Other open items found in the code (snapshot `3e6b450`)
+
+- **Voice provider interface.** Plug into upstream's `VoiceTranscriber` and controller (`packages/client-runtime/src/voice-input/`), or stay separate? The facts are in `HANDOFF.md`.
+- **A test now fails.** `scripts/notify-discord-release.test.ts` reads `.github/workflows/release.yml`, which moved to `.github/upstream-workflows/`, so it fails with ENOENT. Update its path, delete it (it covers upstream's Discord release announcer, which Polaris does not use), or leave it failing? It is upstream source, so it was not edited. `ci.yml` does not run the `scripts` package.
+- **Other references to moved workflows.** `docs/operations/development.md:111` links `windows-tests.yml`, and `docs/operations/release.md`, `infra/relay/README.md` and `packaging/aur/README.md` name paths under `.github/workflows/`. Fix or leave?
+- **`.nvmrc` is `24`, but `engines` needs `^24.13.1`.** A machine whose newest installed 24.x is older than 24.13.1 passes `.nvmrc` and fails `engines`. Pin `24.13.1`, or keep `24`?
+- **`.cursor/rules/cursor-cloud.mdc`** is kept unedited, but it disagrees with `AGENTS.md` and upstream's rules in places (listed in `HANDOFF.md`). Fix, replace or delete it?
 - **T3 Code's git text generation reads the repo's `AGENTS.md`** when the style is "repo conventions" (`apps/server/src/git/GitManager.ts`). With a Claude writer it also reads `CLAUDE.md`, which is now a symlink, so the same text is included twice (upstream's `CLAUDE.md` was just `@AGENTS.md`). Acceptable?
