@@ -16,12 +16,23 @@ A personal fork of T3 Code with extra features, themes and built-in skills. Cust
 
 Decided 2026-10-05 (session 2, by the human):
 
-- **CI.** Upstream's 18 workflows were moved to `.github/upstream-workflows/` (reference only, inert). One new `.github/workflows/ci.yml` runs only commands verified locally on Node 24: format check, lint, typecheck for six packages, and tests for three. No release, deploy, mobile or bot workflows, and nothing that needs secrets.
+- **CI.** Upstream's 18 workflows were moved to `.github/upstream-workflows/` (reference only, inert). One new `.github/workflows/ci.yml` runs only commands verified locally on Node 24.13.1: format check, lint, typecheck for six packages, tests for three packages, and one Discord release-step test file. No release, deploy, mobile or bot workflows, and nothing that needs secrets.
 - **Usage graph (v1 item 3) extends upstream's existing Usage panel.** No second panel. The gap against the wishlist (activity heatmap, cost over time, tool-call graphs, per-thread views) is in `HANDOFF.md`. No code until that is reviewed.
 - **Effort colors are keyed on tiers, not provider level names.** Tiers: none, low, medium, high, xhigh, max. A provider-to-tier table maps each provider's levels onto them (see "Chatbox outline"). Do not hard-code provider level names in the beam config.
 - **Voice: no code yet.** Upstream's voice-input controller is summarized in `HANDOFF.md` so the provider-interface decision can be made with facts.
 - **Upstream doc links** that pointed at headings in the old `AGENTS.md` now point at `docs/upstream-AGENTS.md`.
-- **Node**: `.nvmrc` pins `24`. `.cursor/rules/cursor-cloud.mdc` is kept unedited; where it disagrees with `AGENTS.md` is logged in `HANDOFF.md`.
+- **Node**: `.nvmrc` pins Node (`24` in session 2, changed to `24.13.1` in session 3, see below). `.cursor/rules/cursor-cloud.mdc` is kept unedited; where it disagrees with `AGENTS.md` is logged in `HANDOFF.md`.
+
+Decided 2026-10-05 (session 3, by the human):
+
+- **Quota-low flash trigger.** Flash the chat outline red when remaining quota is below 20% (more than 80% used) on the 5-hour limit or on the general quota; either one triggers it. Reading of the data (mine, to be confirmed): the 5-hour limit is the window with `kind: "session"` (Claude's `five_hour`), and the general quota is every other window (`weekly`, `monthly`, `other`). Not built.
+- **Fallback tier by position** (only for level names missing from the provider → tier table; explicit names always win). Ordered active tiers: low, medium, high, xhigh, max. "none" is separate and only for off or none levels. For an unknown value, take the provider's ordered level list, drop off/none and keyword-style levels, and let n be what is left. If n is 1 the tier is medium. Otherwise p = index / (n − 1) and tier = ladder[round(p × 4)], rounding half up (exact integer form: floor((8i + n − 1) / (2(n − 1)))). The provider's lowest level always looks low and its highest always max; middle levels interpolate. Example: [fast, balanced, deep] → low, high, max (accepted; it is a fallback and the explicit table should cover real providers). Clamp, never throw, log once in dev. Checked with a throwaway script: the integer form matches the float form for every n from 2 to 60, and the result is monotonic.
+- **Neutral default** (providers with no effort setting, or a value that cannot be resolved): `colorVariant` mono, `size` md, `strength` 0.6, `duration` 2.0. Steady and grey, with no hue that implies a level, and visibly different from low (mono + `pulse-inner`, breathing). It animates only while a turn is running; idle stays the thin static border.
+- **The beam follows the level sent with the turn, not the live picker.** The beam is a status indicator for the running turn. Resolve the effective effort once at send time (the same function that builds the request), store it on the turn or event, and freeze it for that turn. Changing the picker mid-run must not recolor a running beam. If the picker display and the sent value disagree (for example the keyword level in the text changes what is sent), the beam follows what is sent. Where effective effort is resolved today: see "How the composer handles the keyword level" and `HANDOFF.md`.
+- **Upstream's static ring for the keyword level stays, as the idle/composing indicator only.** It tells the user the prompt contains the keyword before sending, and it is not an animation, so it does not break the one-animated-glow rule. While a turn runs, hide the ring and show the beam at the max tier; when idle again the ring returns if the keyword is still in the text. Never show ring and beam together. The ring's color comes from the same config as the max tier. Reduced motion: the ring stays and the beam does not animate. Upstream's ring code is not deleted; it is wired into the idle state of the Composer FX slot.
+- **Moved-workflow fallout.** The `notify-discord-release` test failure was caused by our workflow move (it passes 22/22 on the pristine snapshot), so it was repointed to `.github/upstream-workflows/release.yml` and the docs that named the old workflow paths were updated. A second test, `build-desktop-artifact.test.ts` ("skips the primary native probe for cross-architecture Windows payloads"), fails on the pristine snapshot too, so it is pre-existing: not fixed, listed as known failing, and not in CI. No silent skips.
+- **Node pin.** `.nvmrc` is `24.13.1`, exactly the lower bound of `engines.node` (`^24.13.1`), and CI reads `node-version-file: .nvmrc`. Bumping Node means changing `.nvmrc` and `engines.node` together.
+- **Remote.** The human creates the remote and pushes. The agent never pushes. A pre-push checklist and the exact commands are in `HANDOFF.md`.
 
 ## v1 scope (in order)
 
@@ -75,14 +86,15 @@ Goal: the composer's outline glows or animates, and its intensity reflects the t
 
 **Color per thinking-effort tier (draft; tune after seeing it).** Cool to warm as effort rises. The first column is a **tier**, not a provider's level name: each provider's levels are mapped to a tier by the table below, so the config never hard-codes provider vocabulary. Keep it in one config object so users can edit it. `duration` is the cycle time in seconds, so lower = faster. The `xhigh` row is interpolated from its neighbors and has never been seen rendered.
 
-| Tier   | colorVariant | size          | strength | duration | extra                                                                                                                         |
-| ------ | ------------ | ------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| none   | n/a          | n/a           | n/a      | n/a      | `active={false}`; thin static border                                                                                          |
-| low    | `mono`       | `pulse-inner` | 0.5      | 2.3      | calm breathing                                                                                                                |
-| medium | `ocean`      | `md`          | 0.8      | 1.96     | blue-purple                                                                                                                   |
-| high   | `sunset`     | `md`          | 1        | 1.5      | orange-red                                                                                                                    |
-| xhigh  | `sunset`     | `md`          | 1        | 1.3      | **draft, interpolated.** Variants cannot blend, so it keeps `sunset`; `hueRange` and `saturation` about halfway to max's bump |
-| max    | `colorful`   | `md`          | 1        | 1.1      | wider `hueRange` (about 60), a bit more `saturation`                                                                          |
+| Tier                           | colorVariant | size          | strength | duration | extra                                                                                                                         |
+| ------------------------------ | ------------ | ------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| none                           | n/a          | n/a           | n/a      | n/a      | `active={false}`; thin static border                                                                                          |
+| low                            | `mono`       | `pulse-inner` | 0.5      | 2.3      | calm breathing                                                                                                                |
+| medium                         | `ocean`      | `md`          | 0.8      | 1.96     | blue-purple                                                                                                                   |
+| high                           | `sunset`     | `md`          | 1        | 1.5      | orange-red                                                                                                                    |
+| xhigh                          | `sunset`     | `md`          | 1        | 1.3      | **draft, interpolated.** Variants cannot blend, so it keeps `sunset`; `hueRange` and `saturation` about halfway to max's bump |
+| max                            | `colorful`   | `md`          | 1        | 1.1      | wider `hueRange` (about 60), a bit more `saturation`                                                                          |
+| neutral (fallback, not a tier) | `mono`       | `md`          | 0.6      | 2.0      | steady grey, no hue; animates only while a turn is running; idle stays the thin static border                                 |
 
 **Provider → tier.** Read from the source on 2026-10-05 (snapshot `3e6b450`). Not seen rendered, except that the composer I loaded showed the Codex model `GPT-6-Astra` at `Medium`. The Claude set matches what the human described seeing in the composer.
 
@@ -97,9 +109,21 @@ Goal: the composer's outline glows or animates, and its intensity reflects the t
 | ACP registry           | the agent's own session config option                 | Runtime                                                                                                                                                                                                               | Known names as above; others by position                                                                              |
 | Antigravity            | none                                                  | The thinking level is part of the model ID; there is no separate effort option                                                                                                                                        | neutral default                                                                                                       |
 
-Mapping rules (decided by the human): off or none → none; minimal or low → low; medium → medium; high → high; extra high → xhigh; max, and any keyword-style level whose name starts with "ultra", → max; an unknown level → the nearest tier by its position in that provider's own list; a provider with no effort setting → neutral default. How "nearest by position" is computed and what "neutral default" renders are not defined yet (see Open questions).
+Mapping rules (decided by the human): off or none → none; minimal or low → low; medium → medium; high → high; extra high → xhigh; max, and any keyword-style level whose name starts with "ultra", → max; a provider with no effort setting → neutral default. These names always win. Only a level name that is not in the table goes through the fallback below.
 
-Display level versus API level: for some Claude profiles the manifest's `effortMap` sends a different value to the API than the picker shows (for example `xhigh`→`max` on one profile, `max`→`high` on another, and `ultracode`→`xhigh`). The tables above use the level the picker shows.
+**Fallback by position.** Take the provider's ordered level list, drop off/none and keyword-style levels, and let n be what is left. If n is 1, the tier is medium. Otherwise p = index / (n − 1) and the tier is ladder[round(p × 4)], where the ladder is low, medium, high, xhigh, max and rounding is half up. The lowest level of a provider always looks low and its highest always max. Clamp, never throw, and log once in dev. A value that cannot be resolved at all gets the neutral default. Worked results (computed, see Decisions):
+
+| n (levels left) | tiers, lowest level first                    |
+| --------------- | -------------------------------------------- |
+| 1               | medium                                       |
+| 2               | low, max                                     |
+| 3               | low, high, max                               |
+| 4               | low, medium, xhigh, max                      |
+| 5               | low, medium, high, xhigh, max                |
+| 6               | low, medium, high, high, xhigh, max          |
+| 7               | low, medium, medium, high, xhigh, xhigh, max |
+
+Display level versus API level: for some Claude profiles the manifest's `effortMap` sends a different value to the API than the picker shows (for example `xhigh`→`max` on one profile, `max`→`high` on another, and `ultracode`→`xhigh`). The tables above are keyed on the level the picker shows. The beam follows the level sent with the turn (see Decisions); whether that means the level id in the turn's selection or the API value after `effortMap` is an open question.
 
 ### How the composer handles the keyword level
 
@@ -114,27 +138,19 @@ Claude's picker has one top level that is not a saved setting. Typing the keywor
 - **Two ways in.**
   - _Picked in the picker._ Choosing the level does not save an option. It edits the prompt: an empty prompt becomes `"<Keyword>:\n"`, otherwise the prompt is prefixed with that line (`TraitsPicker.tsx:346-352`, prefix constant at `:93`, `applyClaudePromptEffortPrefix` at `packages/shared/src/model.ts:510`). The prefix is skipped when the prompt starts with a slash command (`/name`), and it is never doubled. Picking any other level strips the prefix and saves that level (`TraitsPicker.tsx:355-359`).
   - _Typed in the body._ The picker control is disabled with a message telling the user to remove the word (`TraitsPicker.tsx:182-183`, `:408-426`).
-- **On send.** The web client re-applies the prefix when the effort resolves to the keyword level (`ChatView.tsx:782-791`), and the Claude adapter does it again server-side at two call sites (`apps/server/src/orchestration-v2/Adapters/ClaudeAdapterV2.ts:7187` and `:7396`, using `promptEffort` from `apps/server/src/claudeModelOptions.ts:51`). In the manifest the level's `effortMap` entry is `null`, which means no explicit API effort for it. Prompt-history recall strips the prefix (`composerPromptHistory.ts:119`).
-- **Not determined.** Whether the UI can ever store the keyword as the saved option value, as opposed to only the text prefix. `resolveDescriptorChoiceValue` (`packages/shared/src/model.ts:119-141`) maps a stored keyword value back to the model's default level when descriptors resolve.
-- **What the beam could react to** (facts, not a decision): the pure function of the prompt text above; `getComposerProviderState(...).composerFrameClassName`; or the picker's prompt-controlled flag (`TraitsPicker.tsx:176`). Because the signal comes from the text, a beam keyed on it would change as the user types. The composer already has a static outline treatment for this level, which overlaps the planned beam.
-
-If four palettes are not enough or exact hex per effort is wanted, vendor `border-beam` into the repo (MIT, keep the license) and add a `colors` prop like `voice-glow` has. Do not use a CSS `hue-rotate` hack unless it looks right.
-
-`border-beam`'s pulse types honor `prefers-reduced-motion` themselves. Its rotate types do NOT; add the reduced-motion handling ourselves.
-
-**Rules.**
-
-- Honor `prefers-reduced-motion` (fall back to a static border).
-- One glowing element per view (the active composer only). Blurred conic layers are expensive.
-- Do not clip the halo with `overflow: hidden`.
-- Ship a static fallback for engines without `@property`.
-
-**Spike first.** Prototype two options on an isolated page. Pick by look and frame rate on the target machines. Record the result in `HANDOFF.md`.
+- **How it reaches the request** (verified by reading on 2026-10-05; not exercised in a running composer).
+  - The web client dispatches the turn with `modelSelection: ctxSelectedModelSelection` (the picker's saved options, `ChatComposer.tsx:2307`; for example at `ChatView.tsx:9516`) and the text from `formatOutgoingPrompt` (`ChatView.tsx:782-791`).
+  - Picking the keyword level in the web picker never saves an option; it only edits the prompt text (`TraitsPicker.tsx:346-352`). The mobile picker hides it (`apps/mobile/src/features/threads/thread-settings-options.ts:56`). So in the normal flows the saved effort option is never the keyword level, and the prefix added at send (`ChatView.tsx:782-791`, and the server calls below) fires only if stored data holds the keyword as the effort value, for example legacy data.
+  - Typing the keyword in the body changes nothing structured. T3's server has no text detection; the detector (`packages/shared/src/model.ts:302`) is used only by the web composer. The turn goes out with the saved level in `modelSelection` and the keyword inside the text. What Claude does with the word is Claude's behavior and was not checked here. Prompt-history recall strips the prefix (`composerPromptHistory.ts:119`).
+- **Where effective effort is resolved on the server.** For Claude it is `compileClaudeModelSelection` in `apps/server/src/claudeModelOptions.ts:28`. It reads the `effort` option, applies the catalog's `effortMap`, and returns `effort` (for the API; `undefined` for the keyword level), `promptEffort` (for the text prefix), `settings` (such as `ultracode`, `fastMode`) and `queryIdentity`. Callers, all in `apps/server/src/orchestration-v2/Adapters/ClaudeAdapterV2.ts`: `makeClaudeQueryOptions` (`:804`, compiles at `:830` and passes `effort` to the SDK at `:872-876`), the per-turn query setup (`:6923`), and the text prefix (`:7187-7189` and `:7396-7398`). Other adapters each read their own option from the turn's `modelSelection`: Codex `reasoningEffort` at `CodexAdapterV2.ts:718`, OpenCode `variant` at `OpenCodeAdapterV2.ts:3271` and `OpenCode2AdapterV2.ts:755`, Pi `thinking` at `PiAdapterV2.ts:2117`. Grok, Cursor and ACP were not traced. The turn input carries `modelSelection` per turn, so the structured part is already fixed at send. There is no single provider-neutral "effective effort" function yet.
+- **The disagreement case.** Saved level `high` and the keyword typed in the body: the picker displays the keyword level, `modelSelection` says `high`, and the text contains the keyword. A beam that follows what is sent therefore needs: effective = (keyword present in the final outgoing text, and the model lists it) ? keyword level : the level in the turn's selection. No function computes that today. Its pieces are the detector (`packages/shared/src/model.ts:302`), `resolvePromptInjectedEffort` (`:495`) and `compileClaudeModelSelection`. The natural place is the Claude adapter at turn start, where the compiled selection and the final text both exist.
+- **When the beam is built.** Hide upstream's ring while a turn runs and keep its code. Today its gradient is a hard-coded custom property in `apps/web/src/index.css:2075-2118`, so making it read the max-tier color from the beam config is an edit to upstream CSS.
 
 ### Quota-low warning (requested 2026-10-05; not built)
 
 The human's request: when the usage of the provider drops below 20%, make the chat outline shader flash **red**. Not implemented: this session is repo hygiene only, and the composer outline is v2. Read from the code, not exercised:
 
+- **Trigger (decided 2026-10-05).** Remaining quota below 20% on the 5-hour limit or on the general quota; either one. Window kinds are `session`, `weekly`, `monthly` and `other` (`providerUsageLimits.ts:22`); Claude's `five_hour` is `session` (`apps/server/src/provider/Layers/claudeUsageLimits.ts:42`). My reading is 5-hour = `session` and general = every other window. How Codex's windows are classified was not checked.
 - **The data already exists.** Each provider reports quota windows as `ServerProviderUsageWindow`: `usedPercent` (0 to 100), `resetsAt`, `windowDurationMins` and a `label` (`packages/contracts/src/providerUsageLimits.ts:20-26`). A provider can report several windows. The composer already renders them (`apps/web/src/components/chat/ComposerUsageLimits.tsx`); shared logic is in `packages/shared/src/usageLimits.ts`. Accounts that cannot report windows at all exist (the contract's own note at `:46`), so the rule has to stay silent when there are none.
 - **Red is not available in `border-beam`.** It only has the four palettes and no custom hex colors (see the candidates table). Red needs the vendored-with-a-`colors`-prop route described above, or an original shader.
 - **Flashing is motion.** It has to honor `prefers-reduced-motion` (static red border instead). Upstream's own rule is "no continuously repainting animations; they peg the GPU on high-refresh displays" (`docs/upstream-AGENTS.md`, "Taste"). A flash that runs for as long as quota stays low runs into that rule.
@@ -144,12 +160,12 @@ The human's request: when the usage of the provider drops below 20%, make the ch
 
 Only one animated effect on the composer at a time. Swap with a fade (`active` + `onDeactivate`), never stack.
 
-| Composer state     | Effect                                 |
-| ------------------ | -------------------------------------- |
-| idle               | thin static border                     |
-| agent thinking     | `BorderBeam` by the effort table above |
-| voice listening    | `VoiceBeam` driven by `level`          |
-| voice transcribing | `VoiceBeam` with `processing` on       |
+| Composer state     | Effect                                                                                                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| idle               | thin static border; upstream's static ring instead while the prompt text contains the keyword level (never together with the beam)                                        |
+| agent thinking     | `BorderBeam` at the tier of the level sent with the turn, frozen for that turn (max when the keyword level was sent); neutral default if unresolvable; the ring is hidden |
+| voice listening    | `VoiceBeam` driven by `level`                                                                                                                                             |
+| voice transcribing | `VoiceBeam` with `processing` on                                                                                                                                          |
 
 ## Bots (thinking / working animation, v2)
 
@@ -199,28 +215,18 @@ Merging upstream. Building our own database or block engine. Forking Obsidian (p
 
 ### Effort tiers and the beam
 
-Facts are under "Chatbox outline" above. These are still open.
-
-- What does "neutral default" render for a provider with no effort setting (Antigravity)? A tier, a separate look, or no glow?
-- How is "nearest tier by position in that provider's own list" computed? One candidate, which is my interpretation and not decided: for a list of n levels, take the level's 0-based index i, drop levels already mapped by name, and map the rest by i/(n-1) onto the order low, medium, high, xhigh, max. Confirm or replace it.
-- Should the beam follow the level the picker shows, or the level actually sent to the API? They differ for some Claude profiles (the manifest's `effortMap`), and `ultracode` is sent as `xhigh` but maps to the max tier by the rule above.
-- Should the beam react while the user types the keyword level (the signal comes from the prompt text and flips on every keystroke), only after send, or not at all?
-- The composer already draws a static gradient ring for the keyword level. Keep it, replace it with the beam's max tier, or suppress it while the beam is active?
+- **What does "the level sent" mean for Claude?** Two readings give different tiers on some profiles. (A) The level id in the turn's `modelSelection`, which is what the user picked (for example `ultracode` → max by the name rule, plus the keyword-in-text override). (B) The API value after `effortMap` (for example `ultracode` is sent as `xhigh`; `xhigh` is sent as `max` on one profile; `max` is sent as `high` on another). The tables are keyed on picker names, so I read your decision as (A). Confirm or choose (B).
 
 ### Quota-low flash
 
-- "Below 20%": do you mean 20% of quota **remaining** (`usedPercent` above 80)? That is how I read it, but it could also mean under 20% used.
-- When a provider reports several windows (for example a short rolling window and a weekly one), which one counts: any of them, the shortest, or the most used?
+- Confirm my reading of "general quota": every window other than `kind: "session"`.
 - Does it apply to the provider of the active thread only, or to any provider?
 - How long does it flash: a few flashes when the threshold is crossed, or until the quota resets? The second conflicts with upstream's no-continuous-animation rule.
-- Does it override the effort-tier beam while active, or share the slot some other way?
+- While it is active, does it override the tier beam, or share the composer slot some other way?
 - Is the 20% threshold fixed or a setting?
 
 ### Other open items found in the code (snapshot `3e6b450`)
 
 - **Voice provider interface.** Plug into upstream's `VoiceTranscriber` and controller (`packages/client-runtime/src/voice-input/`), or stay separate? The facts are in `HANDOFF.md`.
-- **A test now fails.** `scripts/notify-discord-release.test.ts` reads `.github/workflows/release.yml`, which moved to `.github/upstream-workflows/`, so it fails with ENOENT. Update its path, delete it (it covers upstream's Discord release announcer, which Polaris does not use), or leave it failing? It is upstream source, so it was not edited. `ci.yml` does not run the `scripts` package.
-- **Other references to moved workflows.** `docs/operations/development.md:111` links `windows-tests.yml`, and `docs/operations/release.md`, `infra/relay/README.md` and `packaging/aur/README.md` name paths under `.github/workflows/`. Fix or leave?
-- **`.nvmrc` is `24`, but `engines` needs `^24.13.1`.** A machine whose newest installed 24.x is older than 24.13.1 passes `.nvmrc` and fails `engines`. Pin `24.13.1`, or keep `24`?
 - **`.cursor/rules/cursor-cloud.mdc`** is kept unedited, but it disagrees with `AGENTS.md` and upstream's rules in places (listed in `HANDOFF.md`). Fix, replace or delete it?
 - **T3 Code's git text generation reads the repo's `AGENTS.md`** when the style is "repo conventions" (`apps/server/src/git/GitManager.ts`). With a Claude writer it also reads `CLAUDE.md`, which is now a symlink, so the same text is included twice (upstream's `CLAUDE.md` was just `@AGENTS.md`). Acceptable?
