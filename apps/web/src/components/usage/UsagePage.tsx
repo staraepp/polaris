@@ -75,6 +75,7 @@ import {
 } from "../WorkspaceBreadcrumb";
 import { WorkspacePageContainer } from "../WorkspacePageContainer";
 import { WorkspacePageHeader } from "../WorkspacePageHeader";
+import { UsageActivitySection } from "./UsageActivitySection";
 import { UsageLimitsSection } from "./UsageLimits";
 import { UsagePriceOverrides } from "./UsagePriceOverrides";
 import { UsageProviderChart } from "./UsageProviderChart";
@@ -134,6 +135,7 @@ export function UsagePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [limitsNow, setLimitsNow] = useState(() => Date.now());
   const refreshingRef = useRef(false);
+  const [activityRefreshToken, setActivityRefreshToken] = useState(0);
   const [breakdown, setBreakdown] = useState<"model" | "time">("model");
   const [priceDialog, setPriceDialog] = useState<{ readonly model?: string } | null>(null);
   const [selectedModelKey, setSelectedModelKey] = useState<string | null>(null);
@@ -295,6 +297,7 @@ export function UsagePage() {
     ) {
       setWindowSelection({ days: windowDays, window: nextWindow });
     }
+    setActivityRefreshToken((token) => token + 1);
     refreshingRef.current = true;
     setIsRefreshing(true);
     void refresh(nextWindow).finally(() => {
@@ -626,6 +629,12 @@ export function UsagePage() {
                     />
                   </div>
                 </section>
+
+                <UsageActivitySection
+                  metric={metric === "tokens" ? "tokens" : "cost"}
+                  selectedEnvironmentIds={selectedEnvironmentIds}
+                  refreshToken={activityRefreshToken}
+                />
 
                 <section className="flex flex-col gap-2">
                   <h2 className="text-sm font-medium text-foreground">Totals</h2>

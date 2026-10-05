@@ -60,6 +60,19 @@ Decided 2026-10-05 (session 6, by the human):
 - **The logo is a placeholder.** A "P" with a four-pointed north-star window on a green squircle, in every icon file, the favicon, the splash and the sidebar mark. The human wants final art later; `HANDOFF.md` lists every file to swap.
 - **Success stays green but is a different green.** Brand is emerald (hue 168), success is Tailwind green (hue about 150), so a success check and a brand button do not look alike. Errors stay red, warnings amber.
 
+Decided 2026-10-05 (session 7, defaults given by the human for the unattended v1 run):
+
+- **Quota-low flash watches the 5-hour (`session`) window and every non-session window** of the active provider. Either crossing triggers it. This closes the session 3 vs session 5 conflict.
+- **Flash is red for 4 seconds, then a persistent amber accent** (`--warning`), which must stay clearly distinct from the green brand. The persistent signal also feeds the usage meter.
+- **While a turn runs, the effort beam animates over the static amber accent border.** Composer priority: voice listening, then the flash, then the effort beam, then the idle ring.
+- **Beam effort is derived on read**, from the run's stored `modelSelection` plus the keyword-in-text override of the run's user message. No stored field and no contract change (that would need the human's approval). If derive-on-read turns out impossible the sub-feature is skipped and the reason logged in `HANDOFF.md`.
+- **Threshold.** Adding a threshold setting is a contract change, so v1 ships the default of 20% remaining as a constant (hysteresis +5) and the setting is listed under "Needs Star's approval".
+- **Cursor provider untouched. Fonts: upstream's customization is the baseline, nothing new.** Any bundled font must be OFL or Apache licensed.
+- **Dev isolation rule** in `AGENTS.md`: temp state dir, non-3773 port, never touch processes the agent did not start.
+- **Icons per channel.** Dev, nightly and prod share the P+star base; dev gets a small amber `</>` badge and nightly an indigo crescent badge, prod none. Favicons use the star alone at 16 px (the P+star mushes there) and P+star at 32 px and up.
+- **Stage artwork** (the dev "blueprint" header and nightly sky) derives from `--primary` via `color-mix`, so it follows the brand token instead of upstream's hard-coded blue.
+- **Pairing.** The packaged desktop app signs itself in (`desktop-managed-local` policy) and never shows a pairing page. The browser dev flow pairs once per browser: `scripts/polaris-dev.mjs` gives the server a fixed reusable dev token, so the 30-day localhost cookie keeps working across fresh temp homes. A fully token-free "trusted loopback" browser mode is an open question (security trade-off, see `HANDOFF.md`, Questions for Star).
+
 ## v1 scope (in order)
 
 1. **Agent-friendly repo**: `AGENTS.md`, `HANDOFF.md`, `docs/`.
@@ -270,9 +283,7 @@ Merging upstream. Building our own database or block engine. Forking Obsidian (p
 
 ### Quota-low flash
 
-- **The 5-hour window.** Session 3 decided "below 20% on the 5-hour limit or on the general quota, either one". The session 5 line reads "every window other than `session`", which would leave the 5-hour window out. Does the flash watch the 5-hour (`session`) window too, as in session 3, or only the other windows?
-- **Flash color.** The original request was a red flash, and the persistent accent is amber. Is the 4-second flash red, followed by the amber accent?
-- **Accent and beam.** While the amber accent is on and a turn is running, does the effort beam animate with the accent as the static border under it (my default), or is the accent hidden while the beam runs?
+Closed in session 7 by the human's defaults (see Decisions): the flash watches the 5-hour window too, it is red for 4 seconds and then amber, and the beam animates over the static accent.
 
 ### Other open items found in the code (snapshot `3e6b450`)
 
