@@ -61,9 +61,9 @@ git push -u origin main
 gh run list --limit 3
 ```
 
-What the push publishes: the clone is not shallow, so it sends all 4,769 commits (12 are ours, the rest upstream's) and about 436 MiB packed. Upstream's workflows are inert under `.github/upstream-workflows/`, so only `ci.yml` runs.
+What the push publishes: the clone is not shallow, so it sends upstream's whole history plus ours (about 4,770 commits; `git rev-list --count HEAD` gives the exact number) and about 436 MiB packed. Upstream's workflows are inert under `.github/upstream-workflows/`, so only `ci.yml` runs.
 
-**Check the commit identity first.** All 12 of our commits are authored and committed as `5rnkq9b5yf-collab <5rnkq9b5yf@privaterelay.appleid.com>`, taken from `~/.gitconfig`. If you want a different public identity, set it for this repo and rewrite only our 12 local commits (safe because nothing is pushed, and it changes their hashes):
+**Check the commit identity first.** Every commit of ours since `3e6b450` is authored and committed as `5rnkq9b5yf-collab <5rnkq9b5yf@privaterelay.appleid.com>`, taken from `~/.gitconfig`. If you want a different public identity, set it for this repo and rewrite only our local commits (safe because nothing is pushed, and it changes their hashes):
 
 ```sh
 git config user.name  "<name>"
@@ -127,7 +127,7 @@ Facts for the provider-interface decision (`docs/internals/voice-input.md`, `pac
   - **`vp`'s own Node shim checks `engines.node` before `.nvmrc`**, so a local `vp` may use a newer 24.x than CI's 24.13.1.
   - **Two interpretations of yours** are flagged in `blueprint.md` Open questions: "general quota" (I read: every quota window other than the 5-hour `session` one) and "the level sent" (I read: the level id in the turn's selection plus the keyword-in-text override, not the API value after `effortMap`).
   - **The effort-resolution facts are from reading source**, not from a running turn.
-  - **Push size and identity**: about 436 MiB and 4,769 commits, and the commit identity is a private-relay Apple ID address from your global git config (see "Before you push").
+  - **Push size and identity**: about 436 MiB and roughly 4,770 commits, and the commit identity is a private-relay Apple ID address from your global git config (see "Before you push").
   - Still not exercised: the Usage page with real data, an agent turn, the desktop app.
 - Next action: Human: work through "Before you push" in "Current state" (check the commit identity first), push, and watch the first `ci.yml` run. After that, an agent starts v1 item 2 (Discord Rich Presence) with a read-only plan: read `apps/desktop/src/main.ts`, `apps/desktop/src/ipc/` and `apps/desktop/src/settings/`, find where an opt-in, desktop-only setting and a main-process service would live, and report before writing code (the implementation needs the Discord Application ID).
 - Open questions: all in `blueprint.md` → "Open questions". New or still open, highest priority first: (1) "the level sent" for Claude: level id (my reading) or API value after `effortMap`; (2) quota-low flash: confirm "general quota", whether it applies to the active provider only, how long it flashes, whether it overrides the tier beam, whether 20% is a setting; (3) fix, replace or delete `.cursor/rules/cursor-cloud.mdc`; (4) voice provider interface; (5) the git-text-generation double read of `AGENTS.md`/`CLAUDE.md`. Earlier ones still open: Discord Application ID, app name and branding, desktop vs `npx`, Clide API port.
