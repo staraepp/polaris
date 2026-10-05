@@ -1498,6 +1498,17 @@ describe("Usage shortcuts", () => {
     },
   );
 
+  it("binds the Polaris one-year period to the fifth shifted digit on Usage", () => {
+    const shortcut = event({ key: "%", code: "Digit5", ctrlKey: true, shiftKey: true });
+    assert.strictEqual(
+      resolveShortcutCommand(shortcut, DEFAULT_RESOLVED_KEYBINDINGS, {
+        platform: "Linux",
+        context: { usagePageOpen: true },
+      }),
+      "usage.period.year",
+    );
+  });
+
   it("matches shifted number keys for periods and only on Usage", () => {
     const shortcut = event({ key: "!", code: "Digit1", ctrlKey: true, shiftKey: true });
     assert.strictEqual(
