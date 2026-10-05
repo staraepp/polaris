@@ -30,7 +30,7 @@ Start with the [development runbook](./operations/development.md) and
 
 Internal notes preserve architectural decisions, constraints, and implementation traps that the
 source alone does not explain. Most code changes do not need an internal documentation update. Follow the
-[documentation rules](../AGENTS.md#documentation) before adding one.
+[documentation rules](upstream-AGENTS.md#documentation) before adding one.
 
 - [Architecture overview](./internals/overview.md)
 - [Glossary](./internals/glossary.md)
