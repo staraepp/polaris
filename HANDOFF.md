@@ -158,6 +158,14 @@ Skipped in this run because each needs a contract, schema or keybinding-command 
 
 ## Entries
 
+### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 3: quota-low signal
+
+- Status: done and committed locally. Logic and hook only; the pixels come in Phase 4.
+- What: `apps/web/src/polaris/quota/quotaLow.ts` is the pure state machine: threshold 20% remaining (constant for now), hysteresis +5, one disarm flag per window id, a flash timestamp per crossing, re-arm on provider switch (a switch to a provider that is already low flashes once), windows that vanish are forgotten, and the step returns the previous object when nothing changed. It watches every window the active provider reports, the 5-hour `session` one included (your default), and is silent when the account cannot report limits or the last probe failed. `useQuotaLowSignal(provider)` adds the provider snapshot and the 4-second flash timer (`flashing` is always false under reduced motion) and returns `{ low, flashing, lowWindows, thresholdPercent }`; `lowWindows` is the feed for a usage meter.
+- Tests: 11 for the machine, 5 jsdom tests for the hook with fake timers and a `matchMedia` stub.
+- Decisions: threshold stays a constant because a client setting is a contract change (listed under "Needs Star's approval"). The hook keeps its memory in React state and steps in an effect; the lint reports two `set-state-in-effect` warnings there, accepted because the step needs the previous state and the snapshot is an external system.
+- Left over: the usage meter in the input area is a backlog item ("after the graph exists"), so nothing renders `lowWindows` yet; Phase 4 consumes `low` and `flashing`.
+
 ### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 2: Discord Rich Presence
 
 - Status: done and committed locally. Ships **inert** until a Discord Application ID is set (see "Questions for Star").
