@@ -6,25 +6,37 @@ Read this file first, then `HANDOFF.md` (current state) and `blueprint.md` (plan
 
 ## Commands
 
-Requires Node 24 (`engines: ^24.13.1`) and the global `vp` (Vite+) CLI: `curl -fsSL https://vite.plus | bash`. Without a global `vp`, run `pnpm install` once (pnpm 11.10.0, lockfile `pnpm-lock.yaml`), then use `node_modules/.bin/vp`. Run everything from the repo root. `vpr <script>` is short for `vp run <script>`.
+Requires Node 24: `.nvmrc` says `24` and `engines` says `^24.13.1`. On macOS: `brew install fnm && fnm install 24`, then `fnm exec --using=24 <cmd>` or `fnm use` in the repo. You also need the global `vp` (Vite+) CLI: `curl -fsSL https://vite.plus | bash`. Without a global `vp`, run `pnpm install` once (pnpm 11.10.0, lockfile `pnpm-lock.yaml`), then use `node_modules/.bin/vp`. Run everything from the repo root. `vpr <script>` is short for `vp run <script>`.
 
-| Command                                      | What it does                                                                        | Status (2026-10-05)                                               |
-| -------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `vp i`                                       | Install deps; also installs the `vp staged` pre-commit hook                         | verified: exit 0                                                  |
-| `vp run --filter <pkg-name> typecheck`       | Typecheck one package (names below)                                                 | verified with `@t3tools/contracts`: exit 0                        |
-| `vp test run <path/to/file.test.ts>`         | Run one test file (Vitest via Vite+)                                                | verified: one `packages/shared` and one `apps/server` file passed |
-| `vp lint --report-unused-disable-directives` | Lint (= `vp run lint`)                                                              | verified: exit 0, 0 errors, ~850 existing warnings                |
-| `vp fmt --check`                             | Format check, includes Markdown (= `vp run fmt:check`). Fix with `vp fmt <files>`   | verified: exit 0                                                  |
-| `vp run dev`                                 | Server + web dev (`scripts/dev-runner.ts`). Read ports from the `[dev-runner]` line | script exists; not run                                            |
-| `vp run dev:desktop`                         | Electron dev client                                                                 | script exists; not run                                            |
-| `vp run migrate-dev-db`                      | Seed dev DB from a read-only copy of real data (see upstream notes)                 | script exists; not run                                            |
-| `vp run knip:check`                          | Unused files, deps and exports                                                      | script exists; not run                                            |
-| `vp run build:desktop`                       | Desktop build. Only when asked                                                      | script exists; not run                                            |
-| `vp run release:smoke`                       | Release smoke test (`node scripts/release-smoke.ts`)                                | script exists; not run                                            |
+Status column: checked 2026-10-05 on Node 24.21.0 unless noted.
+
+| Command                                            | What it does                                                                       | Status                                                                         |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `vp i`                                             | Install deps; also installs the `vp staged` pre-commit hook (formats staged files) | verified: exit 0                                                               |
+| `vp run --filter <pkg-name> typecheck`             | Typecheck one package (names below)                                                | verified, exit 0: contracts, shared, client-runtime, `t3`, web, desktop        |
+| `vp test run <path/to/file.test.ts>`               | Run one test file (Vitest via Vite+)                                               | verified: one `packages/shared` and one `apps/server` file passed              |
+| `vp run --filter <pkg-name> test`                  | Run one package's whole suite                                                      | verified: contracts 510 tests, shared 1,105, client-runtime 1,998 (≤10 s each) |
+| `vp lint --report-unused-disable-directives`       | Lint (= `vp run lint`)                                                             | verified: exit 0, 0 errors, 850 existing warnings, about 7 s                   |
+| `vp fmt --check`                                   | Format check, includes Markdown. Fix with `vp fmt <files>`                         | verified: exit 0                                                               |
+| `vp run dev --home-dir /tmp/polaris-dev`           | Server + web dev (`scripts/dev-runner.ts`)                                         | verified: boots, see "Dev boot" below                                          |
+| `vp run --filter @t3tools/desktop ensure:electron` | Make sure the Electron binary is present (CI runs it before typecheck)             | verified: exit 0                                                               |
+| `vp run dev:desktop`                               | Electron dev client                                                                | script exists; not run                                                         |
+| `vp run migrate-dev-db`                            | Seed dev DB from a read-only copy of real data (see upstream notes)                | script exists; not run                                                         |
+| `vp run knip:check`                                | Unused files, deps and exports                                                     | script exists; not run                                                         |
+| `vp run build:desktop`                             | Desktop build. Only when asked                                                     | script exists; not run                                                         |
+| `vp run release:smoke`                             | Release smoke test (`node scripts/release-smoke.ts`)                               | script exists; not run                                                         |
 
 Package names for `--filter`: `t3` (apps/server), `@t3tools/web`, `@t3tools/desktop`, `@t3tools/mobile`, `@t3tools/marketing`, `@t3tools/contracts`, `@t3tools/client-runtime`, `@t3tools/shared`, `@t3tools/ssh`, `@t3tools/tailscale`, `effect-acp`, `effect-codex-app-server`, `t3code-relay` (infra/relay), `@t3tools/scripts`.
 
-Prefer file-scoped commands. Do **not** run repo-wide `vp check`, `vp run test` or `vp run typecheck` unless asked (upstream rule; CI owns the full suite). Never run a dev server against `~/.t3/userdata`, the live T3 Code database. The main checkout defaults to `~/.t3/dev/userdata` (`docs/operations/development.md`).
+Prefer file-scoped commands. Do **not** run repo-wide `vp check`, `vp run test` or `vp run typecheck` unless asked (upstream rule). CI is `.github/workflows/ci.yml`: exactly the verified commands above (format, lint, six typechecks, three package test suites). Upstream's workflows are inert reference copies in `.github/upstream-workflows/`.
+
+Known failing: `scripts/notify-discord-release.test.ts` (reads `.github/workflows/release.yml`, which moved). Not in CI. See `blueprint.md` Open questions.
+
+### Dev boot
+
+`vp run dev --home-dir /tmp/polaris-dev` starts the server on `127.0.0.1:13773` and Vite on `localhost:5733` (read the real ports from the `[dev-runner]` line). The first page load took about a minute while Vite optimized dependencies. The browser then shows "Pair with this environment": open the `pairingUrl:` printed in the log once. The boot needed no `.env` and no sign-in. Upstream's README says at least one provider CLI must be installed and signed in to run an agent; that was not tested here.
+
+Use `--home-dir` so state stays out of `~/.t3`; never point a dev server at the live `~/.t3/userdata`. To stop it, kill the PIDs you started: SIGTERM to the `vp` wrapper left the dev-runner, Vite and the server running, so each had to be stopped by PID. Ctrl-C in a terminal was not tested. Never kill by name pattern.
 
 ## Layout
 
@@ -37,6 +49,7 @@ Prefer file-scoped commands. Do **not** run repo-wide `vp check`, `vp run test` 
 - `.repos/`: vendored read-only references (`effect-smol`, `alchemy-effect`). Never edit or import from them.
 - `docs/internals/` (start at `overview.md`, `glossary.md`, `effect-services.md`), `docs/user/`, `docs/operations/`, `docs/orchestration-v2/`. Read the matching doc before changing a subsystem.
 - `.agents/skills/` (also at `.claude/skills`): upstream skills `test-t3-app`, `test-t3-mobile`, `contribution-triage`.
+- `.github/workflows/ci.yml`: Polaris CI. `.github/upstream-workflows/`: upstream's workflows, inert.
 - Polaris docs at the root: `AGENTS.md` (`CLAUDE.md` is a symlink to it), `HANDOFF.md`, `blueprint.md`, `ref.md`, `clide-api-spec.md`.
 
 ## How it works
