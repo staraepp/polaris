@@ -6,9 +6,9 @@ Read this file first, then `HANDOFF.md` (current state) and `blueprint.md` (plan
 
 ## Commands
 
-Requires Node 24: `.nvmrc` says `24` and `engines` says `^24.13.1`. On macOS: `brew install fnm && fnm install 24`, then `fnm exec --using=24 <cmd>` or `fnm use` in the repo. You also need the global `vp` (Vite+) CLI: `curl -fsSL https://vite.plus | bash`. Without a global `vp`, run `pnpm install` once (pnpm 11.10.0, lockfile `pnpm-lock.yaml`), then use `node_modules/.bin/vp`. Run everything from the repo root. `vpr <script>` is short for `vp run <script>`.
+Requires Node 24.13.1: `.nvmrc` pins exactly `24.13.1`, the lower bound of `engines.node` (`^24.13.1`), and CI reads `.nvmrc`. **Bumping Node means changing `.nvmrc` and `engines.node` together.** On macOS: `brew install fnm && fnm install 24.13.1`, then `fnm exec --using=24.13.1 <cmd>` (with a global `vp`, its Node shim checks `engines` before `.nvmrc`, so it may pick a newer 24.x). You also need the global `vp` (Vite+) CLI: `curl -fsSL https://vite.plus | bash`. Without a global `vp`, run `pnpm install` once (pnpm 11.10.0, lockfile `pnpm-lock.yaml`), then use `node_modules/.bin/vp`. Run everything from the repo root. `vpr <script>` is short for `vp run <script>`.
 
-Status column: checked 2026-10-05 on Node 24.21.0 unless noted.
+Status column: checked 2026-10-05 on Node 24.13.1 (CI's version) unless noted.
 
 | Command                                            | What it does                                                                       | Status                                                                         |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -16,9 +16,10 @@ Status column: checked 2026-10-05 on Node 24.21.0 unless noted.
 | `vp run --filter <pkg-name> typecheck`             | Typecheck one package (names below)                                                | verified, exit 0: contracts, shared, client-runtime, `t3`, web, desktop        |
 | `vp test run <path/to/file.test.ts>`               | Run one test file (Vitest via Vite+)                                               | verified: one `packages/shared` and one `apps/server` file passed              |
 | `vp run --filter <pkg-name> test`                  | Run one package's whole suite                                                      | verified: contracts 510 tests, shared 1,105, client-runtime 1,998 (≤10 s each) |
+| `vp run --filter @t3tools/scripts test`            | Whole scripts suite                                                                | 337 passed, **1 known failing**: see Known failing                             |
 | `vp lint --report-unused-disable-directives`       | Lint (= `vp run lint`)                                                             | verified: exit 0, 0 errors, 850 existing warnings, about 7 s                   |
 | `vp fmt --check`                                   | Format check, includes Markdown. Fix with `vp fmt <files>`                         | verified: exit 0                                                               |
-| `vp run dev --home-dir /tmp/polaris-dev`           | Server + web dev (`scripts/dev-runner.ts`)                                         | verified: boots, see "Dev boot" below                                          |
+| `vp run dev --home-dir /tmp/polaris-dev`           | Server + web dev (`scripts/dev-runner.ts`)                                         | verified on 24.21.0: boots, see "Dev boot" below                               |
 | `vp run --filter @t3tools/desktop ensure:electron` | Make sure the Electron binary is present (CI runs it before typecheck)             | verified: exit 0                                                               |
 | `vp run dev:desktop`                               | Electron dev client                                                                | script exists; not run                                                         |
 | `vp run migrate-dev-db`                            | Seed dev DB from a read-only copy of real data (see upstream notes)                | script exists; not run                                                         |
@@ -28,9 +29,9 @@ Status column: checked 2026-10-05 on Node 24.21.0 unless noted.
 
 Package names for `--filter`: `t3` (apps/server), `@t3tools/web`, `@t3tools/desktop`, `@t3tools/mobile`, `@t3tools/marketing`, `@t3tools/contracts`, `@t3tools/client-runtime`, `@t3tools/shared`, `@t3tools/ssh`, `@t3tools/tailscale`, `effect-acp`, `effect-codex-app-server`, `t3code-relay` (infra/relay), `@t3tools/scripts`.
 
-Prefer file-scoped commands. Do **not** run repo-wide `vp check`, `vp run test` or `vp run typecheck` unless asked (upstream rule). CI is `.github/workflows/ci.yml`: exactly the verified commands above (format, lint, six typechecks, three package test suites). Upstream's workflows are inert reference copies in `.github/upstream-workflows/`.
+Prefer file-scoped commands. Do **not** run repo-wide `vp check`, `vp run test` or `vp run typecheck` unless asked (upstream rule). CI is `.github/workflows/ci.yml`: exactly the verified commands above (format, lint, six typechecks, three package test suites, and `scripts/notify-discord-release.test.ts`). Upstream's workflows are inert reference copies in `.github/upstream-workflows/`.
 
-Known failing: `scripts/notify-discord-release.test.ts` (reads `.github/workflows/release.yml`, which moved). Not in CI. See `blueprint.md` Open questions.
+Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads` (`AssertionError: expected true to be false`, line 1595). It fails the same way on the pristine snapshot `3e6b450` (checked in a throwaway worktree, macOS arm64, Node 24.13.1); not checked on Linux. It is not in CI, which does not run the whole `scripts` suite. Do not skip it silently: if you fix or remove it, update this line.
 
 ### Dev boot
 
