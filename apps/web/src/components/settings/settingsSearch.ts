@@ -608,6 +608,14 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["allow disable enable open drive preview tools sessions project override"],
   },
   {
+    id: "discord-presence",
+    title: "Discord Rich Presence",
+    to: "/settings/integrations",
+    targetId: "discord",
+    searchTerms: ["discord rich presence status activity coding with polaris show playing"],
+    desktopOnly: true,
+  },
+  {
     id: "device-hosts",
     title: "Device hosts",
     to: "/settings/integrations",

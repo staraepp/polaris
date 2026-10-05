@@ -23,6 +23,10 @@
       "types": "./src/themePalettes.ts",
       "import": "./src/themePalettes.ts"
     },
+    "./polarisBridge": {
+      "types": "./src/polarisBridge.ts",
+      "import": "./src/polarisBridge.ts"
+    },
     "./themePreview": {
       "types": "./src/themePreview.ts",
       "import": "./src/themePreview.ts"

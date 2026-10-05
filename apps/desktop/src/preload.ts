@@ -6,6 +6,7 @@ import type {
   DesktopPreviewTabState,
   DesktopSnapShotEvent,
 } from "@t3tools/contracts";
+import type { PolarisBridge } from "@t3tools/shared/polarisBridge";
 import { exposeClerkBridge } from "@clerk/electron/preload";
 import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
@@ -421,3 +422,12 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     },
   },
 } satisfies DesktopBridge);
+
+// Polaris-only bridge, kept apart from upstream's desktopBridge and contracts.
+contextBridge.exposeInMainWorld("polarisBridge", {
+  discordPresence: {
+    getState: () => ipcRenderer.invoke(IpcChannels.POLARIS_DISCORD_PRESENCE_GET_STATE_CHANNEL),
+    setEnabled: (enabled) =>
+      ipcRenderer.invoke(IpcChannels.POLARIS_DISCORD_PRESENCE_SET_ENABLED_CHANNEL, enabled),
+  },
+} satisfies PolarisBridge);

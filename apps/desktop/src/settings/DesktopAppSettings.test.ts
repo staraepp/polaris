@@ -109,6 +109,19 @@ describe("DesktopSettings", () => {
         }),
       ),
   );
+  it.effect("persists the Polaris Discord presence switch, which is off by default", () =>
+    withSettings(
+      Effect.gen(function* () {
+        const settings = yield* DesktopAppSettings.DesktopAppSettings;
+        assert.isFalse((yield* settings.load).discordPresenceEnabled);
+        assert.isTrue((yield* settings.setDiscordPresenceEnabled(true)).changed);
+        assert.isTrue((yield* settings.load).discordPresenceEnabled);
+        assert.isFalse((yield* settings.setDiscordPresenceEnabled(true)).changed);
+        yield* settings.setDiscordPresenceEnabled(false);
+        assert.deepEqual(yield* settings.load, DesktopAppSettings.DEFAULT_DESKTOP_SETTINGS);
+      }),
+    ),
+  );
   it.effect("loads defaults when no settings file exists", () =>
     withSettings(
       Effect.gen(function* () {
@@ -123,6 +136,7 @@ describe("DesktopSettings", () => {
     assert.deepEqual(
       DesktopAppSettings.resolveDefaultDesktopSettings("0.0.17-nightly.20260415.1"),
       {
+        discordPresenceEnabled: false,
         linuxPasswordStore: "auto",
         localEnvironmentEnabled: true,
         mainWindowBounds: null,
@@ -153,6 +167,7 @@ describe("DesktopSettings", () => {
         });
 
         assert.deepEqual(yield* settings.load, {
+          discordPresenceEnabled: false,
           linuxPasswordStore: "gnome-libsecret",
           localEnvironmentEnabled: true,
           mainWindowBounds: null,
@@ -261,6 +276,7 @@ describe("DesktopSettings", () => {
         );
 
         assert.deepEqual(yield* settings.load, {
+          discordPresenceEnabled: false,
           linuxPasswordStore: "auto",
           localEnvironmentEnabled: true,
           mainWindowBounds: { x: 120, y: 80, width: 1280, height: 900 },
@@ -318,6 +334,7 @@ describe("DesktopSettings", () => {
           );
 
           assert.deepEqual(yield* settings.load, {
+            discordPresenceEnabled: false,
             linuxPasswordStore: "auto",
             localEnvironmentEnabled: true,
             mainWindowBounds: null,
@@ -395,6 +412,7 @@ describe("DesktopSettings", () => {
         });
 
         assert.deepEqual(yield* settings.load, {
+          discordPresenceEnabled: false,
           linuxPasswordStore: "auto",
           localEnvironmentEnabled: true,
           mainWindowBounds: null,
@@ -424,6 +442,7 @@ describe("DesktopSettings", () => {
         });
 
         assert.deepEqual(yield* settings.load, {
+          discordPresenceEnabled: false,
           linuxPasswordStore: "auto",
           localEnvironmentEnabled: true,
           mainWindowBounds: null,
@@ -452,6 +471,7 @@ describe("DesktopSettings", () => {
         });
 
         assert.deepEqual(yield* settings.load, {
+          discordPresenceEnabled: false,
           linuxPasswordStore: "auto",
           localEnvironmentEnabled: true,
           mainWindowBounds: null,

@@ -59,6 +59,7 @@ import {
   agentDeviceDescription,
 } from "~/components/device/DeviceSetup";
 import { isElectron } from "../../env";
+import { DiscordPresenceSetting } from "./polaris/DiscordPresenceSetting";
 
 import { Badge } from "../ui/badge";
 import {
@@ -1464,6 +1465,15 @@ export function IntegrationsSettingsPanel() {
         )}
       </SettingsSection>
       <DeviceIntegrationSettings />
+      <SettingsSection id="discord" title="Discord">
+        {isElectron ? (
+          <DiscordPresenceSetting />
+        ) : (
+          <SettingsUnavailableGroup message="Only available in the desktop app.">
+            <DiscordPresenceSetting disabled />
+          </SettingsUnavailableGroup>
+        )}
+      </SettingsSection>
     </SettingsPageContainer>
   );
 }

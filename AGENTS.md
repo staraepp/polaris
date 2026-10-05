@@ -93,7 +93,7 @@ Clients send typed WebSocket requests. The server turns them into commands. The 
 
 ## Polaris-specific rules
 
-- Discord Rich Presence: desktop shell only, **off by default**, silent if Discord is not running, generic text only (for example "Coding with Polaris").
+- Discord Rich Presence: desktop shell only, **off by default**, silent if Discord is not running, generic text only (for example "Coding with Polaris"). Code: `apps/desktop/src/polaris/discord/` (own IPC client, no dependency), IPC in `apps/desktop/src/ipc/methods/polarisDiscordPresence.ts`, renderer bridge `window.polarisBridge` (`packages/shared/src/polarisBridge.ts`), switch in Settings → Integrations → Discord. It stays inert until `POLARIS_DISCORD_APPLICATION_ID` in `discordConfig.ts` (or the env var of the same name) holds a real Application ID.
 - Effects: only the MIT packages named in `blueprint.md`. One animated glow on the composer at a time. Honor `prefers-reduced-motion`.
 - Voice: talk to Clide only through `clide-api-spec.md` (read its "Using the API" section first), from the desktop main process. Store the token with Electron `safeStorage`, never in plain settings JSON or the renderer. Voice must work without Clide installed.
 - Agent-friendliness is a feature. If you change how something works, update this file or `docs/`. A stale instruction file is worse than none.
