@@ -1105,3 +1105,23 @@ describe("branch naming settings", () => {
     },
   );
 });
+
+describe("ClientSettings quota-low threshold (Polaris)", () => {
+  it("defaults to 20 percent remaining", () => {
+    expect(decodeClientSettings({}).quotaLowThresholdPercent).toBe(20);
+  });
+
+  it.each([-1, 51, 12.5])("rejects an invalid threshold: %s", (value) => {
+    expect(() => decodeClientSettings({ quotaLowThresholdPercent: value })).toThrow();
+    expect(() => decodeClientSettingsPatch({ quotaLowThresholdPercent: value })).toThrow();
+  });
+
+  it.each([0, 10, 30, 50])("accepts a threshold within range, 0 meaning off: %s", (value) => {
+    expect(decodeClientSettings({ quotaLowThresholdPercent: value }).quotaLowThresholdPercent).toBe(
+      value,
+    );
+    expect(
+      decodeClientSettingsPatch({ quotaLowThresholdPercent: value }).quotaLowThresholdPercent,
+    ).toBe(value);
+  });
+});

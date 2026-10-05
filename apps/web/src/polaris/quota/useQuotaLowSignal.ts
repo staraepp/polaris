@@ -43,16 +43,25 @@ function prefersReducedMotion(): boolean {
  * stays there. Pure logic lives in `quotaLow.ts`; this hook only adds the
  * provider snapshot and the 4-second timer.
  */
-export function useQuotaLowSignal(provider: ServerProvider | null): QuotaLowSignal {
+export function useQuotaLowSignal(
+  provider: ServerProvider | null,
+  thresholdPercent: number = QUOTA_LOW_THRESHOLD_PERCENT,
+): QuotaLowSignal {
+  // A threshold of 0 turns the signal off: no windows means silence.
   const providerKey = provider?.instanceId ?? null;
-  const windows = useMemo(() => quotaWindowsOf(provider), [provider]);
+  const windows = useMemo(
+    () => (thresholdPercent > 0 ? quotaWindowsOf(provider) : []),
+    [provider, thresholdPercent],
+  );
   const [state, setState] = useState<QuotaLowState>(INITIAL_QUOTA_LOW_STATE);
   const [flashing, setFlashing] = useState(false);
 
   // An unchanged snapshot steps to the same state object, so nothing re-renders.
   useEffect(() => {
-    setState((previous) => stepQuotaLow(previous, { providerKey, windows, now: Date.now() }));
-  }, [providerKey, windows]);
+    setState((previous) =>
+      stepQuotaLow(previous, { providerKey, windows, now: Date.now(), thresholdPercent }),
+    );
+  }, [providerKey, windows, thresholdPercent]);
 
   useEffect(() => {
     if (state.flashAt === null || prefersReducedMotion()) {
@@ -75,10 +84,11 @@ export function useQuotaLowSignal(provider: ServerProvider | null): QuotaLowSign
         ? IDLE_SIGNAL
         : {
             low: isQuotaLow(state),
-            flashing,
+            // A flash outlives its cause if the warning is switched off mid-burst.
+            flashing: flashing && isQuotaLow(state),
             lowWindows: state.lowWindows,
-            thresholdPercent: QUOTA_LOW_THRESHOLD_PERCENT,
+            thresholdPercent,
           },
-    [state, flashing],
+    [state, flashing, thresholdPercent],
   );
 }

@@ -608,6 +608,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["allow disable enable open drive preview tools sessions project override"],
   },
   {
+    id: "quota-low-threshold",
+    title: "Low quota warning",
+    to: "/settings/general",
+    searchTerms: ["quota limit usage threshold low warning flash amber five hour weekly"],
+  },
+  {
     id: "discord-presence",
     title: "Discord Rich Presence",
     to: "/settings/integrations",

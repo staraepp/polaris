@@ -22,16 +22,22 @@ describe("useQuotaLowSignal", () => {
   let latest: QuotaLowSignal | null = null;
   let reduceMotion = false;
 
-  function Probe({ provider }: { readonly provider: ServerProvider | null }) {
-    const signal = useQuotaLowSignal(provider);
+  function Probe({
+    provider,
+    threshold,
+  }: {
+    readonly provider: ServerProvider | null;
+    readonly threshold?: number | undefined;
+  }) {
+    const signal = useQuotaLowSignal(provider, threshold);
     useEffect(() => {
       latest = signal;
     });
     return null;
   }
-  const render = async (current: ServerProvider | null) => {
+  const render = async (current: ServerProvider | null, threshold?: number) => {
     await act(async () => {
-      renderer.render(<Probe provider={current} />);
+      renderer.render(<Probe provider={current} threshold={threshold} />);
     });
   };
 
@@ -103,5 +109,16 @@ describe("useQuotaLowSignal", () => {
     expect(latest?.low).toBe(true);
     await render(provider("claude", 90, true));
     expect(latest?.low).toBe(false);
+  });
+
+  it("follows a custom threshold and stays silent when it is 0", async () => {
+    await render(provider("claude", 75), 30);
+    expect(latest?.low).toBe(true);
+    expect(latest?.thresholdPercent).toBe(30);
+    await render(provider("claude", 75), 20);
+    expect(latest?.low).toBe(false);
+    await render(provider("claude", 99), 0);
+    expect(latest?.low).toBe(false);
+    expect(latest?.flashing).toBe(false);
   });
 });

@@ -167,6 +167,7 @@ import {
 import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
+import { QuotaLowThresholdSetting } from "./polaris/QuotaLowThresholdSetting";
 
 const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, string> = {
   artwork: "Artwork",
@@ -3330,6 +3331,9 @@ export function GeneralSettingsPanel() {
         />
       </SettingsSection>
 
+      <SettingsSection id="usage" title="Usage">
+        <QuotaLowThresholdSetting />
+      </SettingsSection>
       <SettingsSection id="about" title="About">
         {isElectron || HOSTED_APP_CHANNEL ? (
           <AboutVersionSection />

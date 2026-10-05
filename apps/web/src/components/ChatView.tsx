@@ -3211,7 +3211,8 @@ export default function ChatView(props: ChatViewProps) {
     conversationProviderStatus.supportsConversationRollback !== false;
   const phase = derivePhase(activeRuntime);
   // Polaris: signals for the composer FX slot (quota-low flash and accent, effort beam).
-  const polarisQuota = useQuotaLowSignal(activeProviderStatus);
+  const polarisQuotaThreshold = useClientSettings((settings) => settings.quotaLowThresholdPercent);
+  const polarisQuota = useQuotaLowSignal(activeProviderStatus, polarisQuotaThreshold);
   const polarisActiveRun = useMemo(
     () => serverProjection?.runs.find((run) => run.id === activeActivityRun?.runId) ?? null,
     [serverProjection, activeActivityRun?.runId],

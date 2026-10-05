@@ -181,7 +181,9 @@ Contract changes are allowed when additive and tested, and are listed under "Con
 
 Additive only (new optional fields, new RPCs or commands), each covered by tests.
 
-(None yet in session 8.)
+| File                                 | Change                                                                                                                | Reason                                                                 |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `packages/contracts/src/settings.ts` | `ClientSettings.quotaLowThresholdPercent` (Int 0..50, default 20; optional in the patch) and the exported option list | v1 leftover: the quota warning threshold as a setting (0 turns it off) |
 
 ## New dependencies
 
@@ -199,6 +201,11 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — v1 item 1: quota-low threshold setting
+
+- Done: `quotaLowThresholdPercent` client setting (contract, default 20, 0 = off) with a Select row in Settings → General → Usage (`apps/web/src/components/settings/polaris/QuotaLowThresholdSetting.tsx`, searchable as "Low quota warning"). `useQuotaLowSignal(provider, threshold)` follows it; a flash in progress stops if the warning is turned off. Tests: 3 contract cases, 1 new hook case.
+- Left over: nothing for this item.
 
 ### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 4: composer FX slot (effort beam, quota flash and accent)
 
