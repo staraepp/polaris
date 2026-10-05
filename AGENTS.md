@@ -69,7 +69,7 @@ Clients send typed WebSocket requests. The server turns them into commands. The 
 
 - TypeScript throughout. The server is Effect-heavy: read `docs/internals/effect-services.md` and `.repos/effect-smol/LLMS.md` before writing Effect code. Do not add a second DI or plugin framework.
 - A provider-shaped feature needs a decision per driver (Codex, Claude, Cursor, Grok, OpenCode, Antigravity, Pi, ACP registry), even if the decision is "not supported here".
-- Keep UI customizable: colors, spacing and behavior come from settings or theme tokens, not hard-coded values.
+- Keep UI customizable: colors, spacing and behavior come from settings or theme tokens, not hard-coded values. Fonts must stay customizable (v1 requirement): use `var(--font-sans)` and `var(--font-mono)` and the existing `font*` settings (`blueprint.md`, "Fonts"), never a hard-coded `font-family`.
 
 ## Boundaries
 

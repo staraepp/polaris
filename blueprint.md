@@ -21,11 +21,11 @@ Decided 2026-10-05 (session 2, by the human):
 - **Effort colors are keyed on tiers, not provider level names.** Tiers: none, low, medium, high, xhigh, max. A provider-to-tier table maps each provider's levels onto them (see "Chatbox outline"). Do not hard-code provider level names in the beam config.
 - **Voice: no code yet.** Upstream's voice-input controller is summarized in `HANDOFF.md` so the provider-interface decision can be made with facts.
 - **Upstream doc links** that pointed at headings in the old `AGENTS.md` now point at `docs/upstream-AGENTS.md`.
-- **Node**: `.nvmrc` pins Node (`24` in session 2, changed to `24.13.1` in session 3, see below). `.cursor/rules/cursor-cloud.mdc` is kept unedited; where it disagrees with `AGENTS.md` is logged in `HANDOFF.md`.
+- **Node**: `.nvmrc` pins Node (`24` in session 2, changed to `24.13.1` in session 3, see below). `.cursor/rules/cursor-cloud.mdc` was kept unedited in session 2 and replaced by a pointer in session 4 (see below).
 
 Decided 2026-10-05 (session 3, by the human):
 
-- **Quota-low flash trigger.** Flash the chat outline red when remaining quota is below 20% (more than 80% used) on the 5-hour limit or on the general quota; either one triggers it. Reading of the data (mine, to be confirmed): the 5-hour limit is the window with `kind: "session"` (Claude's `five_hour`), and the general quota is every other window (`weekly`, `monthly`, `other`). Not built.
+- **Quota-low flash trigger.** Flash the chat outline red when remaining quota is below 20% (more than 80% used) on the 5-hour limit or on the general quota; either one triggers it. Reading of the data (confirmed by the human in session 4): the 5-hour limit is the window with `kind: "session"` (Claude's `five_hour`), and the general quota is every other window (`weekly`, `monthly`, `other`). Not built.
 - **Fallback tier by position** (only for level names missing from the provider → tier table; explicit names always win). Ordered active tiers: low, medium, high, xhigh, max. "none" is separate and only for off or none levels. For an unknown value, take the provider's ordered level list, drop off/none and keyword-style levels, and let n be what is left. If n is 1 the tier is medium. Otherwise p = index / (n − 1) and tier = ladder[round(p × 4)], rounding half up (exact integer form: floor((8i + n − 1) / (2(n − 1)))). The provider's lowest level always looks low and its highest always max; middle levels interpolate. Example: [fast, balanced, deep] → low, high, max (accepted; it is a fallback and the explicit table should cover real providers). Clamp, never throw, log once in dev. Checked with a throwaway script: the integer form matches the float form for every n from 2 to 60, and the result is monotonic.
 - **Neutral default** (providers with no effort setting, or a value that cannot be resolved): `colorVariant` mono, `size` md, `strength` 0.6, `duration` 2.0. Steady and grey, with no hue that implies a level, and visibly different from low (mono + `pulse-inner`, breathing). It animates only while a turn is running; idle stays the thin static border.
 - **The beam follows the level sent with the turn, not the live picker.** The beam is a status indicator for the running turn. Resolve the effective effort once at send time (the same function that builds the request), store it on the turn or event, and freeze it for that turn. Changing the picker mid-run must not recolor a running beam. If the picker display and the sent value disagree (for example the keyword level in the text changes what is sent), the beam follows what is sent. Where effective effort is resolved today: see "How the composer handles the keyword level" and `HANDOFF.md`.
@@ -33,6 +33,14 @@ Decided 2026-10-05 (session 3, by the human):
 - **Moved-workflow fallout.** The `notify-discord-release` test failure was caused by our workflow move (it passes 22/22 on the pristine snapshot), so it was repointed to `.github/upstream-workflows/release.yml` and the docs that named the old workflow paths were updated. A second test, `build-desktop-artifact.test.ts` ("skips the primary native probe for cross-architecture Windows payloads"), fails on the pristine snapshot too, so it is pre-existing: not fixed, listed as known failing, and not in CI. No silent skips.
 - **Node pin.** `.nvmrc` is `24.13.1`, exactly the lower bound of `engines.node` (`^24.13.1`), and CI reads `node-version-file: .nvmrc`. Bumping Node means changing `.nvmrc` and `engines.node` together.
 - **Remote.** The human creates the remote and pushes. The agent never pushes. A pre-push checklist and the exact commands are in `HANDOFF.md`.
+
+Decided 2026-10-05 (session 4):
+
+- **Commit identity.** The human confirmed that `5rnkq9b5yf-collab <5rnkq9b5yf@privaterelay.appleid.com>` is theirs, so there is no history rewrite. Polaris is the human's own repo: a snapshot of upstream that never merges from it.
+- **"The level sent" is the level id in the turn's `modelSelection`, plus the keyword-in-text override.** The human delegated this ("whatever is best"), so it can be overruled. Reasons: the tier tables are keyed on the names the picker shows, so the beam and the picker agree. The API value after `effortMap` would make one picker label show different colors on different Claude profiles (`max` is sent as `high` on one, `xhigh` as `max` on another) and would contradict the decided rule that `ultracode` is max (it is sent as `xhigh`). The manifest also maps the keyword level to `null` in `effortMap` (`apps/server/src/provider/model-manifest.json`), so the API value cannot identify it at all; the keyword travels in the prompt text. `effortMap` is catalog internals that can change between releases. The beam is a status indicator for the user's choice, not a spend meter. If the selection has no effort option, use the model's default level; if there is none, use the neutral default.
+- **General quota** for the quota-low flash is every window other than `kind: "session"`. Confirmed.
+- **Cursor rule file: replace, do not fix or delete.** The original is kept at `docs/upstream-cursor-cloud.md` under a banner saying it is upstream's notes and not instructions. `.cursor/rules/cursor-cloud.mdc` is now a five-line pointer to `AGENTS.md`, `HANDOFF.md` and `blueprint.md`. `AGENTS.md` lists the reference copy under References.
+- **Fonts must be customizable in v1** (human, mid-session 4: "i also want for the font to be customizable in this version"). Not built or changed: this session is repo hygiene only. Finding: upstream already ships font settings in the web UI, so v1 starts from what exists (see "Fonts: what upstream already has" below). What, if anything, is missing is an open question.
 
 ## v1 scope (in order)
 
@@ -123,7 +131,7 @@ Mapping rules (decided by the human): off or none → none; minimal or low → l
 | 6               | low, medium, high, high, xhigh, max          |
 | 7               | low, medium, medium, high, xhigh, xhigh, max |
 
-Display level versus API level: for some Claude profiles the manifest's `effortMap` sends a different value to the API than the picker shows (for example `xhigh`→`max` on one profile, `max`→`high` on another, and `ultracode`→`xhigh`). The tables above are keyed on the level the picker shows. The beam follows the level sent with the turn (see Decisions); whether that means the level id in the turn's selection or the API value after `effortMap` is an open question.
+Display level versus API level: for some Claude profiles the manifest's `effortMap` sends a different value to the API than the picker shows (for example `xhigh`→`max` on one profile, `max`→`high` on another, and `ultracode`→`xhigh`). The tables above are keyed on the level the picker shows. The beam follows the level sent with the turn (see Decisions); that means the level id in the turn's selection, not the API value after `effortMap` (decided in session 4).
 
 ### How the composer handles the keyword level
 
@@ -150,7 +158,7 @@ Claude's picker has one top level that is not a saved setting. Typing the keywor
 
 The human's request: when the usage of the provider drops below 20%, make the chat outline shader flash **red**. Not implemented: this session is repo hygiene only, and the composer outline is v2. Read from the code, not exercised:
 
-- **Trigger (decided 2026-10-05).** Remaining quota below 20% on the 5-hour limit or on the general quota; either one. Window kinds are `session`, `weekly`, `monthly` and `other` (`providerUsageLimits.ts:22`); Claude's `five_hour` is `session` (`apps/server/src/provider/Layers/claudeUsageLimits.ts:42`). My reading is 5-hour = `session` and general = every other window. How Codex's windows are classified was not checked.
+- **Trigger (decided 2026-10-05).** Remaining quota below 20% on the 5-hour limit or on the general quota; either one. Window kinds are `session`, `weekly`, `monthly` and `other` (`providerUsageLimits.ts:22`); Claude's `five_hour` is `session` (`apps/server/src/provider/Layers/claudeUsageLimits.ts:42`). Confirmed by the human: 5-hour = `session`, general = every other window. How Codex's windows are classified was not checked.
 - **The data already exists.** Each provider reports quota windows as `ServerProviderUsageWindow`: `usedPercent` (0 to 100), `resetsAt`, `windowDurationMins` and a `label` (`packages/contracts/src/providerUsageLimits.ts:20-26`). A provider can report several windows. The composer already renders them (`apps/web/src/components/chat/ComposerUsageLimits.tsx`); shared logic is in `packages/shared/src/usageLimits.ts`. Accounts that cannot report windows at all exist (the contract's own note at `:46`), so the rule has to stay silent when there are none.
 - **Red is not available in `border-beam`.** It only has the four palettes and no custom hex colors (see the candidates table). Red needs the vendored-with-a-`colors`-prop route described above, or an original shader.
 - **Flashing is motion.** It has to honor `prefers-reduced-motion` (static red border instead). Upstream's own rule is "no continuously repainting animations; they peg the GPU on high-refresh displays" (`docs/upstream-AGENTS.md`, "Taste"). A flash that runs for as long as quota stays low runs into that rule.
@@ -202,6 +210,15 @@ Security rules for the Clide side are in the spec (token, loopback only, Host/Or
 
 Token storage on the Polaris side: the user pastes the token once; Polaris desktop's main process stores it with Electron `safeStorage`. If `safeStorage` is unavailable (for example an unsigned macOS build), keep the token in memory only and ask again next launch. Never store it in plain JSON and never hand it to the renderer.
 
+## Fonts: what upstream already has (v1 requirement)
+
+The human wants fonts customizable in v1. Read from the code at snapshot `3e6b450`; not exercised in a running app this session.
+
+- **Settings** (client settings, `packages/contracts/src/settings.ts:118-152` for the size ranges, `:380-398` for the fields): four families, `fontFamilySans` (interface), `fontFamilyComposer`, `fontFamilyCode` and `fontFamilyTerminal` (empty string means the built-in stack); four sizes in CSS pixels, `fontSizeInterface` 12-20 (default 16), `fontSizePrompt` 12-20 (14), `fontSizeCode` 10-18 (13) and `fontSizeTerminal` 8-20 (12); and `fontSmoothing` (default on, no effect off macOS).
+- **Applied** by `FontAppearanceSync` (`apps/web/src/routes/__root.tsx:305`), which calls `applyAppearanceFontVariables` (`apps/web/src/appearanceFonts.ts:99`) to set CSS variables on the document root; `index.css` reads them as `var(--font-sans)` and `var(--font-mono)`. The terminal reads its two settings separately (`apps/web/src/components/ThreadTerminalDrawer.tsx:393-400`).
+- **UI**: the settings page (`apps/web/src/components/settings/SettingsPanels.tsx`) with `FontFamilyPicker.tsx` and live previews in `SettingsFontPreviews.tsx`. The picker lists installed fonts through the Local Font Access API (`queryLocalFonts`, Chromium and Electron); where that is unavailable it falls back to a plain family-name text input.
+- **Rule for Polaris UI**: new Polaris components must take their fonts from these variables and settings, not a hard-coded `font-family` (see `AGENTS.md`, Conventions).
+
 ## Non-goals
 
 Merging upstream. Building our own database or block engine. Forking Obsidian (proprietary). Using tldraw (not MIT).
@@ -213,13 +230,13 @@ Merging upstream. Building our own database or block engine. Forking Obsidian (p
 - Do friends run the desktop build, or `npx` of the fork?
 - Port and default settings for the Clide Local API.
 
-### Effort tiers and the beam
+### Fonts
 
-- **What does "the level sent" mean for Claude?** Two readings give different tiers on some profiles. (A) The level id in the turn's `modelSelection`, which is what the user picked (for example `ultracode` → max by the name rule, plus the keyword-in-text override). (B) The API value after `effortMap` (for example `ultracode` is sent as `xhigh`; `xhigh` is sent as `max` on one profile; `max` is sent as `high` on another). The tables are keyed on picker names, so I read your decision as (A). Confirm or choose (B).
+- Is upstream's existing font customization what you meant (see "Fonts: what upstream already has"), or do you want more: a bundled Polaris default typeface, loading a font file, or per-theme fonts? A default typeface is tied to the open branding question.
+- Which surfaces: web and desktop (where the settings are) only, or mobile too? The mobile app was not checked.
 
 ### Quota-low flash
 
-- Confirm my reading of "general quota": every window other than `kind: "session"`.
 - Does it apply to the provider of the active thread only, or to any provider?
 - How long does it flash: a few flashes when the threshold is crossed, or until the quota resets? The second conflicts with upstream's no-continuous-animation rule.
 - While it is active, does it override the tier beam, or share the composer slot some other way?
@@ -228,5 +245,5 @@ Merging upstream. Building our own database or block engine. Forking Obsidian (p
 ### Other open items found in the code (snapshot `3e6b450`)
 
 - **Voice provider interface.** Plug into upstream's `VoiceTranscriber` and controller (`packages/client-runtime/src/voice-input/`), or stay separate? The facts are in `HANDOFF.md`.
-- **`.cursor/rules/cursor-cloud.mdc`** is kept unedited, but it disagrees with `AGENTS.md` and upstream's rules in places (listed in `HANDOFF.md`). Fix, replace or delete it?
+- **Cursor provider.** You said your friends do not use it. It is left in the code untouched. Counted with `git grep -il cursor` over `apps packages infra scripts native`: 561 files mention the word in any case (363 outside tests), which includes unrelated uses such as text cursors and pagination cursors; 32 files name the provider directly (`cursor-agent`, `CursorProvider`, `cursorAgent`, `CursorDriver`), a narrow pattern, so a lower bound. Removing it would touch many files of upstream code. Keep it as is, or remove it from the app in a separate change?
 - **T3 Code's git text generation reads the repo's `AGENTS.md`** when the style is "repo conventions" (`apps/server/src/git/GitManager.ts`). With a Claude writer it also reads `CLAUDE.md`, which is now a symlink, so the same text is included twice (upstream's `CLAUDE.md` was just `@AGENTS.md`). Acceptable?

@@ -21,6 +21,8 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 - Fork created: 2026-10-05 from `pingdotgg/t3code` `main` at `3e6b45028ceec5820dacb37dc3852470ebdc9411`. Remote `upstream-snapshot` is reference-only. There is no `origin` and nothing has been pushed.
 - v1 progress (`blueprint.md` "v1 scope"): item 1 (agent-friendly repo) done and verified on Node 24, including a real dev boot. Item 2 (Discord) and item 3 (usage graph) not started. Item 3 will extend upstream's Usage panel; the gap list is below.
 - CI: `.github/workflows/ci.yml` (Polaris, verified commands only, Node from `.nvmrc`). Never executed on GitHub yet.
+- Cursor: `.cursor/rules/cursor-cloud.mdc` is a five-line pointer to `AGENTS.md`. Upstream's original notes are `docs/upstream-cursor-cloud.md` (reference only, not instructions). The Cursor provider is untouched in the code.
+- Fonts: customizable fonts are a v1 requirement (your request, session 4). Upstream already has per-surface font settings in the web UI; nothing was changed. What exists and what is open: `blueprint.md`, "Fonts: what upstream already has" and "Open questions".
 - Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
 - Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
 
@@ -33,7 +35,7 @@ Read from source on 2026-10-05, not run. This is for the beam decision "follow t
 - **So the two can disagree:** saved level `high` plus the keyword in the body means the picker shows the keyword level, `modelSelection` says `high`, and the text carries the keyword. "Follow what is sent" needs: effective = (keyword in the final outgoing text, and the model lists it) ? keyword level : level id in the turn's selection. Nothing computes that today. Its pieces: the detector, `resolvePromptInjectedEffort` (`packages/shared/src/model.ts:495`) and `compileClaudeModelSelection`. The natural place is the Claude adapter at turn start (`ClaudeAdapterV2.ts` near `:7187` and `:7396`), where the compiled selection and the final text both exist.
 - **Other adapters** read their own option from the turn's `modelSelection`: Codex `reasoningEffort` (`CodexAdapterV2.ts:718`), OpenCode `variant` (`OpenCodeAdapterV2.ts:3271`, `OpenCode2AdapterV2.ts:755`), Pi `thinking` (`PiAdapterV2.ts:2117`). Grok, Cursor and ACP were not traced. There is no provider-neutral function.
 - **Storing it:** `OrchestrationV2ProviderTurn` has no effort or model field (`packages/contracts/src/orchestrationV2.ts:951-970`), so a frozen per-turn tier needs a new field or event. Where the per-turn `modelSelection` is persisted for UI reads was not traced. `ProviderEventIngestor.ts:101` reads the raw option for analytics at turn completion; it is not a store.
-- **Still open:** whether "sent" means the level id in the turn's selection (my reading) or the API value after `effortMap` (see `blueprint.md`, Open questions).
+- **Decided (session 4, delegated to the agent):** "sent" means the level id in the turn's selection plus the keyword-in-text override, not the API value after `effortMap`. Reasons are in `blueprint.md`, Decisions.
 
 ### Before you push (commands for you)
 
@@ -46,7 +48,7 @@ cd /Users/brenomenezes/Downloads/polaris-kickoff/polaris-repo
 git remote -v                                         # one remote, upstream-snapshot; its (push) line reads DISABLED-...
 ls .github/workflows                                  # ci.yml only
 git status --short                                    # empty
-git log --format='%an <%ae>' 3e6b450..HEAD | sort -u  # the identity that will be public (see below)
+git log --format='%an <%ae>' 3e6b450..HEAD | sort -u  # the identity that will be public (confirmed as yours)
 
 # 2. Create an EMPTY repo on GitHub yourself: no README, license or .gitignore.
 #    A private repo is the safest first push. With gh (not checked whether you are signed in):
@@ -63,14 +65,7 @@ gh run list --limit 3
 
 What the push publishes: the clone is not shallow, so it sends upstream's whole history plus ours (about 4,770 commits; `git rev-list --count HEAD` gives the exact number) and about 436 MiB packed. Upstream's workflows are inert under `.github/upstream-workflows/`, so only `ci.yml` runs.
 
-**Check the commit identity first.** Every commit of ours since `3e6b450` is authored and committed as `5rnkq9b5yf-collab <5rnkq9b5yf@privaterelay.appleid.com>`, taken from `~/.gitconfig`. If you want a different public identity, set it for this repo and rewrite only our local commits (safe because nothing is pushed, and it changes their hashes):
-
-```sh
-git config user.name  "<name>"
-git config user.email "<email>"
-git rebase 3e6b450 --exec 'git commit --amend --no-edit --reset-author'
-git log --format='%an <%ae>' 3e6b450..HEAD | sort -u
-```
+**Commit identity: confirmed by you on 2026-10-05.** Every commit of ours since `3e6b450` is authored and committed as `5rnkq9b5yf-collab <5rnkq9b5yf@privaterelay.appleid.com>` (from `~/.gitconfig`). No rewrite is needed.
 
 Scans done before the push: added lines since the snapshot contain no token-like strings (GitHub, Anthropic, OpenAI-style, AWS, Slack, private key blocks, bearer tokens, the dev pairing token). Files with "credentials" in the name exist only under `.repos/alchemy-effect/.../test/.../fixtures/`, vendored from upstream with 11 to 20 character placeholder strings.
 
@@ -100,6 +95,39 @@ Decision: extend upstream's Usage panel, no second panel, no code until this lis
 Facts for the provider-interface decision (`docs/internals/voice-input.md`, `packages/client-runtime/src/voice-input/`). **Audio** comes from a `VoiceRecorder` the caller injects (`uri`, `prepareToRecordAsync`, `record({ forDuration })`, `stop`), plus callbacks for permission, configuring, releasing and deleting the recording and for reading and committing the composer draft (`controller.ts:46-62`). The only recorder in the repo is the mobile app's expo-audio one (`apps/mobile/src/features/voice-input/lazyVoiceRecorder.ts`). The recording is a file URI capped at 5 minutes, not a stream, and the controller exposes no audio level (the mobile UI computes its own waveform in `voiceInputMetering`). **Text** comes from a `VoiceTranscriber` (`transcription.ts`): `prepare()` returns `{ locale, transcribe(uri, { signal }) → Promise<string> }`, with cooperative cancellation and typed error codes, and `getTranscriber()` returning null means "unavailable". The text is committed into the draft only if the draft's owner and revision still match, and it never submits a turn. **Interface:** yes, `VoiceTranscriber` is a clean seam a desktop provider (Clide, or an OpenAI-compatible server) could implement, since it is file-in, text-out. But it has no streaming partials, no live level and no `onLevel`/`onState` events, so the blueprint's `start/stop/onLevel/onState/onTranscript` interface is wider than what upstream defines, and a voice glow's `level` would have to come from somewhere else. **iOS-only:** the single transcriber is `apps/mobile/src/native/voiceTranscription.ios.ts` (Apple on-device, via `@react-native-ai/apple`); the non-iOS file returns null; the doc says environment-backed transcription is not implemented. Nothing in `apps/web` or `apps/desktop` uses the controller. Not run on a device.
 
 ## Entries
+
+### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 4: your answers, Cursor rule replaced with a pointer
+
+- Status: done. Nothing pushed.
+- What changed:
+  - **Cursor rule file replaced** (your decision, after I had first deleted it: see the process note under Risks). `docs/upstream-cursor-cloud.md` is the original with your banner line on top. `.cursor/rules/cursor-cloud.mdc` is now exactly the five-line pointer you specified (four lines of frontmatter, one instruction line). `AGENTS.md` got a `## References` section (it had none) with one line pointing at the reference copy as "upstream reference, not instructions". `.cursor/.gitignore` is untouched.
+  - **Blueprint decisions** (session 4 block): commit identity confirmed; "the level sent" is the level id in the turn's selection plus the keyword-in-text override (delegated to me, with reasons, so you can overrule); "general quota" confirmed; the Cursor rule decision; fonts customizable in v1. The answered open questions were removed, and two were added: whether to remove the Cursor provider from the app, and what is missing from upstream's font settings.
+  - **Fonts (your mid-session request, "i also want for the font to be customizable in this version").** Recorded only; no code. I found that upstream already ships four font families, four sizes and a smoothing toggle, with a settings page and live previews. The facts are in `blueprint.md` ("Fonts: what upstream already has"). I also added one sentence to `AGENTS.md` Conventions: new Polaris UI must use `var(--font-sans)`, `var(--font-mono)` and the existing `font*` settings, not a hard-coded `font-family`. That rule is my reading of your request; remove it if you disagree.
+  - **HANDOFF**: the push notes now say the identity is confirmed and the rewrite instructions are gone.
+- Lines in the old Cursor file that contradicted `AGENTS.md` or what I observed. Line numbers are those of the original `.cursor/rules/cursor-cloud.mdc`; in `docs/upstream-cursor-cloud.md` line n is line n+3 for n of 2 or more (checked by diffing the whole body: original line 2 onward equals copy line 5 onward).
+  - **Contradicts `AGENTS.md`:**
+    - **Line 15** lists `vp check` and `vp run typecheck` as normal commands; `AGENTS.md` says not to run repo-wide `vp check`, `vp run test` or `vp run typecheck` unless asked (use `--filter` and single files).
+    - **Lines 20-21** say to run `vp check --fix` before committing; `AGENTS.md` says no repo-wide `vp check` (the pre-commit hook already formats staged files; use `vp fmt <files>`).
+    - **Lines 25-27** use `npm run dev`, `npm run dev:server` and `npm run dev:web`; the repo is pnpm and `AGENTS.md` uses `vp run dev --home-dir /tmp/...`.
+    - **Line 26** says the runner auto-wires `VITE_HTTP_URL` and `VITE_WS_URL`. For `dev` and `dev:web` it deletes them and sets single-origin mode (`scripts/dev-runner.ts:349-364`), and upstream's rule (`docs/upstream-AGENTS.md`) says never set them.
+    - **Lines 31-32** say server state lives under `~/.t3` and several dev instances share one DB; `AGENTS.md` says use `--home-dir` and never point a dev server at the live `~/.t3/userdata`.
+  - **Wrong against what I saw on the real boot:** **line 29** says the server is "unauthenticated by default". It runs auth policy `loopback-browser` and needs the one-time pairing token (the same paragraph's pairing instructions are right).
+  - **Incomplete, not contradicting:** **line 33** lists only `codex`, `claude`, `cursor-agent` and `opencode` as provider CLIs.
+  - **Consistent:** Node 24.13.1 (lines 13 and 19, matching `.nvmrc`), and ports 5733 and 13773 (lines 25-26).
+- How verified (Node v24.13.1):
+  - The pointer file is the five lines you specified. The reference copy is your banner line, a blank line, then the original body; `vp fmt` added one blank line after the opening `---`, which is why the offset is 3 and not 2. `diff` of original line 2 onward against copy line 5 onward shows no difference.
+  - The pre-commit hook (`vp staged`) ran `vp fmt` on the three staged files and the commit went through.
+  - Fonts: read from source with `grep` and file reads only. The settings page was not opened in a running app.
+  - No code, config or test files changed this session, so the CI command list from session 3 still stands (not re-run).
+  - `fnm exec --using=24.13.1 vp fmt --check` (with `node_modules/.bin` on `PATH`): exit 0, "All matched files use the correct format", 4883 files. Run on the edited docs before the docs commit, and again as the last command of the session on the clean tree (it also exit 0).
+  - Zero occurrences of the keyword level's literal word in `AGENTS.md`, `blueprint.md`, `HANDOFF.md`, the reference copy and the pointer (case-insensitive `grep -c`). `CLAUDE.md` is still a symlink to `AGENTS.md`; `git remote -v` shows only `upstream-snapshot`, push URL disabled.
+- Risks:
+  - **Process note.** Before your replace decision arrived I had deleted the rule file and committed that locally. I undid it with `git reset --soft HEAD~1` and `git restore`, so the history has only the replace commit. I checked the tree was identical to the previous commit before continuing. It was my own unpushed commit, and nothing else was touched.
+  - **The pointer is `alwaysApply: true`**, so every Cursor agent reads it first. It tells them to read `AGENTS.md`, `HANDOFF.md` and `blueprint.md`, and not to follow the upstream notes.
+  - **The Cursor provider is still in the code.** `git grep -il cursor` over `apps packages infra scripts native` finds 561 files (363 outside tests), including unrelated uses such as text cursors; 32 files name the provider directly. You said friends don't use it; whether to remove it is an open question, not done.
+  - Not exercised: a Cursor agent actually picking up the pointer.
+- Next action: Human: work through "Before you push" in "Current state" (the identity check is now done), push, and watch the first `ci.yml` run. After that, an agent starts v1 item 2 (Discord Rich Presence) with a read-only plan: read `apps/desktop/src/main.ts`, `apps/desktop/src/ipc/` and `apps/desktop/src/settings/`, find where an opt-in, desktop-only setting and a main-process service would live, and report before writing code (the implementation needs the Discord Application ID).
+- Open questions: all in `blueprint.md` → "Open questions". Highest priority: (1) quota-low flash: the active provider only or any provider, how long it flashes, whether it overrides the tier beam, whether 20% is a setting; (2) remove the Cursor provider from the app, or leave it; (3) fonts: is upstream's existing customization enough for v1, and does it need to reach mobile; (4) voice provider interface; (5) the git-text-generation double read of `AGENTS.md`/`CLAUDE.md`. Earlier ones still open: Discord Application ID, app name and branding, desktop vs `npx`, Clide API port.
 
 ### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 3: your decisions, CI fallout, Node pin, push prep
 
@@ -167,7 +195,7 @@ Facts for the provider-interface decision (`docs/internals/voice-input.md`, `pac
   - **One upstream test fails** (`scripts/notify-discord-release.test.ts`, ENOENT) because of the workflow move. `ci.yml` does not run the `scripts` package, but repo-wide `vp run test` would fail on it.
   - **Leftover references to the old workflow path**: `docs/operations/development.md:111` links `windows-tests.yml` (dead link), and `docs/operations/release.md`, `infra/relay/README.md` and `packaging/aur/README.md` mention paths under `.github/workflows/`.
   - **`.nvmrc` `24` vs `engines` `^24.13.1`**: a machine whose newest 24.x is older than 24.13.1 passes `.nvmrc` and fails `engines`. This Mac resolved `24` to 24.21.0.
-  - **`.cursor/rules/cursor-cloud.mdc` vs AGENTS.md** (kept unedited; it is `alwaysApply: true`, so Cursor agents always load it). It disagrees on: (1) it says `npm run dev` auto-wires `VITE_HTTP_URL`/`VITE_WS_URL`, but for `dev` and `dev:web` the runner deletes them and sets single-origin mode (`scripts/dev-runner.ts:350-363`), and upstream's rule says never set them; (2) it says server state lives in `~/.t3` and dev instances share one DB, while upstream says never run a dev server against `~/.t3/userdata` and the main checkout defaults to `~/.t3/dev/userdata`; (3) it tells agents to run `vp check --fix` before committing, while AGENTS.md says no repo-wide `vp check`; (4) it uses `npm run …`, while the repo is pnpm and AGENTS.md uses `vp`; (5) "unauthenticated by default" does not match the observed `loopback-browser` policy with a one-time token; and it lists only four provider CLIs (omits Grok, Pi, Antigravity). It agrees on Node 24 and on ports 5733 and 13773.
+  - **`.cursor/rules/cursor-cloud.mdc` vs AGENTS.md** (kept unedited at the time and `alwaysApply: true`, so Cursor agents always loaded it; replaced by a pointer in session 4, see that entry). It disagrees on: (1) it says `npm run dev` auto-wires `VITE_HTTP_URL`/`VITE_WS_URL`, but for `dev` and `dev:web` the runner deletes them and sets single-origin mode (`scripts/dev-runner.ts:349-364`), and upstream's rule says never set them; (2) it says server state lives in `~/.t3` and dev instances share one DB, while upstream says never run a dev server against `~/.t3/userdata` and the main checkout defaults to `~/.t3/dev/userdata`; (3) it tells agents to run `vp check --fix` before committing, while AGENTS.md says no repo-wide `vp check`; (4) it uses `npm run …`, while the repo is pnpm and AGENTS.md uses `vp`; (5) "unauthenticated by default" does not match the observed `loopback-browser` policy with a one-time token; and it lists only four provider CLIs (omits Grok, Pi, Antigravity). It agrees on Node 24 and on ports 5733 and 13773.
   - **Not exercised**: the Usage page with real data, a running composer with the keyword level, an actual agent turn, the desktop app. The effort and keyword facts are from reading source.
   - **Process slip, recovered.** Mid-session I ran `git stash -u` to compare against the pre-move tree. It conflicted with my new `ci.yml` and half-applied. I checked every file against the stash (my `ci.yml` and README identical, all 18 upstream workflows byte-identical to HEAD) before dropping the stash. Nothing was lost. No further stash use.
   - The T3 Code preview tool saved its screenshots under `~/.t3/userdata/browser-artifacts/` itself; I did not choose that or write anything else there.
