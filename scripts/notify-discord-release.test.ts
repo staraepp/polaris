@@ -463,8 +463,11 @@ it.layer(NodeServices.layer)("Discord release CLI and workflow", (it) => {
       const path = yield* Path.Path;
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const temp = yield* fs.makeTempDirectoryScoped({ prefix: "discord release " });
+      // Polaris keeps upstream's release workflow as an inert reference copy; see .github/upstream-workflows/README.md.
       const workflow = yield* fs.readFileString(
-        yield* path.fromFileUrl(new URL("../.github/workflows/release.yml", import.meta.url)),
+        yield* path.fromFileUrl(
+          new URL("../.github/upstream-workflows/release.yml", import.meta.url),
+        ),
       );
       const publishedNotes =
         Array.from({ length: 50 }, () => notes).join("\n\n") +
