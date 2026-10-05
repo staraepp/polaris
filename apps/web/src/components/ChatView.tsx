@@ -37,6 +37,9 @@ import {
 } from "@t3tools/shared/usageLimits";
 import { feedbackBannerItem } from "./chat/ComposerFeedback";
 import { usageLimitsBannerItem } from "./chat/ComposerUsageLimits";
+import type { ComposerFxSignals } from "../polaris/fx/ComposerFx";
+import { resolveRunEffort } from "../polaris/fx/effortTier";
+import { useQuotaLowSignal } from "../polaris/quota/useQuotaLowSignal";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
 import * as Schema from "effect/Schema";
 import { Minimize2Icon } from "lucide-react";
@@ -3207,6 +3210,37 @@ export default function ChatView(props: ChatViewProps) {
     conversationProviderStatus !== null &&
     conversationProviderStatus.supportsConversationRollback !== false;
   const phase = derivePhase(activeRuntime);
+  // Polaris: signals for the composer FX slot (quota-low flash and accent, effort beam).
+  const polarisQuota = useQuotaLowSignal(activeProviderStatus);
+  const polarisActiveRun = useMemo(
+    () => serverProjection?.runs.find((run) => run.id === activeActivityRun?.runId) ?? null,
+    [serverProjection, activeActivityRun?.runId],
+  );
+  const polarisRunMessageText = useMemo(
+    () =>
+      serverProjection?.messages.find((message) => message.id === polarisActiveRun?.userMessageId)
+        ?.text ?? null,
+    [serverProjection, polarisActiveRun?.userMessageId],
+  );
+  const polarisRunEffort = useMemo(
+    () =>
+      resolveRunEffort({
+        run: polarisActiveRun,
+        providers: providerStatuses,
+        messageText: polarisRunMessageText,
+      }),
+    [polarisActiveRun, providerStatuses, polarisRunMessageText],
+  );
+  const polarisFxSignals = useMemo<ComposerFxSignals>(
+    () => ({
+      voiceListening: false,
+      quotaFlashing: polarisQuota.flashing,
+      quotaLow: polarisQuota.low,
+      running: phase === "running",
+      tier: polarisRunEffort.tier,
+    }),
+    [polarisQuota.flashing, polarisQuota.low, phase, polarisRunEffort.tier],
+  );
   const pendingRequests = useMemo(
     () =>
       serverProjection === null
@@ -11160,6 +11194,7 @@ export default function ChatView(props: ChatViewProps) {
                                 isLocalDraftThread && activeProject === null
                               }
                               phase={phase}
+                              polarisFx={polarisFxSignals}
                               canInterrupt={canInterruptRunningThread}
                               isConnecting={isConnecting}
                               isSendBusy={isSendBusy || isSavingQueuedEdit || isResuming}

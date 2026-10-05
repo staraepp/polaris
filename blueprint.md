@@ -211,6 +211,8 @@ The human's request: when the usage of the provider drops below 20%, make the ch
 
 ## Composer FX slot
 
+**Built in session 7** with our own CSS (`apps/web/src/polaris/fx/`, no dependency): the effort beam derived on read, the quota flash and accent, and the priority below. The `border-beam` rows in the candidates table are history.
+
 Only one animated effect on the composer at a time. Swap with a fade (`active` + `onDeactivate`), never stack.
 
 Priority, highest first (decided in session 5): voice listening, then the quota-low flash, then the effort beam, then the idle ring. Voice transcribing shares voice listening's priority (my placement; the decision did not mention it).

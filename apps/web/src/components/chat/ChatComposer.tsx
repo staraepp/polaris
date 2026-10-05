@@ -146,6 +146,12 @@ import type { ThreadSyncPhase } from "../../threadSync";
 import { ComposerBanner } from "./ComposerBanner";
 import { ComposerSurface } from "./ComposerSurface";
 import {
+  ComposerFx,
+  IDLE_COMPOSER_FX_SIGNALS,
+  useComposerFx,
+  type ComposerFxSignals,
+} from "~/polaris/fx/ComposerFx";
+import {
   ComposerBannerStack,
   type ComposerBannerStackContent,
   type ComposerBannerStackItem,
@@ -1527,6 +1533,8 @@ export interface ChatComposerProps {
 
   // Session phase
   phase: SessionPhase;
+  /** Polaris: quota and running-turn signals for the composer outline. */
+  polarisFx?: ComposerFxSignals;
   /** Stop is offered: a run is preparing, starting, or running. */
   canInterrupt: boolean;
   isConnecting: boolean;
@@ -1704,6 +1712,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     forceExpandedOnMobile,
     projectSelectionRequired,
     phase,
+    polarisFx = IDLE_COMPOSER_FX_SIGNALS,
     canInterrupt,
     isConnecting,
     isSendBusy,
@@ -2298,6 +2307,13 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   );
 
   const selectedPromptEffort = composerProviderState.promptEffort;
+  const polarisFxState = useComposerFx(
+    polarisFx,
+    composerProviderState.composerFrameClassName !== undefined,
+  );
+  // Upstream's keyword ring is the idle indicator only; any Polaris layer replaces it.
+  const composerFrameClassName =
+    polarisFxState.layer === "ring" ? composerProviderState.composerFrameClassName : undefined;
   const selectedModelOptionsForDispatch = composerProviderState.modelOptionsForDispatch;
   const { enabled: planModeUiEnabled, interactionMode } = resolveComposerInteractionMode({
     planModeEnabled: settings.planModeEnabled,
@@ -6785,8 +6801,9 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           data-model-only-strip={
             restingControlsHost?.closest("[data-composer-model-strip]") ? "true" : undefined
           }
-          className={composerProviderState.composerFrameClassName}
+          className={composerFrameClassName}
         >
+          <ComposerFx state={polarisFxState} />
           <div
             ref={composerSurfaceRef}
             data-chat-composer-surface="true"

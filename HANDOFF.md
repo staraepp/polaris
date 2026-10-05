@@ -158,6 +158,15 @@ Skipped in this run because each needs a contract, schema or keybinding-command 
 
 ## Entries
 
+### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 4: composer FX slot (effort beam, quota flash and accent)
+
+- Status: done and committed locally. Verified visually by forcing each state on the real composer in the dev app (`.playwright-mcp/p7-fx-*-{light,dark}.png`: beam low/medium/max, flash, accent, beam over accent); a live turn was not run, so the derive-on-read path is covered by unit tests only.
+- What: `apps/web/src/polaris/fx/`. `effortTier.ts` maps a level to a tier (explicit names win, any `ultra…` level is max, unknown names fall back by position with the integer formula from `blueprint.md`) and `resolveRunEffort` derives the running turn's effort **on read** from the run's stored `modelSelection` plus the keyword in the user message it was sent with (no stored field, no contract change). `composerFxState.ts` is the priority resolver: voice listening, then the quota flash, then the beam, then upstream's idle keyword ring; the amber accent is static and sits under any layer; reduced motion drops the flash and freezes the beam. `ComposerFx.tsx` renders two layers inside `ComposerSurface.Main`: a 2 px masked ring (conic-gradient spun through a registered `@property` angle; low breathes instead of spinning; max is the full spectrum) and an unmasked amber halo. Styles in `composerFx.css` (imported from `index.css`), keyed on data attributes, with per-tier colors as `--polaris-beam-*` variables; durations follow the blueprint (2.3, 1.96, 1.5, 1.3, 1.1, neutral 2.0 s); the beam pauses with upstream's `--visible-animation-state`.
+- Wiring: `ChatView.tsx` builds the signals (quota hook on the active provider; the active run from `serverProjection.runs` by `activeActivityRun.runId`; its user message text from `serverProjection.messages`) and passes `polarisFx` to `ChatComposer`, which hides upstream's `ultrathink-frame` whenever a Polaris layer owns the outline and otherwise leaves the ring exactly as it was.
+- Tests: 9 for tiers and derive-on-read, 5 for the priority resolver, 4 jsdom tests for the component. Web typecheck, lint and fmt pass.
+- Decisions: no dependency (the `border-beam` candidate has no custom colors and the own-CSS route was already on the table); the flash uses `--destructive` and the accent `--warning` so themes can retune both; with the accent on, the "high" beam (sunset) sits close to amber, which is how the blueprint's palette reads and can be tuned in the CSS variables.
+- Left over: the voice layer is a placeholder (the web composer has no voice capture in v1); the flash was captured mid-pulse in the dark screenshot and reads orange next to the accent, so judge it live.
+
 ### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 3: quota-low signal
 
 - Status: done and committed locally. Logic and hook only; the pixels come in Phase 4.
