@@ -12,12 +12,12 @@ export const STANDARD_THEME_PREVIEW_COLORS: Readonly<Record<ThemeAppearance, The
     light: {
       canvas: "#fcfcfc",
       accent: "#f4f4f5",
-      messageAction: "#4f46e5",
+      messageAction: "#007955",
     },
     dark: {
       canvas: "#0a0a0a",
       accent: "#1c1c1f",
-      messageAction: "#8b9cff",
+      messageAction: "#00805a",
     },
   };
 

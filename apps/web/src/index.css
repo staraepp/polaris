@@ -252,6 +252,10 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-subtle: var(--primary-subtle);
   --color-popover-foreground: var(--contrast-popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--contrast-card-foreground);
@@ -1076,8 +1080,18 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --card-foreground: var(--color-zinc-800);
   --popover: var(--color-white);
   --popover-foreground: var(--color-zinc-800);
-  --primary: oklch(0.488 0.217 264);
+  /* Polaris brand green. Everything brand-colored derives from --primary; change
+     this one value (and its dark twin below) to re-tint the app. White on it is
+     5.45:1 in light mode and 4.99:1 in dark mode (WCAG AA for text is 4.5:1). */
+  --primary: oklch(0.5 0.125 168);
   --primary-foreground: var(--color-white);
+  /* Brand-colored text on a surface (links, update notices): 5.3:1 on the light
+     canvas; the dark variant is lighter (10:1 on the dark canvas). */
+  --primary-text: var(--primary);
+  --primary-hover: color-mix(in oklab, var(--primary) 90%, var(--background));
+  --primary-active: color-mix(in oklab, var(--primary) 80%, var(--background));
+  --primary-subtle: color-mix(in srgb, var(--primary) 12%, transparent);
+  --primary-selection: color-mix(in srgb, var(--primary) 28%, transparent);
   --secondary: var(--color-zinc-50);
   --secondary-foreground: var(--color-zinc-800);
   --muted: var(--color-zinc-50);
@@ -1089,7 +1103,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --message-foreground: var(--foreground);
   --message-action: var(--primary);
   --message-action-foreground: var(--primary-foreground);
-  --message-action-hover: color-mix(in srgb, var(--primary) 90%, var(--background));
+  --message-action-hover: var(--primary-hover);
   --accent: var(--color-zinc-100);
   --accent-foreground: var(--color-zinc-900);
   --error: var(--color-red-500);
@@ -1104,12 +1118,14 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --info: var(--color-blue-500);
   --info-foreground: var(--color-blue-700);
   --success: var(--color-emerald-500);
-  --success-foreground: var(--color-emerald-700);
+  /* Success text sits in the plain green family so it stays distinguishable from
+     the emerald brand (emerald-700 here was identical to the brand color). */
+  --success-foreground: var(--color-green-700);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
   --warning-surface: color-mix(in srgb, var(--warning) 8%, transparent);
   --update: var(--primary);
-  --update-foreground: var(--primary);
+  --update-foreground: var(--primary-text);
   --update-surface: color-mix(in srgb, var(--update) 12%, transparent);
   /* Keep every sidebar primitive on the same light surface hierarchy, including
      portaled mobile sheets and settings navigation outside the app sidebar. */
@@ -1126,8 +1142,8 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --code-foreground: var(--foreground);
   --terminal-background: var(--background);
   --terminal-foreground: var(--foreground);
-  --terminal-cursor: rgb(38 56 78);
-  --terminal-selection-background: rgb(37 63 99 / 20%);
+  --terminal-cursor: var(--primary);
+  --terminal-selection-background: color-mix(in srgb, var(--primary) 22%, transparent);
 
   @variant dark {
     color-scheme: dark;
@@ -1140,7 +1156,9 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     --card-foreground: var(--color-neutral-100);
     --popover: color-mix(in srgb, var(--background) 97%, var(--color-white));
     --popover-foreground: var(--color-neutral-100);
-    --primary: oklch(0.571 0.21 264);
+    --primary: oklch(0.52 0.13 168);
+    --primary-text: oklch(0.77 0.16 166);
+    --primary-subtle: color-mix(in srgb, var(--primary) 18%, transparent);
     --secondary: --alpha(var(--color-white) / 3%);
     --secondary-foreground: var(--color-neutral-100);
     --muted: --alpha(var(--color-white) / 3%);
@@ -1154,10 +1172,9 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     --border: --alpha(var(--color-white) / 6%);
     --input: --alpha(var(--color-white) / 8%);
     --info-foreground: var(--color-blue-400);
-    --success-foreground: var(--color-emerald-400);
+    --success-foreground: var(--color-green-400);
     --warning-foreground: var(--color-amber-400);
     --warning-surface: color-mix(in srgb, var(--warning) 16%, transparent);
-    --update-foreground: var(--color-blue-400);
     --update-surface: color-mix(in srgb, var(--update) 18%, transparent);
     --sidebar: var(--card);
     --sidebar-control-surface: var(--muted);
@@ -1165,8 +1182,8 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     --sidebar-row-active: var(--accent);
     --sidebar-row-selected: var(--muted);
     --sidebar-stage-fade: var(--card);
-    --terminal-cursor: rgb(180 203 255);
-    --terminal-selection-background: rgb(180 203 255 / 25%);
+    --terminal-cursor: var(--primary-text);
+    --terminal-selection-background: color-mix(in srgb, var(--primary-text) 25%, transparent);
   }
 }
 
@@ -1245,6 +1262,9 @@ html[data-theme-id]:not([data-theme-id=""]) {
      a distinct action color make these identical. */
   --primary: var(--app-theme-message-action);
   --primary-foreground: var(--app-theme-message-action-foreground);
+  /* Themes keep the link color they had before the Polaris green (the independent
+     info role); only the default theme uses the brand green for links. */
+  --primary-text: var(--info-foreground);
   --secondary: var(--app-theme-secondary);
   --secondary-foreground: var(--app-theme-secondary-foreground);
   --muted: var(--app-theme-muted);
@@ -1722,6 +1742,16 @@ code {
   -webkit-app-region: no-drag;
 }
 
+/* Brand-tinted text selection and native-control accent. The scrollbar below stays
+   neutral on purpose. */
+::selection {
+  background: var(--primary-selection);
+}
+
+html {
+  accent-color: var(--primary);
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: var(--app-scrollbar-width);
@@ -1859,7 +1889,7 @@ code {
 
 /* File links are Chips and own their color and focus ring. */
 .chat-markdown a:not(.chat-markdown-file-link) {
-  color: var(--info-foreground);
+  color: var(--primary-text);
 }
 
 .chat-markdown a:not(.chat-markdown-file-link):hover,
