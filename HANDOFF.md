@@ -146,31 +146,52 @@ Facts for the provider-interface decision (`docs/internals/voice-input.md`, `pac
 
 **Needs Star's approval** and **Questions for Star** follow the phase plan below; the pairing note answers your message from during the run.
 
-## Phase plan (autonomous run, started 2026-10-05)
+## Version plan (session 8, started 2026-10-05)
 
-You asked for all of v1 in one run while you are away. This is the order, smallest dependencies first and riskiest last. Each phase ends with fmt, lint, the relevant tests, a local commit and an entry below. Nothing is pushed.
+Every remaining version, one at a time, each on its own branch (`vN` from `main`), merged back with `--no-ff` and tagged `vN-done` only after its gate: full fmt + lint, every suite at or above the baseline (only the 8 known server failures and the 1 known scripts failure allowed), light + dark screenshots in `../.playwright-mcp/vN-*`, and a smoke of the dev app via `scripts/polaris-dev.mjs`. After the last version: polish mode on a `polish` branch, logged in `MORNING.md`. Mobile stays out. No real agent turns (states are forced in the UI).
 
-Scope note: `blueprint.md` files the quota-low flash and the effort beam under v2, but your mission gave explicit defaults for both, so they are built in this run. Voice, themes, per-theme fonts, bots, gooey, the planning suite, the Clide API and mobile stay out.
+Contract changes are allowed when additive and tested, and are listed under "Contract changes". New dependencies must be maintained and MIT/Apache/BSD/OFL, listed under "New dependencies".
 
-| Phase | What                                                                                                                                                                                                                                        | Why this position                                                                                                     |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| 0     | Known issues: (a) baseline of the 8 failing server tests on a pre-rebrand worktree, (b) dev isolation rule, (c) dev/nightly/prod icon badges and green stage artwork, (d) 16 and 32 px favicon check, (e) Electron dev launch and DMG build | Cheap, and (a) tells me what "failing because of me" means for every later phase.                                     |
-| 1     | Usage panel (v1 item 3): GitHub-style activity heatmap and cost-over-time upgrades on top of the existing buckets, no contract change                                                                                                       | Web-only, pure functions plus one component, no new data.                                                             |
-| 2     | Discord Rich Presence (v1 item 2): desktop-only, opt-in, off by default, generic text, own minimal IPC client (no new dependency), reconnect with backoff, no-op on web                                                                     | Mostly new files under a `polaris/` folder. Needs your Discord Application ID, so it ships disabled until one is set. |
-| 3     | Quota-low signal: pure state machine (threshold, hysteresis, re-arm), a hook over the active provider's usage windows, the usage-meter feed, a threshold setting                                                                            | Logic and tests before any pixels.                                                                                    |
-| 4     | Composer FX slot: our own CSS beam (no dependency), tier config, flash (red 4 s) then amber accent, effort beam derived on read, idle ring wiring, reduced motion                                                                           | Riskiest: touches upstream's composer. Last, so everything before it is already committed and tested.                 |
-| 5     | Final pass: full fmt, lint and test run, screenshots of every new feature in light and dark, final summary                                                                                                                                  |                                                                                                                       |
+**v1 (finish the leftovers)**
 
-If a phase is blocked, I pick the most reasonable option, log it under "Questions for Star" and continue. Anything that needs a contract change, a new dependency or a paid service goes under "Needs Star's approval" and is skipped.
+1. Quota-low threshold as a client setting (additive field) wired into the signal.
+2. Usage: a "1 year" period (additive keybinding command) for the whole Usage page.
+3. Usage: cost and tokens per model over time (client-only; buckets already carry the model).
+4. Usage: tool calls over time (additive optional `toolCalls` on `UsageBucket`, counted by the Claude and Codex transcript parsers).
+5. Usage: per-thread view (tokens and tool calls per run of the open thread, client-only from the thread projection).
+
+**v2 (composer and atmosphere)**
+
+1. Usage meter in the composer (quota windows; amber only when low).
+2. Bot avatars for run status (`bot-avatars`, MIT), per-provider bot, setting.
+3. Gooey "+" composer menu (`liquid-gooey`, MIT), behind a setting, default off.
+4. Voice input: provider interface, Clide provider in the desktop main process (spec in `clide-api-spec.md`, token in `safeStorage`), OpenAI-compatible server provider (opt-in, user-configured URL, off by default), `voice-glow` wiring and a push-to-talk button. Voice listening takes the composer FX slot's top priority.
+5. Themes: per-theme fonts on top of upstream's theme library.
+
+**v3 (workspace)**
+
+1. Bento dashboard (chats, PRs) with a fixed-then-drag layout.
+2. Skill studio (side panel for the repo's skills).
+3. Better frontend skills (built-in skills content).
+4. Slack-like multi-user chat: SKIPPED (the server is built around one owner; needs a design decision, see "Needs Star's approval").
+5. Planning suite: SKIPPED (depends on the AFFiNE spike, which is Docker work with no code).
+6. Plugin API: SKIPPED by the blueprint's own rule ("only if hard-fork editing stops being enough").
+
+## Contract changes
+
+Additive only (new optional fields, new RPCs or commands), each covered by tests.
+
+(None yet in session 8.)
+
+## New dependencies
+
+(None yet in session 8.)
 
 ## Needs Star's approval
 
-Skipped in this run because each needs a contract, schema or keybinding-command change:
-
-- **Usage: tool-call graphs and per-thread views.** The usage summary RPC carries no tool-call counts or per-thread totals, so both need a new field or RPC in `packages/contracts` and a server-side aggregation.
-- **Usage: a "1y" window button.** The window buttons are bound to keybinding commands in the contracts (`usage.window.*`), so a fifth option is a contract change. The heatmap gets its own 365-day query instead.
-- **Usage: per-model series over time.** `usageMerge` folds daily totals by provider only; a per-model daily series changes that shared shape.
-- **Quota-low threshold setting.** A client setting in `packages/contracts/src/settings.ts`; v1 uses a constant (20% remaining, hysteresis +5).
+- **Slack-like multi-user chat (v3).** Skipped: the server's auth and data model assume one owner; multi-user is a product and security design, not an additive change.
+- **Planning suite (v3).** Skipped until the AFFiNE spike is done (self-hosting with Docker, no code).
+- **Plugin API (v3).** Skipped by the blueprint's rule; hard-fork editing still works.
 
 ## Questions for Star
 
@@ -262,140 +283,11 @@ Skipped in this run because each needs a contract, schema or keybinding-command 
 - Next action: Human: look at the screenshots, tell me whether the P-with-star icon and the star-only header mark are the direction you want (alternatives I rendered and rejected: a star cut out of a solid P, a sparkle on the bowl's shoulder, a monoline P, a star above the P), push using "Before you push", and swap final art into the files listed above. Agent: start v1 item 2 (Discord Rich Presence) with the read-only plan from the session 5 entry.
 - Open questions: (1) final logo and icon art, and whether dev and nightly should get distinguishable icons again; (2) when you ship your own builds: the update feed, install scripts, app ids and artifact name still point at upstream; (3) rename the internal identifiers in a later pass, or never; (4) should the Dev and Nightly stage artwork follow the brand (green) or stay as an environment signal; (5) the open questions from session 5 are unchanged.
 
-### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 5: Cursor stays, fonts checked in the app, quota-low design, effort wiring traced
-
-- Status: done. Nothing pushed. No code changed (docs only).
-- What changed:
-  - **`blueprint.md`**: a session 5 block in "Decisions so far" (Cursor provider stays; fonts baseline; quota-low design; beam effort resolved once at send); the Composer FX slot is now a priority table (voice listening, quota-low flash, effort beam, idle ring, plus a static accent row); the quota-low section was rewritten to the decided behavior; a new "Where the frozen selection lives" section; the fonts section updated; backlog rows for the usage meter, quota flash and themes annotated; answered open questions removed and three new quota-low ones added.
-  - **`AGENTS.md`**: the font-license rule you gave (OFL or Apache-style, license checked and kept in the repo) in the "Never" list; the dev-boot row now says verified on 24.21.0 and 24.13.1, and the "stop it" advice now uses a process group.
-  - **`HANDOFF.md`**: this entry, two new sections ("Hiding a provider", "Fonts page") and the effort section extended with the verdict on the wiring.
-- How verified (Node v24.13.1):
-  - **Code facts** by `git grep`, `sed` and file reads, with file and line numbers in the docs.
-  - **Dev boot:** `fnm exec --using=24.13.1 vp run dev --home-dir /tmp/polaris-dev-p5`, started in its own process group. The log line read `[dev-runner] mode=dev ... serverPort=13773 webPort=5733`. The one-time pairing URL worked and the app was loaded about 50 seconds after launch. The token is not recorded anywhere.
-  - **Fonts page:** opened in a Playwright Chromium; I changed the Interface font to Georgia and 18 px, reloaded, and set a Code font. Results are in "Fonts page" (what worked and what was not exercised).
-  - **Provider hiding:** switched "Enable Claude" off, saw it leave the picker rail, switched it back on. Cursor itself was not on this machine (no CLI), so its own switch was not seen.
-  - **Shutdown:** I checked that the listeners on 13773 and 5733 were in my process group, then `kill -TERM -- -33622`. `ps -g` showed no members, both ports were free, and your own `t3` server on port 3773 (a different process group) kept running.
-  - **Cleanup:** removed the temp home, logs and scratch scripts; deleted the browser snapshots and kept one screenshot, outside the repo.
-  - `fnm exec --using=24.13.1 vp fmt --check`: exit 0, "All matched files use the correct format", 4883 files. Run after formatting the three docs and before the commit, and again as the last command of the session on the clean tree (also exit 0).
-  - Not run: typecheck, lint and tests, because no code changed. The CI command list from session 3 still stands.
-- Risks:
-  - **The beam is not wired as your decision assumes.** The selection part is already frozen per send (each run keeps its own `modelSelection`), but the keyword override is computed nowhere on the server and no effective level is stored. Storing one is a contract change. Details and the two build options (A: store on the run; B: derive when reading) are in the effort section and `blueprint.md`.
-  - **The 5-hour window.** Your latest line says "every window other than session", but session 3 included the 5-hour (`session`) window. I recorded both and chose neither; it is an open question.
-  - **Two of my own defaults, flagged as open:** the flash color (the original request was red, the accent is amber) and how the amber accent combines with a running beam (my default: accent as the static border under the beam).
-  - **Quota data freshness was not traced.** A flash could lag the real crossing by the provider refresh interval (the Providers page health check defaults to 300 seconds; whether usage windows refresh on that cadence was not checked).
-  - **Fonts:** the baseline works as far as I exercised it (see "Fonts page"). Families are typed names only: no font-file loading, and the installed-font picker did not appear. Settings are per browser profile.
-  - **Privacy note:** one browser snapshot of the Providers page contained the Codex account email. It lived only in `polaris-kickoff/.playwright-mcp`, outside the repo, and I deleted it with the others.
-  - Not exercised: any real turn or beam (nothing to render yet), the Electron app, mobile.
-- Next action: Human: push using "Before you push". Agent: start v1 item 2 (Discord Rich Presence) with a read-only plan: read `apps/desktop/src/main.ts`, `apps/desktop/src/ipc/` and `apps/desktop/src/settings/`, find where an opt-in, desktop-only setting and a main-process service would live, and report before writing code (the implementation needs the Discord Application ID).
-- Open questions: all in `blueprint.md` → "Open questions". Quota-low flash: (1) does it watch the 5-hour window, (2) is the flash red, (3) how the accent and the beam combine. When the beam is built: store the effective level on the run, or derive it when reading (needs a contract go-ahead for the first). Still open from before: voice provider interface; the git-text-generation double read of `AGENTS.md`/`CLAUDE.md`; Discord Application ID; app name and branding; desktop vs `npx`; Clide API port.
-
-### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 4: your answers, Cursor rule replaced with a pointer
-
-- Status: done. Nothing pushed.
-- What changed:
-  - **Cursor rule file replaced** (your decision, after I had first deleted it: see the process note under Risks). `docs/upstream-cursor-cloud.md` is the original with your banner line on top. `.cursor/rules/cursor-cloud.mdc` is now exactly the five-line pointer you specified (four lines of frontmatter, one instruction line). `AGENTS.md` got a `## References` section (it had none) with one line pointing at the reference copy as "upstream reference, not instructions". `.cursor/.gitignore` is untouched.
-  - **Blueprint decisions** (session 4 block): commit identity confirmed; "the level sent" is the level id in the turn's selection plus the keyword-in-text override (delegated to me, with reasons, so you can overrule); "general quota" confirmed; the Cursor rule decision; fonts customizable in v1. The answered open questions were removed, and two were added: whether to remove the Cursor provider from the app, and what is missing from upstream's font settings.
-  - **Fonts (your mid-session request, "i also want for the font to be customizable in this version").** Recorded only; no code. I found that upstream already ships four font families, four sizes and a smoothing toggle, with a settings page and live previews. The facts are in `blueprint.md` ("Fonts: what upstream already has"). I also added one sentence to `AGENTS.md` Conventions: new Polaris UI must use `var(--font-sans)`, `var(--font-mono)` and the existing `font*` settings, not a hard-coded `font-family`. That rule is my reading of your request; remove it if you disagree.
-  - **HANDOFF**: the push notes now say the identity is confirmed and the rewrite instructions are gone.
-- Lines in the old Cursor file that contradicted `AGENTS.md` or what I observed. Line numbers are those of the original `.cursor/rules/cursor-cloud.mdc`; in `docs/upstream-cursor-cloud.md` line n is line n+3 for n of 2 or more (checked by diffing the whole body: original line 2 onward equals copy line 5 onward).
-  - **Contradicts `AGENTS.md`:**
-    - **Line 15** lists `vp check` and `vp run typecheck` as normal commands; `AGENTS.md` says not to run repo-wide `vp check`, `vp run test` or `vp run typecheck` unless asked (use `--filter` and single files).
-    - **Lines 20-21** say to run `vp check --fix` before committing; `AGENTS.md` says no repo-wide `vp check` (the pre-commit hook already formats staged files; use `vp fmt <files>`).
-    - **Lines 25-27** use `npm run dev`, `npm run dev:server` and `npm run dev:web`; the repo is pnpm and `AGENTS.md` uses `vp run dev --home-dir /tmp/...`.
-    - **Line 26** says the runner auto-wires `VITE_HTTP_URL` and `VITE_WS_URL`. For `dev` and `dev:web` it deletes them and sets single-origin mode (`scripts/dev-runner.ts:349-364`), and upstream's rule (`docs/upstream-AGENTS.md`) says never set them.
-    - **Lines 31-32** say server state lives under `~/.t3` and several dev instances share one DB; `AGENTS.md` says use `--home-dir` and never point a dev server at the live `~/.t3/userdata`.
-  - **Wrong against what I saw on the real boot:** **line 29** says the server is "unauthenticated by default". It runs auth policy `loopback-browser` and needs the one-time pairing token (the same paragraph's pairing instructions are right).
-  - **Incomplete, not contradicting:** **line 33** lists only `codex`, `claude`, `cursor-agent` and `opencode` as provider CLIs.
-  - **Consistent:** Node 24.13.1 (lines 13 and 19, matching `.nvmrc`), and ports 5733 and 13773 (lines 25-26).
-- How verified (Node v24.13.1):
-  - The pointer file is the five lines you specified. The reference copy is your banner line, a blank line, then the original body; `vp fmt` added one blank line after the opening `---`, which is why the offset is 3 and not 2. `diff` of original line 2 onward against copy line 5 onward shows no difference.
-  - The pre-commit hook (`vp staged`) ran `vp fmt` on the three staged files and the commit went through.
-  - Fonts: read from source with `grep` and file reads only. The settings page was not opened in a running app.
-  - No code, config or test files changed this session, so the CI command list from session 3 still stands (not re-run).
-  - `fnm exec --using=24.13.1 vp fmt --check` (with `node_modules/.bin` on `PATH`): exit 0, "All matched files use the correct format", 4883 files. Run on the edited docs before the docs commit, and again as the last command of the session on the clean tree (it also exit 0).
-  - Zero occurrences of the keyword level's literal word in `AGENTS.md`, `blueprint.md`, `HANDOFF.md`, the reference copy and the pointer (case-insensitive `grep -c`). `CLAUDE.md` is still a symlink to `AGENTS.md`; `git remote -v` shows only `upstream-snapshot`, push URL disabled.
-- Risks:
-  - **Process note.** Before your replace decision arrived I had deleted the rule file and committed that locally. I undid it with `git reset --soft HEAD~1` and `git restore`, so the history has only the replace commit. I checked the tree was identical to the previous commit before continuing. It was my own unpushed commit, and nothing else was touched.
-  - **The pointer is `alwaysApply: true`**, so every Cursor agent reads it first. It tells them to read `AGENTS.md`, `HANDOFF.md` and `blueprint.md`, and not to follow the upstream notes.
-  - **The Cursor provider is still in the code.** `git grep -il cursor` over `apps packages infra scripts native` finds 561 files (363 outside tests), including unrelated uses such as text cursors; 32 files name the provider directly. You said friends don't use it; whether to remove it is an open question, not done.
-  - Not exercised: a Cursor agent actually picking up the pointer.
-- Next action: Human: work through "Before you push" in "Current state" (the identity check is now done), push, and watch the first `ci.yml` run. After that, an agent starts v1 item 2 (Discord Rich Presence) with a read-only plan: read `apps/desktop/src/main.ts`, `apps/desktop/src/ipc/` and `apps/desktop/src/settings/`, find where an opt-in, desktop-only setting and a main-process service would live, and report before writing code (the implementation needs the Discord Application ID).
-- Open questions: all in `blueprint.md` → "Open questions". Highest priority: (1) quota-low flash: the active provider only or any provider, how long it flashes, whether it overrides the tier beam, whether 20% is a setting; (2) remove the Cursor provider from the app, or leave it; (3) fonts: is upstream's existing customization enough for v1, and does it need to reach mobile; (4) voice provider interface; (5) the git-text-generation double read of `AGENTS.md`/`CLAUDE.md`. Earlier ones still open: Discord Application ID, app name and branding, desktop vs `npx`, Clide API port.
-
-### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 3: your decisions, CI fallout, Node pin, push prep
-
-- Status: done. One pre-existing failing upstream test is listed, not fixed. Nothing pushed.
-- What changed:
-  - **Decisions recorded** in `blueprint.md` "Decisions so far": quota-low trigger, fallback tier by position, neutral default, beam follows the level sent (frozen per turn), upstream's ring kept as the idle indicator, moved-workflow fallout, Node pin, remote. The tier table gained a `neutral` row and a worked fallback table; the Composer FX slot table now has the ring in the idle state and the beam in the running state; the open questions were rewritten.
-  - **The failing test was caused by our move** (it passes on the pristine snapshot), so the one minimal upstream edit this session is in `scripts/notify-discord-release.test.ts`: its `release.yml` path now points at `.github/upstream-workflows/release.yml`, with a one-line comment. Docs naming the old workflow paths were updated: `docs/operations/development.md` (Windows lane link), `docs/operations/release.md` (all paths plus a Polaris note), `infra/relay/README.md`, `packaging/aur/README.md`.
-  - **A second failing test is pre-existing** and was left alone: `build-desktop-artifact.test.ts` "skips the primary native probe for cross-architecture Windows payloads". Listed by exact name in `AGENTS.md` and above.
-  - **`.nvmrc` is `24.13.1`**; `ci.yml` uses `node-version-file: .nvmrc` and also runs `scripts/notify-discord-release.test.ts`. `AGENTS.md` says to change `.nvmrc` and `engines.node` together.
-  - **Remote**: `upstream-snapshot`'s push URL was a live pingdotgg URL; it is now a dead value (see "Before you push").
-  - "Current state" above gained: where effective effort is resolved, and the push commands.
-- How verified (Node v24.13.1 via `fnm exec --using=24.13.1`):
-  - **Pristine snapshot**: `git worktree add --detach /tmp/polaris-snapshot-wt 3e6b450`, `pnpm install --ignore-scripts --frozen-lockfile` (49 s, to avoid rewriting the shared hook config). `vp test run scripts/notify-discord-release.test.ts` there: exit 0, 22/22. The same file on our tree: exit 1 (ENOENT on `.github/workflows/release.yml`) before the fix, 22/22 after it.
-  - `vp run --filter @t3tools/scripts test`: 1 failed, 337 passed, 2 skipped on our tree and identically on the snapshot, so pre-existing. The worktree was removed afterwards (`git worktree list` shows only the main checkout).
-  - **The full CI command list** (one script, exact commands from `ci.yml`), all exit 0: `vp i` 10 s, `ensure:electron`, lint 7 s, typecheck for contracts, shared, client-runtime, `t3` (24 s), web, desktop, tests for contracts (510), shared (1,105), client-runtime (1,998), and `scripts/notify-discord-release.test.ts` (22). The web and desktop typechecks took 0 to 1 s because `tsc` reuses gitignored `tsbuildinfo` files; they are real `tsc --noEmit` runs, and a fresh CI checkout does a full run.
-  - **`.nvmrc` support in `setup-vp`**: read `action.yml` and `README.md` from the `main` branch of `voidzero-dev/setup-vp` (read-only fetch): `node-version-file` accepts `.nvmrc`. This is the `main` docs, not the `@v1` tag, and it has not run on GitHub.
-  - **Fallback formula**: a throwaway script confirmed your example ([fast, balanced, deep] → low, high, max), that exact integer math equals the float form for every n from 2 to 60, and that results are monotonic with lowest → low and highest → max. The worked table in `blueprint.md` is its output.
-  - **References to `.github/workflows`**: searched tracked files (excluding the vendored `.repos` and the lockfile), including a looser search of scripts and configs. There are no CODEOWNERS, dependabot or renovate files. Only the test and the four docs above needed changes.
-  - **Pre-push checks**: only `ci.yml` is in `.github/workflows`; secrets scan of added lines is clean; commit identity found (see "Before you push").
-  - `vp fmt --check` (run last): exit 0, "All matched files use the correct format" across 4,882 files, on Node 24.13.1.
-- Risks:
-  - **`ci.yml` has still never run on GitHub.** It now reads `.nvmrc` (24.13.1), which `setup-vp` documents as supported. The runner is Linux and I verified on macOS.
-  - **`build-desktop-artifact.test.ts` fails here** (macOS arm64, 24.13.1) and on the snapshot. Not checked on Linux, where it may pass; it is not in CI either way.
-  - **Leftovers kept on purpose.** A comment at `packages/shared/src/cliRelease.ts:16` still says `.github/workflows/release.yml` (upstream source, comment only). The inert copies in `.github/upstream-workflows/` still refer to each other as `./.github/workflows/...` (for example `uses: ./.github/workflows/release-desktop.yml`); harmless while inert, broken if someone moves them back.
-  - **`vp`'s own Node shim checks `engines.node` before `.nvmrc`**, so a local `vp` may use a newer 24.x than CI's 24.13.1.
-  - **Two interpretations of yours** are flagged in `blueprint.md` Open questions: "general quota" (I read: every quota window other than the 5-hour `session` one) and "the level sent" (I read: the level id in the turn's selection plus the keyword-in-text override, not the API value after `effortMap`).
-  - **The effort-resolution facts are from reading source**, not from a running turn.
-  - **Push size and identity**: about 436 MiB and roughly 4,770 commits, and the commit identity is a private-relay Apple ID address from your global git config (see "Before you push").
-  - Still not exercised: the Usage page with real data, an agent turn, the desktop app.
-- Next action: Human: work through "Before you push" in "Current state" (check the commit identity first), push, and watch the first `ci.yml` run. After that, an agent starts v1 item 2 (Discord Rich Presence) with a read-only plan: read `apps/desktop/src/main.ts`, `apps/desktop/src/ipc/` and `apps/desktop/src/settings/`, find where an opt-in, desktop-only setting and a main-process service would live, and report before writing code (the implementation needs the Discord Application ID).
-- Open questions: all in `blueprint.md` → "Open questions". New or still open, highest priority first: (1) "the level sent" for Claude: level id (my reading) or API value after `effortMap`; (2) quota-low flash: confirm "general quota", whether it applies to the active provider only, how long it flashes, whether it overrides the tier beam, whether 20% is a setting; (3) fix, replace or delete `.cursor/rules/cursor-cloud.mdc`; (4) voice provider interface; (5) the git-text-generation double read of `AGENTS.md`/`CLAUDE.md`. Earlier ones still open: Discord Application ID, app name and branding, desktop vs `npx`, Clide API port.
-
-### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 2: CI, your six decisions, Node 24 verification, dev boot
-
-- Status: done, with one known failing upstream test (see Risks). No upstream source file was edited.
-- What changed:
-  - **CI (decision 1).** `git mv .github/workflows .github/upstream-workflows` (17 renames, plus upstream's `ci.yml` moved there too; 18 files, byte-identical to the snapshot) and a short README there saying they are inert. New `.github/workflows/ci.yml`: one job on `ubuntu-latest` running `vp fmt --check`, `vp lint --report-unused-disable-directives`, six per-package typechecks (contracts, shared, client-runtime, `t3`, web, desktop) and three per-package test suites (contracts, shared, client-runtime), after `ensure:electron`. No secrets, no release, deploy, mobile or bot jobs.
-  - **Usage gap list (decision 2)** and **voice paragraph (decision 4)**: written into "Current state" above so they outlive the entry log. No code.
-  - **Effort tiers (decision 3)**: `blueprint.md` color table is now keyed on tiers (none, low, medium, high, xhigh, max) with a drafted `xhigh` row, plus a provider → tier table and your mapping rules. The keyword-level detection is recorded exactly (files and lines) in "How the composer handles the keyword level". The word itself is not spelled anywhere in the docs I wrote.
-  - **Links (decision 5)**: `CONTRIBUTING.md`, `docs/README.md` and `docs/operations/development.md` now point at `docs/upstream-AGENTS.md#documentation` / `#test-data` (each target heading checked).
-  - **Node (decision 6)**: `.nvmrc` = `24`. `.cursor/rules/cursor-cloud.mdc` is untouched; the comparison is under Risks.
-  - **Blueprint**: your six decisions are in "Decisions so far". Open questions were rewritten: answered ones removed, new ones added (tier mapping details, keyword-level behavior, notify-discord test, leftover workflow references, `.nvmrc` vs `engines`, cursor rule).
-  - **Also recorded, not built**: your message that the chat outline should flash red when the provider's usage is below 20%. It is a backlog row, a "Quota-low warning" section and six open questions in `blueprint.md`. It is a feature, and this session is hygiene only.
-  - **AGENTS.md** (84 lines): Commands re-verified on Node 24, new rows for per-package tests and `ensure:electron`, a "Dev boot" section, a CI pointer and the known failing test.
-  - Outside the repo: installed `fnm` with Homebrew and Node 24.21.0 through it. I did not edit any shell profile; use `fnm exec --using=24 <cmd>`.
-- How verified (Node v24.21.0 via `fnm exec --using=24`, local `node_modules/.bin/vp` v1.0.0, macOS arm64):
-  - `vp i`: exit 0, lockfile unchanged, no "Unsupported engine" warning (the Node 26 warning is gone).
-  - Typecheck, each exit 0 with no `error TS` lines (only advisory Effect suggestions): `@t3tools/contracts` 1 s, `@t3tools/shared` 2 s, `@t3tools/client-runtime` 4 s, `t3` 32 s, `@t3tools/web` 9 s, `@t3tools/desktop` 3 s.
-  - Tests: `vp run --filter @t3tools/contracts test` 37 files / 510 tests, `@t3tools/shared` 77 / 1,105, `@t3tools/client-runtime` 121 / 1,998, all passed. Single files: `packages/shared/src/Array.test.ts` 1/1, `apps/server/src/sourceControl/SourceControlProvider.test.ts` 2/2.
-  - `vp lint --report-unused-disable-directives`: exit 0, 0 errors, 850 warnings, about 7 s.
-  - `vp run --filter @t3tools/desktop ensure:electron`: exit 0.
-  - `.github/workflows/ci.yml`: parsed with the repo's `yaml` package (valid; 1 job, 14 steps; no `secrets.` or token expressions, only `github.*` context in `concurrency`). Its command list is the verified list above.
-  - `vp test run scripts/notify-discord-release.test.ts`: **exit 1**, ENOENT on `.github/workflows/release.yml`. Predicted from the move, then confirmed. Not edited.
-  - **Dev boot** (exact command): `PATH="<fnm node 24 bin>:$PWD/node_modules/.bin:$PATH" nohup vp run dev --home-dir /tmp/polaris-dev-home > /tmp/polaris-dev.log 2>&1 &`. Worked on the first try.
-    - Runner line: `[dev-runner] mode=dev source=default ports serverPort=13773 webPort=5733 baseDir=/tmp/polaris-dev-home`. Server `Listening on http://127.0.0.1:13773` about 3 s after start; Vite on `http://localhost:5733/` (IPv6 loopback).
-    - HTTP: `GET :5733/` 200, title "T3 Code (Alpha)"; `GET :13773/` 302; `GET :5733/.well-known/t3/environment` 200 JSON; `GET :5733/api/auth/session` 200 with `authenticated: false`, policy `loopback-browser`, bootstrap `one-time-token`; `/api/health` is 404 (no such route).
-    - Browser (T3 Code preview, 1280×800): T3 mark splash, then "Pair with this environment" with a token field. Opening the logged `pairingUrl` made `POST /api/auth/browser-session` return 200 and redirected to `/draft/<id>`, the main UI: sidebar with a project named `server`, "New thread", "Settled (0)", Settings / Pull Requests / Usage buttons, "What should we build in server?", and a composer showing `GPT-6-Astra`, `Medium`, `Full access`, with a right panel showing branch `main`, "Publish repository" and Changes +802 −145. The first load took about a minute while Vite optimized dependencies.
-    - Needed: no `.env`, no sign-in (just the one-time pairing URL from the log), no provider CLI to boot. On this machine `codex`, `claude` and `opencode` are on PATH; `cursor-agent` and `grok` are not. I did not run an agent.
-    - Observed noise, not diagnosed: Vite warns `Failed to resolve dependency: @clerk/clerk-js, present in client 'optimizeDeps.include'` (it is listed at `apps/web/vite.config.ts:187` but is not a dependency of `apps/web`); the browser logged repeated `net::ERR_ABORTED` for `POST /api/observability/v1/traces` while the server logged 204s; before pairing the WebSocket was refused with 401 (expected).
-    - A project named `server` already existed in the empty throwaway home. Why was not investigated.
-    - **Stopping it took three steps.** SIGINT to the captured PID did nothing (background jobs ignore it). SIGTERM to the `vp` wrapper (PID 31206) ended only the wrapper. The dev-runner, Vite and the server kept running, and I ended them by PID after tracing each one's ancestry to my spawn. End state: ports 5733 and 13773 free, nothing of mine left running, `/tmp/polaris-dev-home` deleted, `git status` clean (the boot created no files in the repo), `~/.t3/dev` not created.
-  - `vp fmt --check` (run last): exit 0, "All matched files use the correct format" across 4,882 files. The first run of the session had failed on the new docs until `vp fmt` was applied to them; the pre-commit hook also formats staged files.
-- Risks:
-  - **CI has never run on GitHub.** It was only YAML-parsed. The runner is Linux, I verified on macOS, and the action versions (`actions/checkout@v6`, `voidzero-dev/setup-vp@v1`) were copied from upstream's workflow, not checked.
-  - **One upstream test fails** (`scripts/notify-discord-release.test.ts`, ENOENT) because of the workflow move. `ci.yml` does not run the `scripts` package, but repo-wide `vp run test` would fail on it.
-  - **Leftover references to the old workflow path**: `docs/operations/development.md:111` links `windows-tests.yml` (dead link), and `docs/operations/release.md`, `infra/relay/README.md` and `packaging/aur/README.md` mention paths under `.github/workflows/`.
-  - **`.nvmrc` `24` vs `engines` `^24.13.1`**: a machine whose newest 24.x is older than 24.13.1 passes `.nvmrc` and fails `engines`. This Mac resolved `24` to 24.21.0.
-  - **`.cursor/rules/cursor-cloud.mdc` vs AGENTS.md** (kept unedited at the time and `alwaysApply: true`, so Cursor agents always loaded it; replaced by a pointer in session 4, see that entry). It disagrees on: (1) it says `npm run dev` auto-wires `VITE_HTTP_URL`/`VITE_WS_URL`, but for `dev` and `dev:web` the runner deletes them and sets single-origin mode (`scripts/dev-runner.ts:349-364`), and upstream's rule says never set them; (2) it says server state lives in `~/.t3` and dev instances share one DB, while upstream says never run a dev server against `~/.t3/userdata` and the main checkout defaults to `~/.t3/dev/userdata`; (3) it tells agents to run `vp check --fix` before committing, while AGENTS.md says no repo-wide `vp check`; (4) it uses `npm run …`, while the repo is pnpm and AGENTS.md uses `vp`; (5) "unauthenticated by default" does not match the observed `loopback-browser` policy with a one-time token; and it lists only four provider CLIs (omits Grok, Pi, Antigravity). It agrees on Node 24 and on ports 5733 and 13773.
-  - **Not exercised**: the Usage page with real data, a running composer with the keyword level, an actual agent turn, the desktop app. The effort and keyword facts are from reading source.
-  - **Process slip, recovered.** Mid-session I ran `git stash -u` to compare against the pre-move tree. It conflicted with my new `ci.yml` and half-applied. I checked every file against the stash (my `ci.yml` and README identical, all 18 upstream workflows byte-identical to HEAD) before dropping the stash. Nothing was lost. No further stash use.
-  - The T3 Code preview tool saved its screenshots under `~/.t3/userdata/browser-artifacts/` itself; I did not choose that or write anything else there.
-- Next action: Human: create the remote (`git remote add origin <url>`, then `git push -u origin main`) and watch the first run of `ci.yml`; fix whatever a Linux runner turns up. After that, an agent starts v1 item 2 (Discord Rich Presence) with a read-only plan: read `apps/desktop/src/main.ts`, `apps/desktop/src/ipc/` and `apps/desktop/src/settings/`, find where an opt-in, desktop-only setting and a main-process service would live, and report before writing code (the implementation needs the Discord Application ID).
-- Open questions: all in `blueprint.md` → "Open questions". Highest priority: (1) quota-low flash: does "below 20%" mean 20% remaining, and which quota window counts; (2) how "nearest tier by position" is computed and what "neutral default" renders; (3) beam follows the displayed level or the API level; (4) beam reaction to the keyword level while typing, and what happens to the composer's existing static ring; (5) fix, delete or leave the failing notify-discord test and the leftover workflow references; (6) pin `.nvmrc` to `24.13.1` or keep `24`. Earlier ones still open: Discord Application ID, app name and branding, desktop vs `npx`, Clide API port, voice provider interface.
-
 ## History
 
+- 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 5: Cursor stays, fonts checked in the app, quota-low design, effort wiring traced. Full entry rolled up in session 8; see `git log` for details.
+- 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 4: your answers, Cursor rule replaced with a pointer. Full entry rolled up in session 8; see `git log` for details.
+- 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 3: your decisions, CI fallout, Node pin, push prep. Full entry rolled up in session 8; see `git log` for details.
+- 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 2: CI, your six decisions, Node 24 verification, dev boot. Full entry rolled up in session 8; see `git log` for details.
 - 2026-10-05, v1 item 1 (Opus 5.5): cloned the upstream snapshot as `polaris-repo`, renamed `origin` to `upstream-snapshot`, moved upstream's `AGENTS.md` to `docs/upstream-AGENTS.md`, and added `AGENTS.md`, `HANDOFF.md`, `blueprint.md`, `ref.md`, `clide-api-spec.md` and the README fork note.
 - Open from that session and still true: dangling upstream doc links (`CONTRIBUTING.md`, `docs/README.md`, `docs/operations/development.md` point at `AGENTS.md` anchors that do not exist), and `.cursor/rules/cursor-cloud.mdc` was replaced by a pointer file in session 4.
