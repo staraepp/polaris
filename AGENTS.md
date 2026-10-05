@@ -83,3 +83,7 @@ Clients send typed WebSocket requests. The server turns them into commands. The 
 - Effects: only the MIT packages named in `blueprint.md`. One animated glow on the composer at a time. Honor `prefers-reduced-motion`.
 - Voice: talk to Clide only through `clide-api-spec.md` (read its "Using the API" section first), from the desktop main process. Store the token with Electron `safeStorage`, never in plain settings JSON or the renderer. Voice must work without Clide installed.
 - Agent-friendliness is a feature. If you change how something works, update this file or `docs/`. A stale instruction file is worse than none.
+
+## References
+
+- `docs/upstream-cursor-cloud.md`: upstream reference, not instructions.
