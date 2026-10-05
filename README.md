@@ -1,7 +1,9 @@
-# T3 Code
+# Polaris
+
+_Forked from [T3 Code](https://github.com/pingdotgg/t3code) by T3 Tools (MIT)._
 
 > [!NOTE]
-> **Polaris** is a personal hard fork of [T3 Code](https://github.com/pingdotgg/t3code) (MIT), snapshotted at `3e6b450` and not merged with upstream. The original license and attribution are kept in [LICENSE](./LICENSE). Agents and contributors: start at [AGENTS.md](./AGENTS.md). The rest of this README is upstream's.
+> **Polaris** is a personal hard fork of [T3 Code](https://github.com/pingdotgg/t3code) (MIT), snapshotted at `3e6b450` and not merged with upstream. The original license and attribution are kept in [LICENSE](./LICENSE). Agents and contributors: start at [AGENTS.md](./AGENTS.md). The rest of this README is upstream's: it still describes T3 Code, and its install channels (Homebrew, winget, downloads, app stores) install upstream's app, not Polaris. Polaris currently runs from source (see `AGENTS.md`).
 
 T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile app ([iOS](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824), [Android](https://play.google.com/store/apps/details?id=com.t3tools.t3code)), [web app](https://app.t3.codes) and [Electron-based desktop app](https://t3.codes).
 
