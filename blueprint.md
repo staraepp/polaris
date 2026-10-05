@@ -54,6 +54,12 @@ Decided 2026-10-05 (session 5, by the human):
   - The persistent signal should also feed the usage meter in the input area (wishlist item). Noted only; nothing is built.
 - **Beam effort: resolve once at send, store it on the turn, freeze it.** Effective effort is the picker value for that turn plus the keyword-in-text override, resolved once at send time and stored on the turn, so changing the picker mid-run never recolors a running beam. Checked against the code: it is **not wired that way today**. Half of it exists: every run stores its own `modelSelection` when it is created and a picker change writes only the thread's selection, so the selection part is already frozen per send. The keyword override is computed nowhere on the server, and nothing stores an effective level. File and function details are in `HANDOFF.md`, "Effective effort: where it is resolved today". Storing a new field is a contract change, so it needs the human's go-ahead when it is built.
 
+Decided 2026-10-05 (session 6, by the human):
+
+- **Display-level rebrand: T3 Code becomes Polaris, and the brand color is green.** The user-facing name (window title, header, onboarding, settings, notifications, desktop product name, README title) is now Polaris, and the accent is an emerald green defined once as tokens in `apps/web/src/index.css`. Internal identifiers were deliberately **not** renamed (package scopes, workspace names, import paths, `t3.json`, `.t3`, `T3CODE_*`, app ids, URL schemes), so nothing breaks; a later pass is possible and its list is in `HANDOFF.md`. Upstream's license and attribution stay, and the README says "Forked from T3 Code".
+- **The logo is a placeholder.** A "P" with a four-pointed north-star window on a green squircle, in every icon file, the favicon, the splash and the sidebar mark. The human wants final art later; `HANDOFF.md` lists every file to swap.
+- **Success stays green but is a different green.** Brand is emerald (hue 168), success is Tailwind green (hue about 150), so a success check and a brand button do not look alike. Errors stay red, warnings amber.
+
 ## v1 scope (in order)
 
 1. **Agent-friendly repo**: `AGENTS.md`, `HANDOFF.md`, `docs/`.
@@ -257,7 +263,8 @@ Merging upstream. Building our own database or block engine. Forking Obsidian (p
 ## Open questions
 
 - Which Discord Application ID and art assets for presence?
-- What name and branding for the desktop app?
+- Final logo and app icon art (the "P" is a placeholder), and whether dev and nightly builds should get their own icon again so they can be told apart from the release icon (all three channels use the same placeholder today).
+- Rebrand scope that was left alone: update feed and install scripts still point at upstream (`pingdotgg/t3code`), the app ids are still `com.t3tools.*`, and the built-in "T3 Chat" theme keeps its name. Decide when you ship your own builds.
 - Do friends run the desktop build, or `npx` of the fork?
 - Port and default settings for the Clide Local API.
 

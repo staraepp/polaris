@@ -61,7 +61,7 @@ Clients send typed WebSocket requests. The server turns them into commands. The 
 
 - Upstream snapshot: `pingdotgg/t3code` at `3e6b45028ceec5820dacb37dc3852470ebdc9411` (2026-10-05). The git remote `upstream-snapshot` is reference-only. We do **not** merge upstream. Do not restyle upstream code.
 - Keep upstream's `LICENSE` and attribution intact.
-- No repo-wide rename or rebrand. Compatibility identifiers (`t3.json`, `.t3`, `T3CODE_*` env vars, package names) must keep working.
+- The display-level rebrand is done (session 6): the user-facing name is **Polaris** and the brand color is green. Internal identifiers stay upstream's and must keep working: `@t3tools/*` package scopes, workspace names, import paths, `t3.json`, `.t3`, `T3CODE_*` env vars, `com.t3tools.*` app ids, `t3code` URL schemes, and the `T3Wordmark` component name (it now draws the placeholder "P"). Do not rename them unless asked. `HANDOFF.md` lists what was left alone.
 - Put new Polaris code in clearly named files or folders (for example `polaris/` subfolders) so fork code is easy to tell from upstream code.
 - Small diffs. One feature per branch. Update docs in the same change.
 
@@ -70,6 +70,7 @@ Clients send typed WebSocket requests. The server turns them into commands. The 
 - TypeScript throughout. The server is Effect-heavy: read `docs/internals/effect-services.md` and `.repos/effect-smol/LLMS.md` before writing Effect code. Do not add a second DI or plugin framework.
 - A provider-shaped feature needs a decision per driver (Codex, Claude, Cursor, Grok, OpenCode, Antigravity, Pi, ACP registry), even if the decision is "not supported here".
 - Keep UI customizable: colors, spacing and behavior come from settings or theme tokens, not hard-coded values. Fonts must stay customizable (v1 requirement): use `var(--font-sans)` and `var(--font-mono)` and the existing `font*` settings (`blueprint.md`, "Fonts"), never a hard-coded `font-family`.
+- Brand color: the green is defined once, as tokens in `apps/web/src/index.css` (`--primary`, `--primary-text`, `--primary-hover`, `--primary-active`, `--primary-subtle`, `--primary-selection`; light and dark values). Change it there, never per component, and re-check WCAG AA (white on `--primary` at least 4.5:1, `--primary-text` on the page background). Success is a separate, cooler green (`--success-foreground`). Errors stay red, warnings amber.
 
 ## Boundaries
 
