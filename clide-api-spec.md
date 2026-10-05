@@ -33,31 +33,36 @@ A local HTTP server can be reached by any web page the user visits, so:
 All under `http://127.0.0.1:<port>`. Header: `Authorization: Bearer <token>`. Every response carries `X-Clide-Version`.
 
 ### `GET /v1/health`
+
 `{ "ok": true, "version": "2.0.0", "state": "idle", "engine": "whisper-large-v3-turbo-q5", "mode": "polished" }`
 
 ### `GET /v1/models`
+
 OpenAI-style list of installed engines/models: `{ "data": [{ "id": "...", "object": "model" }] }`
 
 ### `POST /v1/audio/transcriptions`
+
 `multipart/form-data`: `file` (required), `model` (optional; installed model id, default = current), `language` (optional), `response_format` (`json` default, or `text`).
 
 **Accepted audio formats (decision):** whatever the macOS decoder reads: `wav`, `m4a`, `mp3`, `flac`, `caf`, `aiff`. Recommended input is 16 kHz mono 16-bit WAV. **`webm` / `ogg` / `opus` are NOT supported in v1.** They return `415` with a JSON body `{ "error": { "code": "unsupported_format", "message": "...", "accepted": ["wav","m4a","mp3","flac","caf","aiff"] } }`. No new decoder dependency and no bundled ffmpeg. Revisit only if a real client needs it (the lighter route would be a libopus adapter for Symphonia, not ffmpeg).
 Returns `{ "text": "..." }`. Applies the user's current processing mode (Verbatim / Polished / Rewrite) unless `mode` is passed explicitly. Does NOT insert text into any app. Returns `503` with a clear error if no engine is installed, `413` if too large.
 
 ### `GET /v1/events` (Server-Sent Events)
+
 Long-lived stream; clients use `fetch` with the bearer header. Events (`event:` name, JSON `data:`):
 
-| event | data | when |
-|---|---|---|
-| `state` | `{ "state": "idle" \| "recording" \| "transcribing" \| "inserting" \| "error", "ts": 1735000000000 }` | on every change |
-| `level` | `{ "level": 0.0–1.0, "ts": ... }` | about 30 Hz while recording; the same meter the HUD pill shows |
-| `partial` | `{ "text": "..." }` | Apple Speech live typing only |
-| `transcript` | `{ "id": "...", "text": "...", "mode": "polished", "engine": "..." }` | final text |
-| `error` | `{ "code": "...", "message": "..." }` | failures |
+| event        | data                                                                                                  | when                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `state`      | `{ "state": "idle" \| "recording" \| "transcribing" \| "inserting" \| "error", "ts": 1735000000000 }` | on every change                                                |
+| `level`      | `{ "level": 0.0–1.0, "ts": ... }`                                                                     | about 30 Hz while recording; the same meter the HUD pill shows |
+| `partial`    | `{ "text": "..." }`                                                                                   | Apple Speech live typing only                                  |
+| `transcript` | `{ "id": "...", "text": "...", "mode": "polished", "engine": "..." }`                                 | final text                                                     |
+| `error`      | `{ "code": "...", "message": "..." }`                                                                 | failures                                                       |
 
 Do not include the frontmost app name or window title in any event.
 
 ### Optional v1.1: `POST /v1/dictation/start | stop | toggle`
+
 Body `{ "insert": false }` (default false for API-started sessions, so the text comes back in a `transcript` event instead of being typed into the focused app).
 
 ## Settings
@@ -84,13 +89,13 @@ Add a "Local API" page with the endpoints, a `curl` example, and the security no
 
 Polaris desktop's **main process** connects (keeps the token out of the renderer) and forwards events by IPC. It drives the `voice-glow` component like this:
 
-| Clide | voice-glow |
-|---|---|
-| `level` event | `level={() => latestLevel}` (a getter sampled each frame) |
-| `state: recording` | `active` on |
-| `state: transcribing` | `processing={true}` |
-| `transcript` | insert text into the composer |
-| `state: idle` | `active` off |
+| Clide                 | voice-glow                                                |
+| --------------------- | --------------------------------------------------------- |
+| `level` event         | `level={() => latestLevel}` (a getter sampled each frame) |
+| `state: recording`    | `active` on                                               |
+| `state: transcribing` | `processing={true}`                                       |
+| `transcript`          | insert text into the composer                             |
+| `state: idle`         | `active` off                                              |
 
 ## Using the API (client guide)
 
@@ -98,12 +103,12 @@ Audience: any agent or developer writing a client. The first client is Polaris d
 
 ### Quick reference
 
-| What | Call |
-|---|---|
-| Is Clide up? | `GET /v1/health` |
-| Installed models | `GET /v1/models` |
-| Transcribe a finished clip | `POST /v1/audio/transcriptions` (multipart; 16 kHz mono WAV recommended) |
-| Live state, mic level, transcripts | `GET /v1/events` (Server-Sent Events) |
+| What                               | Call                                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| Is Clide up?                       | `GET /v1/health`                                                         |
+| Installed models                   | `GET /v1/models`                                                         |
+| Transcribe a finished clip         | `POST /v1/audio/transcriptions` (multipart; 16 kHz mono WAV recommended) |
+| Live state, mic level, transcripts | `GET /v1/events` (Server-Sent Events)                                    |
 
 Base URL: `http://127.0.0.1:<port>`. Every request needs `Authorization: Bearer <token>`. The port and token come from Clide → Settings → Developer → Local API; the token is shown **only once**, when it is created or regenerated.
 
@@ -137,20 +142,23 @@ curl -N -H "Authorization: Bearer $CLIDE_TOKEN" -H "Accept: text/event-stream" \
 
 All errors are JSON: `{ "error": { "code": "...", "message": "..." } }`.
 
-| HTTP | code | Meaning |
-|---|---|---|
-| 401 | `unauthorized` | Missing or wrong token |
-| 403 | `forbidden_host` / `forbidden_origin` | Bad `Host` or `Origin` header |
-| 413 | `file_too_large` | Upload over the size cap |
-| 415 | `unsupported_format` | Not wav, m4a, mp3, flac, caf or aiff. Includes an `accepted` list |
-| 429 | `rate_limited` | Too many requests |
-| 503 | `no_engine` / `busy` | No engine installed, or Clide is mid-dictation |
+| HTTP | code                                  | Meaning                                                           |
+| ---- | ------------------------------------- | ----------------------------------------------------------------- |
+| 401  | `unauthorized`                        | Missing or wrong token                                            |
+| 403  | `forbidden_host` / `forbidden_origin` | Bad `Host` or `Origin` header                                     |
+| 413  | `file_too_large`                      | Upload over the size cap                                          |
+| 415  | `unsupported_format`                  | Not wav, m4a, mp3, flac, caf or aiff. Includes an `accepted` list |
+| 429  | `rate_limited`                        | Too many requests                                                 |
+| 503  | `no_engine` / `busy`                  | No engine installed, or Clide is mid-dictation                    |
 
 ### Minimal TypeScript client (run it in Node or the Electron main process)
 
 ```ts
 export type ClideEvent =
-  | { event: "state"; data: { state: "idle" | "recording" | "transcribing" | "inserting" | "error"; ts: number } }
+  | {
+      event: "state";
+      data: { state: "idle" | "recording" | "transcribing" | "inserting" | "error"; ts: number };
+    }
   | { event: "level"; data: { level: number; ts: number } }
   | { event: "partial"; data: { text: string } }
   | { event: "transcript"; data: { id: string; text: string; mode: string; engine: string } }
@@ -248,7 +256,7 @@ export function encodeWav(samples: Float32Array, sampleRate = 16000): ArrayBuffe
 The main process forwards events over IPC. The renderer keeps the latest level in a ref and the current state in React state:
 
 ```tsx
-const levelRef = useRef(0);               // set from the "level" events
+const levelRef = useRef(0); // set from the "level" events
 const [state, setState] = useState("idle"); // set from the "state" events
 
 <VoiceBeam
@@ -257,7 +265,7 @@ const [state, setState] = useState("idle"); // set from the "state" events
   processing={state === "transcribing"}
 >
   <Composer />
-</VoiceBeam>
+</VoiceBeam>;
 ```
 
 ### OpenAI-compatible clients
