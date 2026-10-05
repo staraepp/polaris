@@ -20,7 +20,59 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 
 - Fork created: 2026-10-05 from `pingdotgg/t3code` `main` at `3e6b45028ceec5820dacb37dc3852470ebdc9411`. Remote `upstream-snapshot` is reference-only. There is no `origin` and nothing has been pushed.
 - v1 progress (`blueprint.md` "v1 scope"): item 1 (agent-friendly repo) done and verified on Node 24, including a real dev boot. Item 2 (Discord) and item 3 (usage graph) not started. Item 3 will extend upstream's Usage panel; the gap list is below.
-- CI: `.github/workflows/ci.yml` (Polaris, verified commands only). Never executed on GitHub yet.
+- CI: `.github/workflows/ci.yml` (Polaris, verified commands only, Node from `.nvmrc`). Never executed on GitHub yet.
+- Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
+- Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
+
+### Effective effort: where it is resolved today
+
+Read from source on 2026-10-05, not run. This is for the beam decision "follow the level sent with the turn" (`blueprint.md`, Decisions).
+
+- **Claude:** `compileClaudeModelSelection` in `apps/server/src/claudeModelOptions.ts:28`. Input is the turn's `modelSelection`. It reads the `effort` option, applies the catalog's `effortMap`, and returns `effort` (what the API gets), `promptEffort` (the keyword-level text prefix), `settings` (such as `ultracode`) and `queryIdentity`. Callers in `apps/server/src/orchestration-v2/Adapters/ClaudeAdapterV2.ts`: `makeClaudeQueryOptions` (`:804`, compile at `:830`, `effort` handed to the SDK at `:872-876`), per turn at `:6923`, and the text prefix at `:7187-7189` and `:7396-7398`.
+- **How the keyword level reaches the request:** it does not arrive as the saved option in normal flows. The web picker only edits the prompt text (`apps/web/src/components/chat/TraitsPicker.tsx:346-352`), and mobile hides it (`apps/mobile/src/features/threads/thread-settings-options.ts:56`). Typing it in the body changes only the text: T3's server does no text detection (the detector at `packages/shared/src/model.ts:302` is used only by the web composer). The turn is dispatched with `modelSelection: ctxSelectedModelSelection` (for example `apps/web/src/components/ChatView.tsx:9516`) and text from `formatOutgoingPrompt` (`:782-791`).
+- **So the two can disagree:** saved level `high` plus the keyword in the body means the picker shows the keyword level, `modelSelection` says `high`, and the text carries the keyword. "Follow what is sent" needs: effective = (keyword in the final outgoing text, and the model lists it) ? keyword level : level id in the turn's selection. Nothing computes that today. Its pieces: the detector, `resolvePromptInjectedEffort` (`packages/shared/src/model.ts:495`) and `compileClaudeModelSelection`. The natural place is the Claude adapter at turn start (`ClaudeAdapterV2.ts` near `:7187` and `:7396`), where the compiled selection and the final text both exist.
+- **Other adapters** read their own option from the turn's `modelSelection`: Codex `reasoningEffort` (`CodexAdapterV2.ts:718`), OpenCode `variant` (`OpenCodeAdapterV2.ts:3271`, `OpenCode2AdapterV2.ts:755`), Pi `thinking` (`PiAdapterV2.ts:2117`). Grok, Cursor and ACP were not traced. There is no provider-neutral function.
+- **Storing it:** `OrchestrationV2ProviderTurn` has no effort or model field (`packages/contracts/src/orchestrationV2.ts:951-970`), so a frozen per-turn tier needs a new field or event. Where the per-turn `modelSelection` is persisted for UI reads was not traced. `ProviderEventIngestor.ts:101` reads the raw option for analytics at turn completion; it is not a store.
+- **Still open:** whether "sent" means the level id in the turn's selection (my reading) or the API value after `effortMap` (see `blueprint.md`, Open questions).
+
+### Before you push (commands for you)
+
+Nothing is pushed and there is no `origin`. I did not run any of the commands in step 2 to 4. The `upstream-snapshot` remote's push URL was a live `https://github.com/pingdotgg/t3code` URL (git copies the fetch URL by default); I changed it to a dead value (`git remote set-url --push upstream-snapshot DISABLED-upstream-snapshot-is-reference-only`). To undo: `git remote set-url --push upstream-snapshot https://github.com/pingdotgg/t3code`, which you should not want.
+
+```sh
+cd /Users/brenomenezes/Downloads/polaris-kickoff/polaris-repo
+
+# 1. Checks. Expected results in the comments.
+git remote -v                                         # one remote, upstream-snapshot; its (push) line reads DISABLED-...
+ls .github/workflows                                  # ci.yml only
+git status --short                                    # empty
+git log --format='%an <%ae>' 3e6b450..HEAD | sort -u  # the identity that will be public (see below)
+
+# 2. Create an EMPTY repo on GitHub yourself: no README, license or .gitignore.
+#    A private repo is the safest first push. With gh (not checked whether you are signed in):
+gh repo create <you>/<name> --private                 # do NOT add --source or --push
+
+# 3. Add the remote and push (SSH or HTTPS, whichever you use)
+git remote add origin git@github.com:<you>/<name>.git
+git remote -v
+git push -u origin main
+
+# 4. Watch the first CI run (it has never run on GitHub)
+gh run list --limit 3
+```
+
+What the push publishes: the clone is not shallow, so it sends all 4,769 commits (12 are ours, the rest upstream's) and about 436 MiB packed. Upstream's workflows are inert under `.github/upstream-workflows/`, so only `ci.yml` runs.
+
+**Check the commit identity first.** All 12 of our commits are authored and committed as `5rnkq9b5yf-collab <5rnkq9b5yf@privaterelay.appleid.com>`, taken from `~/.gitconfig`. If you want a different public identity, set it for this repo and rewrite only our 12 local commits (safe because nothing is pushed, and it changes their hashes):
+
+```sh
+git config user.name  "<name>"
+git config user.email "<email>"
+git rebase 3e6b450 --exec 'git commit --amend --no-edit --reset-author'
+git log --format='%an <%ae>' 3e6b450..HEAD | sort -u
+```
+
+Scans done before the push: added lines since the snapshot contain no token-like strings (GitHub, Anthropic, OpenAI-style, AWS, Slack, private key blocks, bearer tokens, the dev pairing token). Files with "credentials" in the name exist only under `.repos/alchemy-effect/.../test/.../fixtures/`, vendored from upstream with 11 to 20 character placeholder strings.
 
 ### Usage panel gap list (v1 item 3)
 
@@ -48,6 +100,37 @@ Decision: extend upstream's Usage panel, no second panel, no code until this lis
 Facts for the provider-interface decision (`docs/internals/voice-input.md`, `packages/client-runtime/src/voice-input/`). **Audio** comes from a `VoiceRecorder` the caller injects (`uri`, `prepareToRecordAsync`, `record({ forDuration })`, `stop`), plus callbacks for permission, configuring, releasing and deleting the recording and for reading and committing the composer draft (`controller.ts:46-62`). The only recorder in the repo is the mobile app's expo-audio one (`apps/mobile/src/features/voice-input/lazyVoiceRecorder.ts`). The recording is a file URI capped at 5 minutes, not a stream, and the controller exposes no audio level (the mobile UI computes its own waveform in `voiceInputMetering`). **Text** comes from a `VoiceTranscriber` (`transcription.ts`): `prepare()` returns `{ locale, transcribe(uri, { signal }) → Promise<string> }`, with cooperative cancellation and typed error codes, and `getTranscriber()` returning null means "unavailable". The text is committed into the draft only if the draft's owner and revision still match, and it never submits a turn. **Interface:** yes, `VoiceTranscriber` is a clean seam a desktop provider (Clide, or an OpenAI-compatible server) could implement, since it is file-in, text-out. But it has no streaming partials, no live level and no `onLevel`/`onState` events, so the blueprint's `start/stop/onLevel/onState/onTranscript` interface is wider than what upstream defines, and a voice glow's `level` would have to come from somewhere else. **iOS-only:** the single transcriber is `apps/mobile/src/native/voiceTranscription.ios.ts` (Apple on-device, via `@react-native-ai/apple`); the non-iOS file returns null; the doc says environment-backed transcription is not implemented. Nothing in `apps/web` or `apps/desktop` uses the controller. Not run on a device.
 
 ## Entries
+
+### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 3: your decisions, CI fallout, Node pin, push prep
+
+- Status: done. One pre-existing failing upstream test is listed, not fixed. Nothing pushed.
+- What changed:
+  - **Decisions recorded** in `blueprint.md` "Decisions so far": quota-low trigger, fallback tier by position, neutral default, beam follows the level sent (frozen per turn), upstream's ring kept as the idle indicator, moved-workflow fallout, Node pin, remote. The tier table gained a `neutral` row and a worked fallback table; the Composer FX slot table now has the ring in the idle state and the beam in the running state; the open questions were rewritten.
+  - **The failing test was caused by our move** (it passes on the pristine snapshot), so the one minimal upstream edit this session is in `scripts/notify-discord-release.test.ts`: its `release.yml` path now points at `.github/upstream-workflows/release.yml`, with a one-line comment. Docs naming the old workflow paths were updated: `docs/operations/development.md` (Windows lane link), `docs/operations/release.md` (all paths plus a Polaris note), `infra/relay/README.md`, `packaging/aur/README.md`.
+  - **A second failing test is pre-existing** and was left alone: `build-desktop-artifact.test.ts` "skips the primary native probe for cross-architecture Windows payloads". Listed by exact name in `AGENTS.md` and above.
+  - **`.nvmrc` is `24.13.1`**; `ci.yml` uses `node-version-file: .nvmrc` and also runs `scripts/notify-discord-release.test.ts`. `AGENTS.md` says to change `.nvmrc` and `engines.node` together.
+  - **Remote**: `upstream-snapshot`'s push URL was a live pingdotgg URL; it is now a dead value (see "Before you push").
+  - "Current state" above gained: where effective effort is resolved, and the push commands.
+- How verified (Node v24.13.1 via `fnm exec --using=24.13.1`):
+  - **Pristine snapshot**: `git worktree add --detach /tmp/polaris-snapshot-wt 3e6b450`, `pnpm install --ignore-scripts --frozen-lockfile` (49 s, to avoid rewriting the shared hook config). `vp test run scripts/notify-discord-release.test.ts` there: exit 0, 22/22. The same file on our tree: exit 1 (ENOENT on `.github/workflows/release.yml`) before the fix, 22/22 after it.
+  - `vp run --filter @t3tools/scripts test`: 1 failed, 337 passed, 2 skipped on our tree and identically on the snapshot, so pre-existing. The worktree was removed afterwards (`git worktree list` shows only the main checkout).
+  - **The full CI command list** (one script, exact commands from `ci.yml`), all exit 0: `vp i` 10 s, `ensure:electron`, lint 7 s, typecheck for contracts, shared, client-runtime, `t3` (24 s), web, desktop, tests for contracts (510), shared (1,105), client-runtime (1,998), and `scripts/notify-discord-release.test.ts` (22). The web and desktop typechecks took 0 to 1 s because `tsc` reuses gitignored `tsbuildinfo` files; they are real `tsc --noEmit` runs, and a fresh CI checkout does a full run.
+  - **`.nvmrc` support in `setup-vp`**: read `action.yml` and `README.md` from the `main` branch of `voidzero-dev/setup-vp` (read-only fetch): `node-version-file` accepts `.nvmrc`. This is the `main` docs, not the `@v1` tag, and it has not run on GitHub.
+  - **Fallback formula**: a throwaway script confirmed your example ([fast, balanced, deep] → low, high, max), that exact integer math equals the float form for every n from 2 to 60, and that results are monotonic with lowest → low and highest → max. The worked table in `blueprint.md` is its output.
+  - **References to `.github/workflows`**: searched tracked files (excluding the vendored `.repos` and the lockfile), including a looser search of scripts and configs. There are no CODEOWNERS, dependabot or renovate files. Only the test and the four docs above needed changes.
+  - **Pre-push checks**: only `ci.yml` is in `.github/workflows`; secrets scan of added lines is clean; commit identity found (see "Before you push").
+  - `vp fmt --check` (run last): exit 0, "All matched files use the correct format" across 4,882 files, on Node 24.13.1.
+- Risks:
+  - **`ci.yml` has still never run on GitHub.** It now reads `.nvmrc` (24.13.1), which `setup-vp` documents as supported. The runner is Linux and I verified on macOS.
+  - **`build-desktop-artifact.test.ts` fails here** (macOS arm64, 24.13.1) and on the snapshot. Not checked on Linux, where it may pass; it is not in CI either way.
+  - **Leftovers kept on purpose.** A comment at `packages/shared/src/cliRelease.ts:16` still says `.github/workflows/release.yml` (upstream source, comment only). The inert copies in `.github/upstream-workflows/` still refer to each other as `./.github/workflows/...` (for example `uses: ./.github/workflows/release-desktop.yml`); harmless while inert, broken if someone moves them back.
+  - **`vp`'s own Node shim checks `engines.node` before `.nvmrc`**, so a local `vp` may use a newer 24.x than CI's 24.13.1.
+  - **Two interpretations of yours** are flagged in `blueprint.md` Open questions: "general quota" (I read: every quota window other than the 5-hour `session` one) and "the level sent" (I read: the level id in the turn's selection plus the keyword-in-text override, not the API value after `effortMap`).
+  - **The effort-resolution facts are from reading source**, not from a running turn.
+  - **Push size and identity**: about 436 MiB and 4,769 commits, and the commit identity is a private-relay Apple ID address from your global git config (see "Before you push").
+  - Still not exercised: the Usage page with real data, an agent turn, the desktop app.
+- Next action: Human: work through "Before you push" in "Current state" (check the commit identity first), push, and watch the first `ci.yml` run. After that, an agent starts v1 item 2 (Discord Rich Presence) with a read-only plan: read `apps/desktop/src/main.ts`, `apps/desktop/src/ipc/` and `apps/desktop/src/settings/`, find where an opt-in, desktop-only setting and a main-process service would live, and report before writing code (the implementation needs the Discord Application ID).
+- Open questions: all in `blueprint.md` → "Open questions". New or still open, highest priority first: (1) "the level sent" for Claude: level id (my reading) or API value after `effortMap`; (2) quota-low flash: confirm "general quota", whether it applies to the active provider only, how long it flashes, whether it overrides the tier beam, whether 20% is a setting; (3) fix, replace or delete `.cursor/rules/cursor-cloud.mdc`; (4) voice provider interface; (5) the git-text-generation double read of `AGENTS.md`/`CLAUDE.md`. Earlier ones still open: Discord Application ID, app name and branding, desktop vs `npx`, Clide API port.
 
 ### 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 2: CI, your six decisions, Node 24 verification, dev boot
 
