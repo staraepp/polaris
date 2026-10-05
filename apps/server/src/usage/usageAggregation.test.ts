@@ -113,6 +113,17 @@ describe("UsageAggregator", () => {
     expect(result.buckets[0]?.totals.outputTokens).toBe(50);
   });
 
+  it("sums tool calls and omits them when there are none (Polaris)", () => {
+    const { buckets } = aggregate([
+      record({ toolCalls: 2 }),
+      record({ toolCalls: 3 }),
+      record({ model: "claude-other" }),
+    ]);
+    const byModel = new Map(buckets.map((bucket) => [bucket.model, bucket]));
+    expect(byModel.get("claude-fable-5")?.toolCalls).toBe(5);
+    expect(byModel.get("claude-other")).not.toHaveProperty("toolCalls");
+  });
+
   it("still sums records that carry no dedupe key", () => {
     const result = aggregate([record(), record()]);
 

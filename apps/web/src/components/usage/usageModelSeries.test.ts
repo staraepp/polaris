@@ -62,6 +62,25 @@ describe("buildModelTrend", () => {
     expect(trend.series.some((series) => series.model === "idle")).toBe(false);
   });
 
+  it("charts tool calls per model (Polaris)", () => {
+    const withTools: DailyTotals = {
+      day: "2026-01-02",
+      costUsd: 1,
+      totalTokens: 1,
+      byProvider: new Map(),
+      byModel: new Map([
+        [
+          "claude opus",
+          { provider: "claude", model: "opus", costUsd: 1, totalTokens: 1, toolCalls: 6 },
+        ],
+        ["claude haiku", { provider: "claude", model: "haiku", costUsd: 1, totalTokens: 1 }],
+      ]),
+    };
+    const trend = buildModelTrend({ days, daily: [withTools], metric: "toolCalls" });
+    expect(trend.series.map((series) => [series.model, series.total])).toEqual([["opus", 6]]);
+    expect(trend.columns.map((column) => column.total)).toEqual([0, 6, 0]);
+  });
+
   it("groups long windows into weekly columns", () => {
     const longDays = Array.from({ length: 60 }, (_, index) => {
       const date = new Date(Date.UTC(2026, 0, 1 + index));

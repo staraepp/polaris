@@ -34,6 +34,11 @@ export interface UsageRecord {
    * unique and needs no dedup.
    */
   readonly dedupeKey: string | null;
+  /**
+   * Tool calls the model asked for in this response (Polaris). Only Claude
+   * Code and Codex are counted. Absent when zero.
+   */
+  readonly toolCalls?: number;
 }
 
 const EMPTY_TOTALS: UsageTokenTotals = {
@@ -138,6 +143,7 @@ export function parseClaudeRecord(parsed: unknown): UsageRecord | null {
     messageId === null && requestId === null ? null : `${messageId ?? ""}:${requestId ?? ""}`;
 
   const cost = record["costUSD"];
+  const toolCalls = countClaudeToolUses(messageRecord["content"]);
 
   return {
     provider: "claude",
@@ -155,7 +161,24 @@ export function parseClaudeRecord(parsed: unknown): UsageRecord | null {
     reportedCostUsd: typeof cost === "number" && Number.isFinite(cost) ? cost : null,
     speed: usageRecord["speed"] === "fast" ? "fast" : "standard",
     dedupeKey,
+    ...(toolCalls > 0 ? { toolCalls } : {}),
   };
+}
+
+/**
+ * Counts `tool_use` blocks (and server-side tools such as web search) in one
+ * record's content. Each content block is its own record, so the within-file
+ * dedupe sums the counts of the repeats it drops into the record it keeps.
+ */
+function countClaudeToolUses(content: unknown): number {
+  if (!Array.isArray(content)) return 0;
+  let count = 0;
+  for (const block of content) {
+    if (typeof block !== "object" || block === null) continue;
+    const type = (block as Record<string, unknown>)["type"];
+    if (type === "tool_use" || type === "server_tool_use") count += 1;
+  }
+  return count;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -179,6 +202,8 @@ export interface CodexScanState {
   /** While true, leading usage events are re-stamped copies of parent history. */
   suppressingForkCopies: boolean;
   forkCopyAnchorMs: number;
+  /** Tool calls seen since the last emitted usage event; they ride on the next one. */
+  pendingToolCalls: number;
 }
 
 export function initialCodexScanState(): CodexScanState {
@@ -190,7 +215,24 @@ export function initialCodexScanState(): CodexScanState {
     sawSessionMeta: false,
     suppressingForkCopies: false,
     forkCopyAnchorMs: 0,
+    pendingToolCalls: 0,
   };
+}
+
+/** Codex `response_item` payload types that are a tool call by the model. */
+const CODEX_TOOL_CALL_TYPES: ReadonlySet<unknown> = new Set([
+  "function_call",
+  "custom_tool_call",
+  "local_shell_call",
+  "web_search_call",
+]);
+
+/**
+ * Cheap gate for Codex tool-call lines, which carry no `token_count`. The
+ * `_call"` suffix matches the payload types above but not `*_call_output`.
+ */
+export function mightBeCodexToolCall(line: string): boolean {
+  return line.includes('_call"');
 }
 
 /**
@@ -270,6 +312,21 @@ export function parseCodexRecord(parsed: unknown, state: CodexScanState): UsageR
     return null;
   }
 
+  if (record["type"] === "response_item" && CODEX_TOOL_CALL_TYPES.has(payloadType)) {
+    // Copied parent history lands in the fork-instant burst; it was counted
+    // in the parent's own rollout.
+    const toolTimestampMs = parseTimestampMs(record["timestamp"]);
+    if (
+      state.suppressingForkCopies &&
+      toolTimestampMs !== null &&
+      toolTimestampMs - state.forkCopyAnchorMs < FORK_COPY_MAX_GAP_MS
+    ) {
+      return null;
+    }
+    state.pendingToolCalls += 1;
+    return null;
+  }
+
   if (payloadType !== "token_count") return null;
 
   const info = payloadRecord["info"];
@@ -298,6 +355,7 @@ export function parseCodexRecord(parsed: unknown, state: CodexScanState): UsageR
   if (state.suppressingForkCopies) {
     if (timestampMs - state.forkCopyAnchorMs < FORK_COPY_MAX_GAP_MS) {
       state.forkCopyAnchorMs = timestampMs;
+      state.pendingToolCalls = 0;
       return null;
     }
     state.suppressingForkCopies = false;
@@ -320,6 +378,9 @@ export function parseCodexRecord(parsed: unknown, state: CodexScanState): UsageR
 
   if (totalTokens(totals) === 0) return null;
 
+  const toolCalls = state.pendingToolCalls;
+  state.pendingToolCalls = 0;
+
   return {
     provider: "codex",
     timestampMs,
@@ -332,6 +393,7 @@ export function parseCodexRecord(parsed: unknown, state: CodexScanState): UsageR
     // Events surviving the fork-copy suppression above are unique to this
     // rollout, so they need no global dedup.
     dedupeKey: null,
+    ...(toolCalls > 0 ? { toolCalls } : {}),
   };
 }
 

@@ -67,6 +67,8 @@ export interface DailyModelTotals {
   readonly model: string;
   readonly costUsd: number;
   readonly totalTokens: number;
+  /** Tool calls, from servers that count them (Polaris). */
+  readonly toolCalls?: number;
 }
 
 export interface DailyTotals {
@@ -130,6 +132,8 @@ export interface MergedUsage {
   readonly totalTokens: number;
   readonly records: number;
   readonly sessions: number;
+  /** Tool calls across the window; 0 when no server counts them (Polaris). */
+  readonly toolCalls: number;
   readonly providers: readonly ProviderTotals[];
   readonly models: readonly ModelTotals[];
   readonly daily: readonly DailyTotals[];
@@ -337,6 +341,7 @@ const EMPTY_MERGED: MergedUsage = {
   totalTokens: 0,
   records: 0,
   sessions: 0,
+  toolCalls: 0,
   providers: [],
   models: [],
   daily: [],
@@ -403,6 +408,7 @@ export function mergeUsage(
   let reasoningTokens = 0;
   let records = 0;
   let sessions = 0;
+  let toolCalls = 0;
   let cacheSavingsUsd = 0;
   let providerReportedRecords = 0;
   let unpricedRecords = 0;
@@ -433,7 +439,13 @@ export function mergeUsage(
       byProvider: Map<UsageProviderKind, { costUsd: number; totalTokens: number }>;
       byModel: Map<
         string,
-        { provider: UsageProviderKind; model: string; costUsd: number; totalTokens: number }
+        {
+          provider: UsageProviderKind;
+          model: string;
+          costUsd: number;
+          totalTokens: number;
+          toolCalls: number;
+        }
       >;
     }
   >();
@@ -482,6 +494,7 @@ export function mergeUsage(
       outputTokens += bucket.totals.outputTokens;
       reasoningTokens += bucket.totals.reasoningTokens;
       records += bucket.records;
+      toolCalls += bucket.toolCalls ?? 0;
       unpricedRecords += bucket.unpricedRecords;
       if (bucket.costSource === "providerReported") providerReportedRecords += bucket.records;
       if (bucket.categoryCostUsd !== undefined) {
@@ -548,9 +561,11 @@ export function mergeUsage(
         model: bucket.model,
         costUsd: 0,
         totalTokens: 0,
+        toolCalls: 0,
       };
       dayModel.costUsd += bucket.costUsd;
       dayModel.totalTokens += tokens;
+      dayModel.toolCalls += bucket.toolCalls ?? 0;
       day.byModel.set(modelKey, dayModel);
       day.costUsd += bucket.costUsd;
       day.totalTokens += tokens;
@@ -635,6 +650,7 @@ export function mergeUsage(
     totalTokens,
     records,
     sessions,
+    toolCalls,
     providers,
     models,
     daily,

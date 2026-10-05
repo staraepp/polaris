@@ -137,6 +137,12 @@ export const UsageBucket = Schema.Struct({
   unpricedRecords: NonNegativeInt,
   /** Distinct transcript sessions that contributed to this cell. */
   sessions: NonNegativeInt,
+  /**
+   * Tool calls the model asked for in these records (Polaris). Counted from
+   * Claude Code and Codex transcripts only. Absent when zero, when the
+   * provider is not counted, or when the server predates it.
+   */
+  toolCalls: Schema.optional(NonNegativeInt),
 });
 export type UsageBucket = typeof UsageBucket.Type;
 

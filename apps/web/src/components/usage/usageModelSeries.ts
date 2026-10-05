@@ -1,7 +1,7 @@
 import type { UsageProviderKind } from "@t3tools/contracts";
 import type { DailyTotals } from "@t3tools/shared/usageMerge";
 
-export type ModelTrendMetric = "cost" | "tokens";
+export type ModelTrendMetric = "cost" | "tokens" | "toolCalls";
 
 export interface ModelTrendSeries {
   readonly key: string;
@@ -44,8 +44,12 @@ export function buildModelTrend(input: {
   readonly top?: number;
 }): ModelTrend {
   const top = input.top ?? MODEL_TREND_TOP;
-  const valueOf = (entry: { costUsd: number; totalTokens: number }) =>
-    input.metric === "cost" ? entry.costUsd : entry.totalTokens;
+  const valueOf = (entry: { costUsd: number; totalTokens: number; toolCalls?: number }) =>
+    input.metric === "cost"
+      ? entry.costUsd
+      : input.metric === "tokens"
+        ? entry.totalTokens
+        : (entry.toolCalls ?? 0);
   const byDay = new Map(input.daily.map((entry) => [entry.day, entry] as const));
 
   const totals = new Map<string, { provider: UsageProviderKind; model: string; total: number }>();

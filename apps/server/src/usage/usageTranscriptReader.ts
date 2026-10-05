@@ -25,6 +25,7 @@ import { createTranscriptJsonReader } from "../project/AgentSessionJson.ts";
 
 import {
   initialCodexScanState,
+  mightBeCodexToolCall,
   mightCarryUsage,
   parseClaudeLine,
   parseClaudeRecord,
@@ -93,6 +94,7 @@ type SelectedFields = { readonly [key: string]: true | SelectedFields };
 
 // Keep the fields consumed by usageTranscripts, including reducer state and
 // dedupe/cost metadata. A selected subtree (usage) keeps future token fields.
+// `"*"` matches any array index (Claude content blocks, for tool counts).
 const USAGE_FIELDS: Record<"claude" | "codex" | "grok", SelectedFields> = {
   claude: {
     type: true,
@@ -100,7 +102,7 @@ const USAGE_FIELDS: Record<"claude" | "codex" | "grok", SelectedFields> = {
     requestId: true,
     sessionId: true,
     costUSD: true,
-    message: { id: true, model: true, usage: true },
+    message: { id: true, model: true, usage: true, content: { "*": { type: true } } },
   },
   codex: {
     type: true,
@@ -132,6 +134,10 @@ function selectUsageFields(provider: UsageProviderKind) {
     let selected: true | SelectedFields = fields;
     for (const key of path) {
       if (selected === true) return true;
+      if (typeof key === "number" && Object.hasOwn(selected, "*")) {
+        selected = selected["*"]!;
+        continue;
+      }
       if (typeof key !== "string" || !Object.hasOwn(selected, key)) return false;
       selected = selected[key]!;
     }
@@ -297,7 +303,8 @@ export async function readTranscriptRecords(
           !mightCarryUsage(line, provider) &&
           !line.includes('"turn_context"') &&
           !line.includes('"thread_settings_applied"') &&
-          !line.includes('"session_meta"')
+          !line.includes('"session_meta"') &&
+          !mightBeCodexToolCall(line)
         ) {
           return;
         }

@@ -690,6 +690,15 @@ export function UsagePage() {
                   />
                 )}
 
+                {isPast24Hours || merged.toolCalls === 0 ? null : (
+                  <UsageModelTrend
+                    days={days}
+                    daily={merged.daily}
+                    metric="toolCalls"
+                    title="Tool calls over time"
+                  />
+                )}
+
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-sm font-medium text-foreground">Breakdown</h2>

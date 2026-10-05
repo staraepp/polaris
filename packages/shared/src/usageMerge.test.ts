@@ -165,11 +165,36 @@ describe("mergeUsage", () => {
       model: "claude-fable-5",
       costUsd: 10,
       totalTokens: 1160,
+      toolCalls: 0,
     });
     expect(first?.byModel?.get("claude claude-opus-5-5")?.costUsd).toBe(30);
     expect(first?.byModel?.get("codex gpt-6")?.costUsd).toBe(7);
     const second = merged.daily.find((day) => day.day === "2026-08-08");
     expect([...(second?.byModel?.keys() ?? [])]).toEqual(["claude claude-fable-5"]);
+  });
+
+  it("sums tool calls per day, per model and overall (Polaris)", () => {
+    const merged = mergeUsage(
+      [
+        environment(
+          "env-a",
+          summary(
+            [
+              bucket({ toolCalls: 3 }),
+              bucket({ model: "claude-opus-5-5", toolCalls: 2 }),
+              bucket({ day: "2026-08-08" as UsageDay }),
+            ],
+            [{ provider: "claude", hostId: "mac", homePath: "/a/.claude" }],
+          ),
+        ),
+      ],
+      USAGE_CONTRACT_VERSION,
+    );
+
+    expect(merged.toolCalls).toBe(5);
+    const first = merged.daily.find((day) => day.day === "2026-08-07");
+    expect(first?.byModel?.get("claude claude-fable-5")?.toolCalls).toBe(3);
+    expect(first?.byModel?.get("claude claude-opus-5-5")?.toolCalls).toBe(2);
   });
 
   it("counts a shared transcript directory once", () => {

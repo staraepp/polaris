@@ -1,6 +1,6 @@
 import type { DailyTotals } from "@t3tools/shared/usageMerge";
-import { formatDayShort, formatTokens, formatUsd } from "@t3tools/shared/usageFormat";
-import { useMemo, useState } from "react";
+import { formatCount, formatDayShort, formatTokens, formatUsd } from "@t3tools/shared/usageFormat";
+import { useId, useMemo, useState } from "react";
 
 import { PROVIDER_PRESENTATION } from "./usageProviders";
 import {
@@ -25,8 +25,15 @@ export function seriesColor(series: Pick<ModelTrendSeries, "provider" | "shade">
 }
 
 function format(metric: ModelTrendMetric, value: number): string {
-  return metric === "cost" ? formatUsd(value) : formatTokens(value);
+  if (metric === "cost") return formatUsd(value);
+  return metric === "tokens" ? formatTokens(value) : formatCount(value);
 }
+
+const METRIC_LABEL: Record<ModelTrendMetric, string> = {
+  cost: "Cost",
+  tokens: "Tokens",
+  toolCalls: "Tool calls",
+};
 
 function columnLabel(column: ModelTrendColumn, columnDays: number): string {
   return columnDays === 1 || column.start === column.end
@@ -38,11 +45,14 @@ export function UsageModelTrend({
   days,
   daily,
   metric,
+  title = "Models over time",
 }: {
   readonly days: readonly string[];
   readonly daily: readonly DailyTotals[];
   readonly metric: ModelTrendMetric;
+  readonly title?: string;
 }) {
+  const headingId = useId();
   const trend = useMemo(() => buildModelTrend({ days, daily, metric }), [days, daily, metric]);
   const [active, setActive] = useState<number | null>(null);
   const ticks = useMemo(() => niceTicks(trend.peak), [trend.peak]);
@@ -57,13 +67,13 @@ export function UsageModelTrend({
   const unit = trend.columnDays === 1 ? "day" : "week";
 
   return (
-    <section className="flex flex-col gap-3" aria-labelledby="usage-model-trend-heading">
+    <section className="flex flex-col gap-3" aria-labelledby={headingId}>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id="usage-model-trend-heading" className="text-sm font-medium text-foreground">
-          Models over time
+        <h2 id={headingId} className="text-sm font-medium text-foreground">
+          {title}
         </h2>
         <span className="text-xs text-muted-foreground">
-          {metric === "cost" ? "Cost" : "Tokens"} per {unit}
+          {METRIC_LABEL[metric]} per {unit}
         </span>
       </div>
 
@@ -72,7 +82,7 @@ export function UsageModelTrend({
           viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
           preserveAspectRatio="none"
           role="img"
-          aria-label={`${metric === "cost" ? "Cost" : "Tokens"} per ${unit} by model. Top model: ${trend.series[0]?.model ?? "none"}, ${format(metric, trend.series[0]?.total ?? 0)}.`}
+          aria-label={`${METRIC_LABEL[metric]} per ${unit} by model. Top model: ${trend.series[0]?.model ?? "none"}, ${format(metric, trend.series[0]?.total ?? 0)}.`}
           tabIndex={0}
           onPointerLeave={() => setActive(null)}
           onBlur={() => setActive(null)}
@@ -219,7 +229,9 @@ export function UsageModelTrend({
       </ul>
 
       <table className="sr-only">
-        <caption>Usage by model per {unit}</caption>
+        <caption>
+          {METRIC_LABEL[metric]} by model per {unit}
+        </caption>
         <thead>
           <tr>
             <th scope="col">Period</th>

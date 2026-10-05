@@ -26,6 +26,10 @@ import type { CodexScanState, UsageRecord, UsageSpeed } from "./usageTranscripts
 // v4: records carry Claude fast mode, which v3 rows never captured.
 // v5: Codex records carry their service tier. v4 rows store speed the same
 // way, so v4 entries still load; see `decodeScanCache` for v4 Codex entries.
+// Polaris: records may carry a 12th column, their tool call count, and files a
+// `tc` flag once parsed with tool counting. Both are optional, so the format
+// stays v5 and saved usage of deleted transcripts is never dropped; see
+// `decodeScanCache` for files saved without the flag.
 const USAGE_SCAN_CACHE_VERSION = 5 as const;
 const SPEED_COMPATIBLE_SINCE_VERSION = 4;
 
@@ -79,6 +83,7 @@ type SerializedRecord = readonly [
   dedupeKey: string | null,
   reportedCostUsd: number | null,
   speed: number,
+  toolCalls?: number,
 ];
 
 interface SerializedFile {
@@ -94,6 +99,8 @@ interface SerializedFile {
   readonly gh: number;
   /** Codex reducer state at `o`; `null` for stateless providers. */
   readonly cs: CodexScanState | null;
+  /** 1 when the records were parsed with tool counting (Polaris). */
+  readonly tc?: 1;
 }
 
 interface SerializedCache {
@@ -125,19 +132,24 @@ function intern(table: string[], index: Map<string, number>, value: string): num
 }
 
 function serializeFile(entry: CachedFile, tables: InternTables): SerializedFile {
-  const serializeRecord = (record: UsageRecord): SerializedRecord => [
-    record.timestampMs,
-    intern(tables.models, tables.modelIndex, record.model),
-    intern(tables.sessions, tables.sessionIndex, record.sessionId),
-    record.totals.uncachedInputTokens,
-    record.totals.cachedInputTokens,
-    record.totals.cacheCreationTokens,
-    record.totals.outputTokens,
-    record.totals.reasoningTokens,
-    record.dedupeKey,
-    record.reportedCostUsd,
-    SPEEDS.indexOf(record.speed),
-  ];
+  const serializeRecord = (record: UsageRecord): SerializedRecord => {
+    const row = [
+      record.timestampMs,
+      intern(tables.models, tables.modelIndex, record.model),
+      intern(tables.sessions, tables.sessionIndex, record.sessionId),
+      record.totals.uncachedInputTokens,
+      record.totals.cachedInputTokens,
+      record.totals.cacheCreationTokens,
+      record.totals.outputTokens,
+      record.totals.reasoningTokens,
+      record.dedupeKey,
+      record.reportedCostUsd,
+      SPEEDS.indexOf(record.speed),
+    ] as const;
+    return record.toolCalls === undefined || record.toolCalls === 0
+      ? row
+      : [...row, record.toolCalls];
+  };
   return {
     s: entry.size,
     m: entry.mtimeMs,
@@ -148,6 +160,7 @@ function serializeFile(entry: CachedFile, tables: InternTables): SerializedFile 
     gl: entry.position.guardLength,
     gh: entry.position.guardHash,
     cs: entry.position.codexState,
+    tc: 1,
   };
 }
 
@@ -258,6 +271,7 @@ export function decodeScanCache(document: unknown): ScanCache {
         dedupeKey,
         reportedCostUsd,
         speedIndex,
+        toolCalls,
       ] = row as SerializedRecord;
       const speed = typeof speedIndex === "number" ? SPEEDS[speedIndex] : undefined;
 
@@ -291,6 +305,9 @@ export function decodeScanCache(document: unknown): ScanCache {
         reportedCostUsd: typeof reportedCostUsd === "number" ? reportedCostUsd : null,
         speed,
         dedupeKey: typeof dedupeKey === "string" ? dedupeKey : null,
+        ...(typeof toolCalls === "number" && Number.isSafeInteger(toolCalls) && toolCalls > 0
+          ? { toolCalls }
+          : {}),
       });
     }
     return records;
@@ -323,8 +340,12 @@ export function decodeScanCache(document: unknown): ScanCache {
     // v4 Codex records predate service tiers, so they all priced as standard.
     // Keep them, because the rollout may be gone, but make a live rollout
     // re-parse whole: no file has size -1, and a zero position cannot resume.
-    const legacyCodex = entry.p === "codex" && version < USAGE_SCAN_CACHE_VERSION;
-    const codexState = legacyCodex ? null : decodeCodexState(entry.cs);
+    // Polaris: a Claude or Codex file saved before tool counting re-parses the
+    // same way, so its tool calls appear. A deleted transcript keeps its saved
+    // usage, just without tool calls.
+    const legacyTools = entry.p !== "grok" && entry.tc !== 1;
+    const mustReparse = (entry.p === "codex" && version < USAGE_SCAN_CACHE_VERSION) || legacyTools;
+    const codexState = mustReparse ? null : decodeCodexState(entry.cs);
     if (codexState === undefined) continue;
 
     const provider: UsageProviderKind = entry.p;
@@ -333,12 +354,12 @@ export function decodeScanCache(document: unknown): ScanCache {
     if (records === null || tailRecords === null) continue;
 
     cache.set(path, {
-      size: legacyCodex ? -1 : entry.s,
+      size: mustReparse ? -1 : entry.s,
       mtimeMs: entry.m,
       provider,
       records,
       tailRecords,
-      position: legacyCodex
+      position: mustReparse
         ? { resumeOffset: 0, guardLength: 0, guardHash: 0, codexState: null }
         : { resumeOffset: entry.o, guardLength: entry.gl, guardHash: entry.gh, codexState },
     });
@@ -364,7 +385,9 @@ function decodeCodexState(value: unknown): CodexScanState | null | undefined {
     typeof state.sawSessionMeta !== "boolean" ||
     typeof state.suppressingForkCopies !== "boolean" ||
     typeof state.forkCopyAnchorMs !== "number" ||
-    !Number.isFinite(state.forkCopyAnchorMs)
+    !Number.isFinite(state.forkCopyAnchorMs) ||
+    (state.pendingToolCalls !== undefined &&
+      (typeof state.pendingToolCalls !== "number" || !Number.isSafeInteger(state.pendingToolCalls)))
   ) {
     return undefined;
   }
@@ -376,6 +399,7 @@ function decodeCodexState(value: unknown): CodexScanState | null | undefined {
     sawSessionMeta: state.sawSessionMeta,
     suppressingForkCopies: state.suppressingForkCopies,
     forkCopyAnchorMs: state.forkCopyAnchorMs,
+    pendingToolCalls: Math.max(0, state.pendingToolCalls ?? 0),
   };
 }
 
@@ -403,10 +427,22 @@ export function dedupeWithinFile(
   seen: Set<string> = new Set(),
 ): readonly UsageRecord[] {
   const kept: UsageRecord[] = [];
+  // Where each key's record sits in `kept`, so a dropped repeat can hand its
+  // tool calls over: Claude writes one record per content block, and only the
+  // tool_use blocks carry them (Polaris).
+  const keptIndex = new Map<string, number>();
   for (const record of records) {
     if (record.dedupeKey !== null) {
-      if (seen.has(record.dedupeKey)) continue;
+      if (seen.has(record.dedupeKey)) {
+        const at = keptIndex.get(record.dedupeKey);
+        if (at !== undefined && record.toolCalls !== undefined && record.toolCalls > 0) {
+          const first = kept[at]!;
+          kept[at] = { ...first, toolCalls: (first.toolCalls ?? 0) + record.toolCalls };
+        }
+        continue;
+      }
       seen.add(record.dedupeKey);
+      keptIndex.set(record.dedupeKey, kept.length);
     }
     kept.push(record);
   }

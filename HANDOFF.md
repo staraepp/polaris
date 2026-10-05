@@ -181,10 +181,11 @@ Contract changes are allowed when additive and tested, and are listed under "Con
 
 Additive only (new optional fields, new RPCs or commands), each covered by tests.
 
-| File                                    | Change                                                                                                                | Reason                                                                 |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `packages/contracts/src/settings.ts`    | `ClientSettings.quotaLowThresholdPercent` (Int 0..50, default 20; optional in the patch) and the exported option list | v1 leftover: the quota warning threshold as a setting (0 turns it off) |
-| `packages/contracts/src/keybindings.ts` | new command `usage.period.year` (default binding Mod+Shift+5 in `packages/shared/src/keybindings.ts`)                 | v1 leftover: one-year Usage period                                     |
+| File                                    | Change                                                                                                                                                                         | Reason                                                                 |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.quotaLowThresholdPercent` (Int 0..50, default 20; optional in the patch) and the exported option list                                                          | v1 leftover: the quota warning threshold as a setting (0 turns it off) |
+| `packages/contracts/src/keybindings.ts` | new command `usage.period.year` (default binding Mod+Shift+5 in `packages/shared/src/keybindings.ts`)                                                                          | v1 leftover: one-year Usage period                                     |
+| `packages/contracts/src/usage.ts`       | `UsageBucket.toolCalls` (optional non-negative Int; absent when zero or not counted). No contract version bump: the module's own rule says optional bucket fields are additive | v1 leftover: tool calls over time                                      |
 
 ## New dependencies
 
@@ -202,6 +203,13 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — v1 item 4: tool calls over time
+
+- Done: usage buckets carry an optional `toolCalls` count (contract change below). Claude: `tool_use` and `server_tool_use` blocks per record. Claude writes one record per content block, so `dedupeWithinFile` now hands a dropped repeat's count to the record it keeps; the cross-file dedupe still drops copied messages whole. Codex: `response_item` tool-call payloads (`function_call`, `custom_tool_call`, `local_shell_call`, `web_search_call`) ride on the next `token_count` (`CodexScanState.pendingToolCalls`); copies in a fork's opening burst are dropped like copied usage. The reader's Codex gate also admits `_call"` lines, and the streaming selector keeps Claude `message.content[*].type` (`"*"` matches array indexes). Merge: `MergedUsage.toolCalls` and `DailyModelTotals.toolCalls`. UI: a "Tool calls over time" chart on Usage (the models chart with `metric="toolCalls"`), shown when anything was counted.
+- Per-driver decision: counted for Claude Code and Codex. Not counted for Grok, Cursor, OpenCode or Antigravity (their usage sources are read elsewhere and carry no per-call data we parse); Pi and ACP have no usage source.
+- Scan cache: still v5 and the same file. Rows may carry a 12th column; files gain `tc: 1`. A Claude or Codex file saved without the flag re-parses once (a one-time cold scan of the window) so its tool calls show; a deleted transcript keeps its saved usage, just without tool calls. An older server sharing the state dir ignores both and drops them on its next write, which only costs another re-parse.
+- Tests: 2 contract, 3 parser, 1 reader, 3 cache, 1 aggregation, 1 merge, 1 series; the streaming test now expects `toolCalls: 1` on its large `tool_use` record.
 
 ### 2026-10-05 — Claude (session 8) — v1 item 3: models over time
 
@@ -227,16 +235,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Decisions: no dependency (the `border-beam` candidate has no custom colors and the own-CSS route was already on the table); the flash uses `--destructive` and the accent `--warning` so themes can retune both; with the accent on, the "high" beam (sunset) sits close to amber, which is how the blueprint's palette reads and can be tuned in the CSS variables.
 - Left over: the voice layer is a placeholder (the web composer has no voice capture in v1); the flash was captured mid-pulse in the dark screenshot and reads orange next to the accent, so judge it live.
 
-### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 3: quota-low signal
-
-- Status: done and committed locally. Logic and hook only; the pixels come in Phase 4.
-- What: `apps/web/src/polaris/quota/quotaLow.ts` is the pure state machine: threshold 20% remaining (constant for now), hysteresis +5, one disarm flag per window id, a flash timestamp per crossing, re-arm on provider switch (a switch to a provider that is already low flashes once), windows that vanish are forgotten, and the step returns the previous object when nothing changed. It watches every window the active provider reports, the 5-hour `session` one included (your default), and is silent when the account cannot report limits or the last probe failed. `useQuotaLowSignal(provider)` adds the provider snapshot and the 4-second flash timer (`flashing` is always false under reduced motion) and returns `{ low, flashing, lowWindows, thresholdPercent }`; `lowWindows` is the feed for a usage meter.
-- Tests: 11 for the machine, 5 jsdom tests for the hook with fake timers and a `matchMedia` stub.
-- Decisions: threshold stays a constant because a client setting is a contract change (listed under "Needs Star's approval"). The hook keeps its memory in React state and steps in an effect; the lint reports two `set-state-in-effect` warnings there, accepted because the step needs the previous state and the snapshot is an external system.
-- Left over: the usage meter in the input area is a backlog item ("after the graph exists"), so nothing renders `lowWindows` yet; Phase 4 consumes `low` and `flashing`.
-
 ## History
 
+- 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 3: quota-low signal. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 2: Discord Rich Presence. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 0: known issues, and Phase 1: Usage activity heatmap. Rolled up; see `git log`.
 - 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 6: display-level rebrand to Polaris, green accent, placeholder logo. Rolled up; see `git log`.
