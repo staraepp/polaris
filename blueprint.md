@@ -77,12 +77,12 @@ Decided 2026-10-05 (session 7, defaults given by the human for the unattended v1
 
 1. **Agent-friendly repo**: `AGENTS.md`, `HANDOFF.md`, `docs/`.
    - Done when: a fresh agent can run, test and extend the repo from `AGENTS.md` alone.
-2. **Discord Rich Presence** (desktop shell).
+2. **Discord Rich Presence** (desktop shell). **Built in session 7**, inert until the Application ID is set.
    - Opt-in toggle, off by default. Silent when Discord is absent. Reconnects with backoff. Generic text only. No-op on web and mobile.
    - Needs a registered Discord Application ID (human task; not a secret).
-3. **Usage / token / cost graph** (flagship).
+3. **Usage / token / cost graph** (flagship). **First slice built in session 7**: the activity heatmap, streaks and a month projection on the Usage page.
    - First task: check what token, cost and tool-call data the server already exposes per turn. If it does not, report back before building.
-   - Done when: a panel shows tokens, cost and tool calls over time per thread and overall, plus a GitHub-style activity heatmap.
+   - Done when: a panel shows tokens, cost and tool calls over time per thread and overall, plus a GitHub-style activity heatmap. Still missing: tool calls and per-thread views (need a contract change, see `HANDOFF.md`).
 
 ## Spike (parallel, no code)
 

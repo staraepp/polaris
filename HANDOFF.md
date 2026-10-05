@@ -19,14 +19,14 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 ## Current state
 
 - Fork created: 2026-10-05 from `pingdotgg/t3code` `main` at `3e6b45028ceec5820dacb37dc3852470ebdc9411`. Remote `upstream-snapshot` is reference-only. There is no `origin` and nothing has been pushed.
-- v1 progress (`blueprint.md` "v1 scope"): item 1 (agent-friendly repo) done and verified on Node 24, including a real dev boot. Item 2 (Discord) and item 3 (usage graph) not started. Item 3 will extend upstream's Usage panel; the gap list is below.
+- v1 progress (`blueprint.md` "v1 scope"): item 1 (agent-friendly repo) done. Item 2 (Discord Rich Presence) built in session 7 and inert until an Application ID is set. Item 3 (usage graph) has its first slice (activity heatmap, streaks, month projection); tool-call and per-thread views wait on a contract change. Also built in session 7: the quota-low signal and the composer FX slot (beam, flash, accent), which `blueprint.md` had filed under v2 but the human asked for with explicit defaults.
 - CI: `.github/workflows/ci.yml` (Polaris, verified commands only, Node from `.nvmrc`). Never executed on GitHub yet.
 - Cursor: `.cursor/rules/cursor-cloud.mdc` is a five-line pointer to `AGENTS.md`. Upstream's original notes are `docs/upstream-cursor-cloud.md` (reference only, not instructions). The Cursor provider is untouched and stays (decided in session 5). An existing per-provider "Enable" switch hides a provider from the picker; see "Hiding a provider" below.
 - Fonts: upstream's existing customization is the v1 baseline (decided in session 5, nothing to build) and was checked in the running app; see "Fonts page" below. Per-theme fonts are v2, mobile is out of v1, and any bundled typeface must be OFL or Apache-style licensed.
 - Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
 - Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
 - Rebrand (session 6): the user-facing name is **Polaris** and the accent is emerald green (tokens in `apps/web/src/index.css`). Internal identifiers are still upstream's on purpose; see the session 6 entry for the list. The logo is a placeholder (a "P" with a north star in its counter); the same entry lists every file to swap for final art.
-- Test status on this Mac (session 6, final tree): contracts 510, shared 1,105, client-runtime 1,998, desktop 1,399 (+44 skipped) and web 5,805 all pass. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
+- Test status on this Mac (session 7, final tree): contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
 
 ### Effective effort: where it is resolved today
 
@@ -124,6 +124,27 @@ Decision: extend upstream's Usage panel, no second panel, no code until this lis
 ### Voice: upstream's voice-input controller
 
 Facts for the provider-interface decision (`docs/internals/voice-input.md`, `packages/client-runtime/src/voice-input/`). **Audio** comes from a `VoiceRecorder` the caller injects (`uri`, `prepareToRecordAsync`, `record({ forDuration })`, `stop`), plus callbacks for permission, configuring, releasing and deleting the recording and for reading and committing the composer draft (`controller.ts:46-62`). The only recorder in the repo is the mobile app's expo-audio one (`apps/mobile/src/features/voice-input/lazyVoiceRecorder.ts`). The recording is a file URI capped at 5 minutes, not a stream, and the controller exposes no audio level (the mobile UI computes its own waveform in `voiceInputMetering`). **Text** comes from a `VoiceTranscriber` (`transcription.ts`): `prepare()` returns `{ locale, transcribe(uri, { signal }) → Promise<string> }`, with cooperative cancellation and typed error codes, and `getTranscriber()` returning null means "unavailable". The text is committed into the draft only if the draft's owner and revision still match, and it never submits a turn. **Interface:** yes, `VoiceTranscriber` is a clean seam a desktop provider (Clide, or an OpenAI-compatible server) could implement, since it is file-in, text-out. But it has no streaming partials, no live level and no `onLevel`/`onState` events, so the blueprint's `start/stop/onLevel/onState/onTranscript` interface is wider than what upstream defines, and a voice glow's `level` would have to come from somewhere else. **iOS-only:** the single transcriber is `apps/mobile/src/native/voiceTranscription.ios.ts` (Apple on-device, via `@react-native-ai/apple`); the non-iOS file returns null; the doc says environment-backed transcription is not implemented. Nothing in `apps/web` or `apps/desktop` uses the controller. Not run on a device.
+
+## Session 7 summary (unattended v1 run, 2026-10-05)
+
+**Shipped** (local commits on `main`, nothing pushed; see the phase entries below for details):
+
+| Commit       | What                                                                                                     |
+| ------------ | -------------------------------------------------------------------------------------------------------- |
+| `db6d7a83da` | Phase 0: `scripts/polaris-dev.mjs` (isolated dev stack, pair once), channel icon badges, green stage art |
+| `19bbc3747a` | Phase 1: Usage activity heatmap, streaks, month projection                                               |
+| `a8b986ec26` | lint fixes for the two above                                                                             |
+| `23d22a0f8a` | Phase 2: Discord Rich Presence (desktop, opt-in, own IPC client, inert until an Application ID is set)   |
+| `c1435c1b13` | Phase 3: quota-low state machine and hook                                                                |
+| `52e8b23236` | Phase 4: composer FX slot (effort beam derived on read, red flash, amber accent)                         |
+
+**Skipped, and why:** tool-call graphs, per-thread usage views, a 1y window button, per-model daily series and a quota-threshold setting all need a contract, keybinding-command or shared-shape change (listed under "Needs Star's approval"). A "working / idle" line in Discord presence needs a renderer signal that does not exist yet. The voice layer of the FX slot is a placeholder because the web composer has no voice capture in v1. The Electron smoke of the Discord switch and a live turn under the beam were not run (no Application ID; a live turn spends your quota).
+
+**Test status vs. baseline:** every client package suite passes (numbers in "Current state"); the server suite result is in "Current state" too, compared with the pre-rebrand baseline of 8 pre-existing failures; the scripts suite keeps its one known failure. `vp fmt --check` and `vp lint` pass with 0 errors.
+
+**Screenshots** (light and dark) in `../.playwright-mcp/`: `p7-01/02` Usage heatmap, `p7-03/04` green stage artwork, `p7-05/06` Discord setting, `p7-fx-*` every composer FX state.
+
+**Needs Star's approval** and **Questions for Star** follow the phase plan below; the pairing note answers your message from during the run.
 
 ## Phase plan (autonomous run, started 2026-10-05)
 
