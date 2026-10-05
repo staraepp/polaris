@@ -19,7 +19,7 @@ Status column: checked 2026-10-05 on Node 24.13.1 (CI's version) unless noted.
 | `vp run --filter @t3tools/scripts test`            | Whole scripts suite                                                                | 337 passed, **1 known failing**: see Known failing                             |
 | `vp lint --report-unused-disable-directives`       | Lint (= `vp run lint`)                                                             | verified: exit 0, 0 errors, 850 existing warnings, about 7 s                   |
 | `vp fmt --check`                                   | Format check, includes Markdown. Fix with `vp fmt <files>`                         | verified: exit 0                                                               |
-| `vp run dev --home-dir /tmp/polaris-dev`           | Server + web dev (`scripts/dev-runner.ts`)                                         | verified on 24.21.0: boots, see "Dev boot" below                               |
+| `vp run dev --home-dir /tmp/polaris-dev`           | Server + web dev (`scripts/dev-runner.ts`)                                         | verified on 24.21.0 and 24.13.1: boots, see "Dev boot"                         |
 | `vp run --filter @t3tools/desktop ensure:electron` | Make sure the Electron binary is present (CI runs it before typecheck)             | verified: exit 0                                                               |
 | `vp run dev:desktop`                               | Electron dev client                                                                | script exists; not run                                                         |
 | `vp run migrate-dev-db`                            | Seed dev DB from a read-only copy of real data (see upstream notes)                | script exists; not run                                                         |
@@ -37,7 +37,7 @@ Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts
 
 `vp run dev --home-dir /tmp/polaris-dev` starts the server on `127.0.0.1:13773` and Vite on `localhost:5733` (read the real ports from the `[dev-runner]` line). The first page load took about a minute while Vite optimized dependencies. The browser then shows "Pair with this environment": open the `pairingUrl:` printed in the log once. The boot needed no `.env` and no sign-in. Upstream's README says at least one provider CLI must be installed and signed in to run an agent; that was not tested here.
 
-Use `--home-dir` so state stays out of `~/.t3`; never point a dev server at the live `~/.t3/userdata`. To stop it, kill the PIDs you started: SIGTERM to the `vp` wrapper left the dev-runner, Vite and the server running, so each had to be stopped by PID. Ctrl-C in a terminal was not tested. Never kill by name pattern.
+Use `--home-dir` so state stays out of `~/.t3`; never point a dev server at the live `~/.t3/userdata`. To stop it, start it in its own process group (for example Python `subprocess.Popen(..., start_new_session=True)`), then `kill -TERM -- -<pgid>`: that stopped the whole stack in one step, and `ps -g <pgid>` and `lsof -nP -iTCP:13773 -iTCP:5733 -sTCP:LISTEN` showed nothing left. Check that the listeners' group id matches before killing. SIGTERM to the `vp` wrapper alone left the dev-runner, Vite and the server running. Ctrl-C in a terminal was not tested. Never kill by name pattern: a real T3 Code server may be running on port 3773, and it is not yours to stop.
 
 ## Layout
 
@@ -75,7 +75,7 @@ Clients send typed WebSocket requests. The server turns them into commands. The 
 
 - Do: reuse existing components and helpers; add or update a test with every behavior change; update `HANDOFF.md` before ending a session.
 - Ask first: adding a dependency, changing the database schema, touching more than one provider adapter, or anything that sends data off the user's machine.
-- Never: commit secrets, tokens or API keys; put repo, thread or file names into Discord presence; copy a shader or component without checking its license (Shadertoy defaults to CC BY-NC-SA 3.0, so only use CC0 or CC BY, or write our own); modify files outside the task's scope.
+- Never: commit secrets, tokens or API keys; put repo, thread or file names into Discord presence; copy a shader or component without checking its license (Shadertoy defaults to CC BY-NC-SA 3.0, so only use CC0 or CC BY, or write our own); bundle a typeface unless it is OFL or Apache-style licensed, with the license checked and kept in the repo; modify files outside the task's scope.
 
 ## Polaris-specific rules
 
