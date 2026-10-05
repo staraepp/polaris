@@ -39,6 +39,19 @@ Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts
 
 Use `--home-dir` so state stays out of `~/.t3`; never point a dev server at the live `~/.t3/userdata`. To stop it, start it in its own process group (for example Python `subprocess.Popen(..., start_new_session=True)`), then `kill -TERM -- -<pgid>`: that stopped the whole stack in one step, and `ps -g <pgid>` and `lsof -nP -iTCP:13773 -iTCP:5733 -sTCP:LISTEN` showed nothing left. Check that the listeners' group id matches before killing. SIGTERM to the `vp` wrapper alone left the dev-runner, Vite and the server running. Ctrl-C in a terminal was not tested. Never kill by name pattern: a real T3 Code server may be running on port 3773, and it is not yours to stop.
 
+### Dev isolation (rule)
+
+Every dev, test-app or screenshot run must use a **temp state dir** and a **dev port that is not 3773**. Never point a dev run at `~/.t3` (the default when you pass no `--home-dir`) and never stop, restart or probe a process you did not start: a real server may be running on 3773 and it is the owner's.
+
+Use the helper, which does all of this for you:
+
+```sh
+node scripts/polaris-dev.mjs start        # temp home dir, own process group, prints JSON: pgid, ports, pairingUrl
+node scripts/polaris-dev.mjs stop <pgid>  # stops only a stack this script started; deletes its temp home dir
+```
+
+It refuses to continue if the dev runner ever picks 3773, and `stop` refuses a process group it did not start. If you start the stack by hand instead, pass `--home-dir /tmp/<unique>`, put it in its own process group, and stop it with `kill -TERM -- -<pgid>` after checking the listeners' group id.
+
 ## Layout
 
 - `apps/server` (`t3`): Node WebSocket server. Entry `src/bin.ts`. Orchestration in `src/orchestration-v2/` (start at `Orchestrator.ts`). Provider drivers in `src/provider/Drivers/*Driver.ts` (registered in `src/provider/builtInDrivers.ts`). Model and option snapshots (including effort levels) in `src/provider/Layers/*Provider.ts`; the Claude catalog is `src/provider/model-manifest.json`. Usage and cost in `src/usage/`.

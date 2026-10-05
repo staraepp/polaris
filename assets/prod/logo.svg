@@ -1,16 +1,15 @@
 <svg fill="none" xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 100 100"><defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#10b585"/><stop offset="1" stop-color="#005f47"/></linearGradient>
-    <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d3f7ea"/></linearGradient>
-    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbe6"/><stop offset="1" stop-color="#8ff0c8"/></linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#d6fff0" stop-opacity=".6"/><stop offset="1" stop-color="#34d399" stop-opacity="0"/></radialGradient>
-    <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/></linearGradient>
-  </defs>
+  <linearGradient id="g" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#10b585"/><stop offset="1" stop-color="#005f47"/></linearGradient>
+  <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d3f7ea"/></linearGradient>
+  <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbe6"/><stop offset="1" stop-color="#8ff0c8"/></linearGradient>
+  <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#d6fff0" stop-opacity=".6"/><stop offset="1" stop-color="#34d399" stop-opacity="0"/></radialGradient>
+  <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+</defs>
   <rect width="100" height="100" rx="22.37" fill="url(#g)"/>
   <rect width="100" height="100" rx="22.37" fill="url(#gl)"/>
   <rect x="0.5" y="0.5" width="99" height="99" rx="21.9" fill="none" stroke="#fff" stroke-opacity="0.14"/>
-  <g fill="#fff"><circle cx="16" cy="84" r="0.8" opacity=".5"/><circle cx="86" cy="86" r="0.7" opacity=".45"/><circle cx="12" cy="40" r="0.6" opacity=".4"/><circle cx="84" cy="14" r="0.6" opacity=".4"/></g>
-  <g transform="translate(14.809999999999999 16.34) scale(1.02)">
-    <path fill-rule="evenodd" fill="url(#pg)" d="M14 8h24c10 0 17 7.6 17 19s-7 19-17 19H24v12H14V8ZM24 18v18h14c4.4 0 7-3.6 7-9s-2.6-9-7-9H24Z"/>
+  <g fill="#fff"><circle cx="16" cy="84" r="0.8" opacity=".5"/><circle cx="86" cy="86" r="0.7" opacity=".45"/><circle cx="12" cy="40" r="0.6" opacity=".4"/><circle cx="84" cy="14" r="0.6" opacity=".4"/></g><g transform="translate(14.809999999999999 16.34) scale(1.02)">
+    <path fill-rule="evenodd" fill="url(#pg)" d="M14 8h24c10 0 17 7.6 17 19s-7 19-17 19H24v12H14V8Z M24 18v18h14c4.4 0 7-3.6 7-9s-2.6-9-7-9H24Z"/>
     <circle cx="34.5" cy="27" r="11" fill="url(#glow)" opacity=".5"/>
     <path fill="url(#sg)" d="M34.5 20Q35.48 26.02 41.5 27Q35.48 27.98 34.5 34Q33.52 27.98 27.5 27Q33.52 26.02 34.5 20Z"/>
   </g></svg>
