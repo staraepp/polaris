@@ -108,8 +108,8 @@ vp run --filter <package> typecheck
 
 Use `vp run lint:mobile` for native mobile changes. CI owns the full suite; see
 [ci.yml](../../.github/workflows/ci.yml) for its current jobs.
-The [manual Windows lane](../../.github/workflows/windows-tests.yml) is available for focused
-Windows investigation while that suite is not a required gate.
+Upstream's manual Windows lane is kept as an inert reference copy
+([windows-tests.yml](../../.github/upstream-workflows/windows-tests.yml)); Polaris does not run it.
 
 ### Unused code
 

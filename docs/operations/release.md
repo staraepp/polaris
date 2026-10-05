@@ -2,11 +2,14 @@
 
 > For maintainers. Using T3 Code? See [docs/user](../user/).
 
+> Polaris: this documents upstream's release process. Its workflows are kept as inert reference
+> copies in [.github/upstream-workflows/](../../.github/upstream-workflows/) and do not run in Polaris.
+
 This document covers the unified release workflow for stable and nightly desktop releases.
 
 ## What the workflow does
 
-- Workflow: `.github/workflows/release.yml`
+- Workflow: `.github/upstream-workflows/release.yml`
 - Triggers:
   - manual `workflow_dispatch` with `channel=stable`, the normal way to ship stable. Stable
     and nightly dispatches must select `main`; preview may select any branch. The channel defaults
@@ -62,9 +65,9 @@ per-commit maintainer decision, which matters because the result carries the Dev
 Vouching a contributor lets their labeled commits be signed; it is not a standing grant. The build is
 split so the Developer ID certificate never shares a job with PR code:
 
-- `.github/workflows/desktop-macos-preview.yml` runs on `pull_request` with no secrets and builds
+- `.github/upstream-workflows/desktop-macos-preview.yml` runs on `pull_request` with no secrets and builds
   only the JS bundle from the PR (the same `js-bundle` artifact `release.yml` produces).
-- `.github/workflows/desktop-macos-preview-publish.yml` runs on `workflow_run` from `main`. It
+- `.github/upstream-workflows/desktop-macos-preview-publish.yml` runs on `workflow_run` from `main`. It
   refuses unless the PR is open, still labeled, its head is the built commit, and the author is a
   bot, a collaborator, or listed in `.github/VOUCHED.td` (read from the default branch, so a PR cannot vouch
   for itself). It then packages and signs the bundle through `release-desktop.yml` checked out at
@@ -99,7 +102,7 @@ The relay is a shared control plane versioned separately from client releases. S
 client builds must point at the same relay so users see the same linked environments when switching
 release channels.
 
-`.github/workflows/deploy-relay.yml` deploys Alchemy stage `prod` on every push to `main`. The
+`.github/upstream-workflows/deploy-relay.yml` deploys Alchemy stage `prod` on every push to `main`. The
 release workflow reads the relay URL and Clerk client configuration from the existing `production`
 GitHub Actions environment before building desktop, CLI, or hosted web artifacts.
 
@@ -226,7 +229,7 @@ Git deployments remain disabled in `apps/marketing/vercel.ts`.
 
 The hosted app is intentionally not deployed by Vercel's Git integration. The
 web project disables automatic Git deployments in `apps/web/vercel.ts` via
-`git.deploymentEnabled: false`. `.github/workflows/release.yml` builds the web
+`git.deploymentEnabled: false`. `.github/upstream-workflows/release.yml` builds the web
 app with Vercel CLI as a staged production deployment (`--skip-domain`) while
 the desktop jobs run, and aliases the channel domains to it after the GitHub
 Release succeeds.
@@ -278,7 +281,7 @@ One-time Vercel dashboard setup:
 
 ## Nightly builds
 
-- Workflow: `.github/workflows/release.yml`
+- Workflow: `.github/upstream-workflows/release.yml`
 - Triggers:
   - scheduled check every 30 minutes
   - manual `workflow_dispatch` with `channel=nightly`
@@ -411,7 +414,7 @@ Checklist:
    names are still rejected):
    - Provider: GitHub Actions
    - Repository: this repo
-   - Workflow file: `.github/workflows/release.yml`
+   - Workflow file: `.github/upstream-workflows/release.yml`
    - Environment (if used): match your npm trusted publishing config
 3. Ensure npm account and org policies allow trusted publishing for every package.
 4. Create release tag `vX.Y.Z` and push; workflow will:
