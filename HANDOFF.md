@@ -203,6 +203,11 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — v1 item 3: models over time
+
+- Done: `mergeUsage` now splits each day by model (`DailyTotals.byModel`, keyed like the model table; `packages/shared/src/usageMerge.ts`). A new "Models over time" chart on Usage (`apps/web/src/components/usage/UsageModelTrend.tsx`, logic in `usageModelSeries.ts`) stacks the top 5 models plus "Other" per day (per week past 45 days), for cost or tokens, hidden for Past 24h. Models take their provider's color in steps toward the background, so no new palette. Hover, tap or arrow keys read a column out; an sr-only table carries the data. Tests: 1 merge case, 7 series cases, 3 jsdom cases.
+- Left over: the logic file is named `usageModelSeries.ts` because `usageModelTrend.ts` clashes with the component on a case-insensitive disk.
+
 ### 2026-10-05 — Claude (session 8) — v1 item 2: one-year Usage period
 
 - Done: a fifth period, "1 year", on the Usage page (`usageShortcuts.ts`), bound to Mod+Shift+5 while Usage is open. The server already accepts a 365-day daily window (the heatmap uses one). Tests: keybinding order test updated, a new binding test.
@@ -230,19 +235,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Decisions: threshold stays a constant because a client setting is a contract change (listed under "Needs Star's approval"). The hook keeps its memory in React state and steps in an effect; the lint reports two `set-state-in-effect` warnings there, accepted because the step needs the previous state and the snapshot is an external system.
 - Left over: the usage meter in the input area is a backlog item ("after the graph exists"), so nothing renders `lowWindows` yet; Phase 4 consumes `low` and `flashing`.
 
-### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 2: Discord Rich Presence
-
-- Status: done and committed locally. Ships **inert** until a Discord Application ID is set (see "Questions for Star").
-- What: a desktop-only Rich Presence that shows "Coding with Polaris" plus the time the app has been open. Opt-in, off by default, no repo, thread, branch or file names, silent when Discord is not running, exponential reconnect backoff (5 s doubling to 60 s), no new dependency.
-- Where (all new, fork-only): `apps/desktop/src/polaris/discord/discordIpc.ts` (the wire format: int32 LE opcode + length + JSON, socket path candidates for macOS, Linux incl. flatpak/snap, and Windows pipes, generic activity payload), `DiscordPresenceController.ts` (plain class with injected connect and timers: handshake, READY, PING/PONG, CLOSE, ready timeout, backoff, clear-on-stop), `discordSocket.ts` (`node:net` adapter), `discordConfig.ts` (Application ID constant and env override), `DiscordPresence.ts` (Effect service and layer; starts or stops the controller to match the persisted switch). IPC methods in `apps/desktop/src/ipc/methods/polarisDiscordPresence.ts`; preload exposes `window.polarisBridge.discordPresence` (type in `packages/shared/src/polarisBridge.ts`, a new subpath export) so upstream's `desktopBridge` contract is untouched. The switch lives in Settings → Integrations → Discord (`apps/web/src/components/settings/polaris/DiscordPresenceSetting.tsx`, searchable as "Discord Rich Presence"), and shows "Only available in the desktop app" in a browser.
-- Upstream files touched (small): `DesktopAppSettings.ts` (new `discordPresenceEnabled` field, default false, plus its setter), `DesktopApp.ts` (one line after settings load), `main.ts` (one layer), `DesktopIpcHandlers.ts`, `channels.ts`, `preload.ts`, `IntegrationsSettings.tsx`, `settingsSearch.ts`, and three test doubles that enumerate the settings service.
-- Tests: 9 protocol tests, 5 controller tests with a fake socket and fake timers (first listening socket wins, backoff and cap while Discord is absent with nothing logged, ping/pong and reconnect after close, silent-handshake timeout, clear activity and no reconnect after stop), a settings round-trip, 4 jsdom tests for the switch. Desktop typecheck, web typecheck, lint and fmt pass.
-- Not verified: a real Discord client. The protocol follows the Discord IPC used by discord-rpc (handshake `{v:1, client_id}`, `SET_ACTIVITY` with `pid` and `activity`, timestamps in ms); with no Application ID there is nothing to test against yet.
-- Decisions: the activity has an optional `large_image: "polaris"` asset key; add art under that name in the Discord application or Discord shows no image. The desktop settings file is fork-local (not the wire contract), so the new field there is not a contract change.
-- Left over: a "working / idle" state line from the renderer (needs a cheap "any turn running" signal from the web app), and the desktop Electron smoke run of the switch.
-
 ## History
 
+- 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 2: Discord Rich Presence. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 0: known issues, and Phase 1: Usage activity heatmap. Rolled up; see `git log`.
 - 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 6: display-level rebrand to Polaris, green accent, placeholder logo. Rolled up; see `git log`.
 - 2026-10-05 — Claude Code (Sonnet 5.5, in T3 Code) — session 5: Cursor stays, fonts checked in the app, quota-low design, effort wiring traced. Full entry rolled up in session 8; see `git log` for details.

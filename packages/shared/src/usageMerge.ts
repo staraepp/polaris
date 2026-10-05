@@ -62,11 +62,20 @@ export function isModelCostUnknown(model: ModelTotals): boolean {
   return model.records > 0 && model.unpricedRecords >= model.records;
 }
 
+export interface DailyModelTotals {
+  readonly provider: UsageProviderKind;
+  readonly model: string;
+  readonly costUsd: number;
+  readonly totalTokens: number;
+}
+
 export interface DailyTotals {
   readonly day: string;
   readonly costUsd: number;
   readonly totalTokens: number;
   readonly byProvider: ReadonlyMap<UsageProviderKind, { costUsd: number; totalTokens: number }>;
+  /** Keyed `"<provider> <model>"`, the same key the model table uses. */
+  readonly byModel?: ReadonlyMap<string, DailyModelTotals>;
 }
 
 export interface HourlyTotals {
@@ -422,6 +431,10 @@ export function mergeUsage(
       costUsd: number;
       totalTokens: number;
       byProvider: Map<UsageProviderKind, { costUsd: number; totalTokens: number }>;
+      byModel: Map<
+        string,
+        { provider: UsageProviderKind; model: string; costUsd: number; totalTokens: number }
+      >;
     }
   >();
   const hourlyAccumulator = new Map<
@@ -528,7 +541,17 @@ export function mergeUsage(
         costUsd: 0,
         totalTokens: 0,
         byProvider: new Map<UsageProviderKind, { costUsd: number; totalTokens: number }>(),
+        byModel: new Map(),
       };
+      const dayModel = day.byModel.get(modelKey) ?? {
+        provider: bucket.provider,
+        model: bucket.model,
+        costUsd: 0,
+        totalTokens: 0,
+      };
+      dayModel.costUsd += bucket.costUsd;
+      dayModel.totalTokens += tokens;
+      day.byModel.set(modelKey, dayModel);
       day.costUsd += bucket.costUsd;
       day.totalTokens += tokens;
       const dayProvider = day.byProvider.get(bucket.provider) ?? { costUsd: 0, totalTokens: 0 };
@@ -594,6 +617,7 @@ export function mergeUsage(
       costUsd: totals.costUsd,
       totalTokens: totals.totalTokens,
       byProvider: totals.byProvider,
+      byModel: totals.byModel,
     }))
     .sort((a, b) => a.day.localeCompare(b.day));
 
