@@ -147,10 +147,10 @@ export function UsageActivityHeatmap({
       </dl>
 
       <div className="overflow-x-auto pb-1">
-        <div className="flex min-w-[40rem] flex-col gap-[3px]">
+        <div className="flex min-w-[40rem] flex-col gap-0.75">
           <div
             aria-hidden
-            className="grid gap-[3px] text-2xs text-muted-foreground"
+            className="grid gap-0.75 text-2xs text-muted-foreground"
             style={rowTemplate}
           >
             <span />
@@ -168,7 +168,7 @@ export function UsageActivityHeatmap({
             ref={gridRef}
             role="grid"
             aria-label={`Daily ${metric === "cost" ? "cost" : "token"} activity, ${formatDayShort(sinceDay)} to ${formatDayShort(untilDay)}`}
-            className="flex flex-col gap-[3px]"
+            className="flex flex-col gap-0.75"
             onKeyDown={moveFocus}
           >
             {WEEKDAY_LABELS.map((label, weekday) => (
@@ -176,7 +176,7 @@ export function UsageActivityHeatmap({
                 key={WEEKDAY_NAMES[weekday]}
                 role="row"
                 aria-label={WEEKDAY_NAMES[weekday]}
-                className="grid items-center gap-[3px]"
+                className="grid items-center gap-0.75"
                 style={rowTemplate}
               >
                 <span aria-hidden className="text-2xs leading-none text-muted-foreground">

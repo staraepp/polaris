@@ -3,12 +3,12 @@
 //   node scripts/polaris-icons.mjs            write every icon file
 //   node scripts/polaris-icons.mjs --sheet <out.png>   write a review sheet only (no repo files)
 // The three channels share one base icon. Dev and nightly add a corner badge so they can be told apart.
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import * as NodeFS from "node:fs";
+import * as NodePath from "node:path";
+import * as NodeURL from "node:url";
 import sharp from "sharp";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = NodePath.resolve(NodePath.dirname(NodeURL.fileURLToPath(import.meta.url)), "..");
 
 const P_OUTER = "M14 8h24c10 0 17 7.6 17 19s-7 19-17 19H24v12H14V8Z";
 const P_COUNTER = "M24 18v18h14c4.4 0 7-3.6 7-9s-2.6-9-7-9H24Z";
@@ -184,9 +184,9 @@ async function renderChannel(channel) {
 async function writeAll() {
   const written = [];
   const put = (rel, buf) => {
-    const target = join(repoRoot, rel);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, buf);
+    const target = NodePath.join(repoRoot, rel);
+    NodeFS.mkdirSync(NodePath.dirname(target), { recursive: true });
+    NodeFS.writeFileSync(target, buf);
     written.push(rel);
   };
   for (const [channel, c] of Object.entries(CHANNELS)) {
@@ -251,5 +251,5 @@ async function writeSheet(out) {
 }
 
 const args = process.argv.slice(2);
-if (args[0] === "--sheet") await writeSheet(resolve(args[1]));
+if (args[0] === "--sheet") await writeSheet(NodePath.resolve(args[1]));
 else await writeAll();
