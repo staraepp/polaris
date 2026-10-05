@@ -22,12 +22,12 @@
           light: {
             background: "#ffffff",
             foreground: "#262626",
-            accent: "#4f46e5",
+            accent: "#007955",
           },
           dark: {
             background: "#0a0a0a",
             foreground: "#f5f5f5",
-            accent: "#818cf8",
+            accent: "#00d49c",
           },
         };
         // These are the runtime defaults used to complete a custom palette
@@ -437,20 +437,93 @@
         color: var(--boot-foreground);
       }
 
+      #boot-shell {
+        --boot-mark: #007955;
+      }
+
+      html.dark #boot-shell {
+        --boot-mark: #00d49c;
+      }
+
+      html[data-theme-selected="true"] #boot-shell {
+        --boot-mark: var(--boot-accent, #007955);
+      }
+
       #boot-shell-card {
         position: relative;
         z-index: 1;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        width: 96px;
-        height: 96px;
+        gap: 14px;
       }
 
       #boot-shell-logo {
-        width: 64px;
-        height: 64px;
-        object-fit: contain;
+        width: 52px;
+        height: 52px;
+        color: var(--boot-mark);
+        overflow: visible;
+        filter: drop-shadow(0 0 10px color-mix(in srgb, var(--boot-mark) 45%, transparent));
+      }
+
+      #boot-shell-star {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: boot-twinkle 2.4s ease-in-out infinite;
+      }
+
+      #boot-shell-name {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        opacity: 0.78;
+      }
+
+      #boot-shell-bar {
+        position: relative;
+        overflow: hidden;
+        width: 56px;
+        height: 2px;
+        border-radius: 1px;
+        background: color-mix(in srgb, var(--boot-mark) 22%, transparent);
+      }
+
+      #boot-shell-bar::after {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 40%;
+        border-radius: inherit;
+        background: var(--boot-mark);
+        animation: boot-slide 1.4s ease-in-out infinite;
+      }
+
+      @keyframes boot-twinkle {
+        0%,
+        100% {
+          opacity: 0.55;
+          transform: scale(0.8);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes boot-slide {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(250%);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot-shell-star,
+        #boot-shell-bar::after {
+          animation: none;
+        }
       }
 
       #boot-error {
@@ -477,13 +550,21 @@
         cursor: pointer;
       }
     </style>
-    <title>T3 Code (Alpha)</title>
+    <title>Polaris (Alpha)</title>
   </head>
   <body>
     <div id="root">
       <div id="boot-shell">
-        <div id="boot-shell-card" aria-label="T3 Code splash screen">
-          <img id="boot-shell-logo" src="/apple-touch-icon.png" alt="T3 Code" />
+        <div id="boot-shell-card" role="status" aria-label="Polaris splash screen">
+          <svg id="boot-shell-logo" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              id="boot-shell-star"
+              fill="currentColor"
+              d="M12 0Q14.6 9.4 24 12Q14.6 14.6 12 24Q9.4 14.6 0 12Q9.4 9.4 12 0Z"
+            />
+          </svg>
+          <span id="boot-shell-name">Polaris</span>
+          <span id="boot-shell-bar" aria-hidden="true"></span>
         </div>
       </div>
     </div>
