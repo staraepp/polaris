@@ -1,4 +1,4 @@
-# Polaris CI. Runs only commands verified locally on Node 24 (see AGENTS.md).
+# Polaris CI. Runs only commands verified locally on Node 24.13.1 (see AGENTS.md).
 # Upstream's release, deploy, mobile and bot workflows are kept for reference in
 # .github/upstream-workflows/ and do not run. Nothing here uses secrets.
 name: CI
@@ -25,12 +25,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      # Same setup action upstream uses. Reads the Node range from package.json
-      # `engines` and runs the install.
+      # Same setup action upstream uses. Node comes from .nvmrc, which must stay in
+      # step with package.json `engines`. Also runs the install.
       - name: Setup Vite+
         uses: voidzero-dev/setup-vp@v1
         with:
-          node-version-file: package.json
+          node-version-file: .nvmrc
           cache: true
           run-install: true
 
@@ -69,3 +69,8 @@ jobs:
 
       - name: Test client-runtime
         run: vp run --filter @t3tools/client-runtime test
+
+      # The whole scripts suite is not run: one upstream test already fails on the
+      # pristine snapshot (see AGENTS.md, Known failing).
+      - name: Test Discord release workflow step
+        run: vp test run scripts/notify-discord-release.test.ts
