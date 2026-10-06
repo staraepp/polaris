@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { memo, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 
-import { useEnvironmentIdentificationMode } from "../../hooks/useSettings";
+import { useClientSettings, useEnvironmentIdentificationMode } from "../../hooks/useSettings";
 import { cn } from "../../lib/utils";
 import { usePullRequestsSupported } from "../../state/environments";
 import { PolarisStar } from "../T3Wordmark";
@@ -30,6 +30,7 @@ import { SidebarUpdateArchitectureWarning, SidebarUpdatePill } from "./SidebarUp
 import { DashboardGlyph } from "~/polaris/dashboard/DashboardGlyph";
 import { lastTool } from "~/polaris/hub/toolsHub";
 import { useOpenTool } from "~/polaris/hub/ToolsHubCrumbs";
+import { resolveSidebarArtworkVariant } from "~/polaris/brand/sidebarArtwork";
 
 export const SidebarChromeHeader = memo(function SidebarChromeHeader({
   isElectron,
@@ -38,9 +39,10 @@ export const SidebarChromeHeader = memo(function SidebarChromeHeader({
 }) {
   const stageLabel = useEnvironmentStageLabel();
   const environmentIdentificationMode = useEnvironmentIdentificationMode();
-  const backdropVariant = resolveSidebarStageBackdropVariant(
-    stageLabel,
-    environmentIdentificationMode === "artwork",
+  const sidebarArtworkEnabled = useClientSettings((settings) => settings.sidebarArtworkEnabled);
+  const backdropVariant = resolveSidebarArtworkVariant(
+    resolveSidebarStageBackdropVariant(stageLabel, environmentIdentificationMode === "artwork"),
+    sidebarArtworkEnabled,
   );
   const pillLabel =
     environmentIdentificationMode === "pill"

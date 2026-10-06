@@ -168,6 +168,7 @@ import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BackgroundSetting } from "./polaris/BackgroundSetting";
+import { SidebarArtworkSetting } from "./polaris/SidebarArtworkSetting";
 import { ActivityOrbsSetting } from "./polaris/ActivityOrbsSetting";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
 import { ComposerEffectsSetting } from "./polaris/ComposerEffectsSetting";
@@ -571,6 +572,9 @@ export function useSettingsRestore(onRestored?: () => void) {
       ...(settings.composerIdleBeamEnabled !== DEFAULT_UNIFIED_SETTINGS.composerIdleBeamEnabled
         ? ["Idle beam"]
         : []),
+      ...(settings.sidebarArtworkEnabled !== DEFAULT_UNIFIED_SETTINGS.sidebarArtworkEnabled
+        ? ["Sidebar artwork"]
+        : []),
       ...(settings.gooeyComposerMenuEnabled !== DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled
         ? ["Liquid composer menu"]
         : []),
@@ -744,6 +748,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.botColors,
       settings.activityOrbsEnabled,
       settings.composerIdleBeamEnabled,
+      settings.sidebarArtworkEnabled,
       settings.botAvatarByDriver,
       settings.gooeyComposerMenuEnabled,
       settings.voiceInputEnabled,
@@ -863,6 +868,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       botColors: DEFAULT_UNIFIED_SETTINGS.botColors,
       activityOrbsEnabled: DEFAULT_UNIFIED_SETTINGS.activityOrbsEnabled,
       composerIdleBeamEnabled: DEFAULT_UNIFIED_SETTINGS.composerIdleBeamEnabled,
+      sidebarArtworkEnabled: DEFAULT_UNIFIED_SETTINGS.sidebarArtworkEnabled,
       botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
       gooeyComposerMenuEnabled: DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled,
       voiceInputEnabled: DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled,
@@ -1358,6 +1364,8 @@ export function AppearanceSettingsPanel() {
         />
 
         <BackgroundSetting />
+
+        <SidebarArtworkSetting />
 
         {showEnvironmentIdentification ? (
           <SettingsRow

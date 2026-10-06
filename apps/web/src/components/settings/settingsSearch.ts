@@ -215,6 +215,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["wallpaper image picture photo video backdrop customize dim blur"],
   },
   {
+    id: "sidebar-artwork",
+    title: "Sidebar artwork",
+    to: "/settings/appearance",
+    searchTerms: ["art artwork header banner green grid sidebar brand polaris"],
+  },
+  {
     id: "diff-color-scheme",
     title: "Diff colors",
     to: "/settings/appearance",
