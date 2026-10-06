@@ -306,6 +306,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan
+
+- Status: done
+- What changed: `MORNING.md` "Secrets scan" section with the result. No code changed.
+- How verified: `git diff 3e6b450..HEAD -U0` added lines (19,603) scanned with regexes for provider keys, GitHub/AWS/Slack/Google tokens, PEM keys, `clide_` tokens, bearer literals, 64-hex strings, JWTs and a Discord ID: 0 hits. Emails: only the confirmed relay identity, a test fixture and `git@github.com`. Commit authors/committers: the relay identity only. `git check-ignore` confirms `.polaris/dev-auth-token` is ignored. Added PNGs have no text/EXIF chunks.
+- Risks: regex scans miss secrets of unknown shapes; binary files were checked for metadata only.
+- Next action: V 4.0.0 gate (full fmt + lint, every suite at baseline, light + dark screenshots under `.playwright-mcp/v4-*`, a `polaris-dev.mjs` smoke), then merge `v4` into `main` with `--no-ff` and tag `v4.0.0` plus `v1.0.0`/`v2.0.0`/`v3.0.0` on the done commits.
+- Open questions: None.
+
 ### 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards
 
 - Status: done
@@ -342,17 +351,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.0.0 item 3, Orbie everywhere (message avatars, thinking state, project avatars, empty state).
 - Open questions: none new.
 
-### 2026-10-05 — Claude (session 8) — V 4.0.0 item 1: vendored `border-beam` and the final effort colors
-
-- Status: done
-- What changed: `border-beam` 1.4.1 (MIT) vendored into `apps/web/src/polaris/vendor/border-beam/` with `LICENSE` and `NOTICE.md`; four marked changes: a `colors` prop (`resolvePalette`), reduced-motion handling for every size, stricter types, `md` blobs scaled to the element. The homemade CSS beam is gone: `EffortBeam.tsx` (lazy) draws the beam from `ComposerFx`, per-tier props in `beamLooks.ts`, colors in the `--polaris-beam-<tier>` tokens in `composerFx.css` (light on `:root`, dark on `.dark`) plus raised opacity hooks. Final colors: low true blue breathing, medium gold, high rainbow, xhigh aurora teal, max icy white-blue, neutral grey. The flash and voice ring keep the small CSS ring; the resolver is unchanged. Dev-only forced states: `localStorage["polaris:fx-force"]` (`devFxOverride.ts`). The tier stays frozen per turn (derived on read from the run's `modelSelection` plus its message's keyword, unchanged). blueprint tier table, Composer FX section and `AGENTS.md` updated.
-- How verified: `vp test run apps/web/src/polaris/vendor apps/web/src/polaris/fx` (26 passed); web typecheck clean; `vp lint` 0 errors. Forced-state screenshots for every tier, light and dark, plus reduced motion: `../.playwright-mcp/v4/tier-*.png`, `sheet-tiers.png`, `sheet-reduced-motion.png`.
-- Risks: screenshots catch one phase of a moving beam. Gold on light relies on the raised stroke hook. xhigh's teal sits near the brand hue; it is pushed toward cyan. Someone was running a real turn in the dev app's main thread during the shots (not started by me); later shots use a draft thread.
-- Next action: V 4.0.0 item 2, quota-low without amber (red-coral badge beside the usage meter).
-- Open questions: none new.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.0.0 item 1: vendored `border-beam` and the final effort colors. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v3 gate: passed, merged, tagged `v3-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v3 items 2–3: skill studio and frontend skills. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v3 item 1: bento dashboard. Rolled up; see `git log`.

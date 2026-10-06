@@ -21,3 +21,13 @@ One focused change per cycle, on branch `polish`, each its own commit. Before/af
 | 011 | Dashboard Start tile: "Start without a project" (the same scratch flow as the draft page's "or start without a project"), filling the empty middle of the tile; the scratch folder is kept out of the tile's project list. Not clicked during the check (it would create a scratch thread) | `011-start-without-project-{before,after}-{light,dark}.png`                                                        | kept   |
 | 012 | Dashboard activity chart became readable: the header shows the day under the pointer ("$73.84 spent on Sep 28") with that bar highlighted; with focus, arrow keys / Home / End step through days and the reading is announced                                                              | `012-activity-readout-{before,after}-{light,dark}.png`                                                             | kept   |
 | 013 | Per-theme fonts: a family that is not installed (e.g. a typo like "Gergia") is now flagged on the field (aria-invalid red border) with a status line saying the global font is used instead; before, it fell back silently                                                                 | `013-theme-font-missing-{before,after}-{light,dark}.png`                                                           | kept   |
+
+## Secrets scan (V 4.0.0, item 6)
+
+Run on 2026-10-05 over everything the fork added since the upstream snapshot `3e6b450` (79 commits at the time, 411 files, 19,603 added lines; no unmerged local branches), plus commit metadata and the 21 added PNGs.
+
+- **Token patterns: 0 hits.** Checked: OpenAI/Anthropic `sk-…`, GitHub `ghp_/gho_/ghu_/ghs_/ghr_/github_pat_`, AWS `AKIA…`, Slack `xox…`, Google `AIza…`, PEM private keys, `clide_…` tokens, `Bearer <literal>`, 64-hex strings (the shape of the dev pairing token), JWTs, a filled-in Discord Application ID.
+- **Emails: none real.** The only addresses are the commit identity you confirmed (`5rnkq9b5yf@privaterelay.appleid.com`, also named in HANDOFF and blueprint), a test fixture `user:pw@example.com` and an SSH remote `git@github.com`. Your account email appears nowhere, in files or in commit messages. All 79 commits are authored and committed by the relay identity; trailers name only Claude models at `noreply@anthropic.com`.
+- **Dev token:** `.polaris/dev-auth-token` is gitignored (`.gitignore:50`) and not tracked.
+- **Images:** the 21 added PNGs (rebrand icons) carry no text or EXIF chunks.
+- **One thing to know (not a secret):** `HANDOFF.md` "Before you push" has a `cd` line with this Mac's absolute repo path, which shows your macOS username. It is there for you to copy; drop it before publishing the repo if you mind.
