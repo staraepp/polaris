@@ -85,6 +85,7 @@ import {
   transcribeVoice,
   watchClideEvents,
 } from "./methods/polarisVoice.ts";
+import { getUpdateInvite, setUpdateInvite } from "./methods/polarisUpdates.ts";
 
 export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers")(function* () {
   const ipc = yield* DesktopIpc.DesktopIpc;
@@ -112,6 +113,8 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   yield* ipc.handle(setVoiceSecret);
   yield* ipc.handle(transcribeVoice);
   yield* ipc.handle(watchClideEvents);
+  yield* ipc.handle(getUpdateInvite);
+  yield* ipc.handle(setUpdateInvite);
   yield* ipc.handle(getConnectionCatalog);
   yield* ipc.handle(getSnapShotState);
   yield* ipc.handle(setupSnapShot);

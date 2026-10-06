@@ -4,6 +4,7 @@
 import * as NodeFSP from "node:fs/promises";
 import * as NodeCrypto from "node:crypto";
 import * as NodeModule from "node:module";
+import * as NodeOS from "node:os";
 
 import {
   createPackageWithOptions,
@@ -21,6 +22,7 @@ import {
 import { HostProcessArchitecture, HostProcessPlatform } from "@t3tools/shared/hostProcess";
 import { clerkFrontendApiHostnameFromPublishableKey } from "@t3tools/shared/relayAuth";
 import { resolveSpawnCommand } from "@t3tools/shared/shell";
+import { POLARIS_UPDATE_FEED_URL } from "@t3tools/shared/polarisUpdateFeed";
 import rootPackageJson from "../package.json" with { type: "json" };
 import desktopPackageJson from "../apps/desktop/package.json" with { type: "json" };
 import gnomeCaptureBundle from "../apps/desktop/gnome-extension/bundle.json" with { type: "json" };
@@ -154,6 +156,24 @@ export function resourceMonitorCargoArgs(input: {
   return input.rustTarget.endsWith("-pc-windows-msvc") && input.hostPlatform !== "win32"
     ? ["xwin", ...build]
     : build;
+}
+
+/**
+ * Polaris: keeps the builder's home folder (and so their account name) out of
+ * the resource monitor binary, whose panic messages embed source paths. It
+ * goes in the target's own rustflags variable because a plain RUSTFLAGS would
+ * replace the linker flags cargo-xwin adds there for Windows.
+ */
+export function resourceMonitorRustflagsEnv(input: {
+  readonly rustTarget: string;
+  readonly homeDir: string;
+  readonly env: Readonly<Record<string, string | undefined>>;
+}): Record<string, string> {
+  if (input.homeDir.length === 0) return {};
+  const key = `CARGO_TARGET_${input.rustTarget.toUpperCase().replace(/-/g, "_")}_RUSTFLAGS`;
+  const remap = `--remap-path-prefix=${input.homeDir}=/build`;
+  const existing = input.env[key]?.trim();
+  return { [key]: existing ? `${existing} ${remap}` : remap };
 }
 
 export function resourceMonitorExecutableName(platform: typeof BuildPlatform.Type): string {
@@ -984,6 +1004,9 @@ export const DESKTOP_FILE_EXCLUSIONS = [
   // client's maps alone were 50 MB of app.asar that no request ever read.
   "!**/*.map",
   "!**/*.d.cts",
+  // Polaris: pnpm's install record names the build machine's store path
+  // (the builder's home folder). The packaged app never reads it.
+  "!**/node_modules/.modules.yaml",
   "!apps/desktop/resources/browser-secret",
   "!apps/desktop/resources/browser-secret/**/*",
   "!apps/desktop/prod-resources/browser-secret",
@@ -1046,6 +1069,7 @@ export const WINDOWS_SERVER_ASAR_IGNORE_GLOBS = [
   "**/node_modules/@anthropic-ai/claude-agent-sdk-*/**",
   "**/node_modules/.bin",
   "**/node_modules/.bin/**",
+  "**/node_modules/.modules.yaml",
   "**/*.map",
 ] as const;
 
@@ -2272,6 +2296,14 @@ export const stageResourceMonitor = Effect.fn("stageResourceMonitor")(function* 
         ChildProcess.make(spawnCommand.command, spawnCommand.args, {
           cwd: input.repoRoot,
           shell: spawnCommand.shell,
+          env: {
+            ...process.env,
+            ...resourceMonitorRustflagsEnv({
+              rustTarget,
+              homeDir: NodeOS.homedir(),
+              env: process.env,
+            }),
+          },
         }),
         {
           label: `cargo build resource monitor (${rustTarget})`,
@@ -2734,6 +2766,9 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
           url: resolveMockUpdateServerUrl(mockUpdateServerPort),
         },
       ];
+    } else if (process.env.POLARIS_UPDATE_FEED !== "off") {
+      // Polaris (V 4.7.0): the private, invite-only feed on Star's VPS.
+      buildConfig.publish = [{ provider: "generic", url: POLARIS_UPDATE_FEED_URL }];
     }
   }
 

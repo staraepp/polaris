@@ -56,6 +56,7 @@ import {
   resolveDesktopWebAssetBrand,
   resolveResourceMonitorRustTargets,
   resourceMonitorCargoArgs,
+  resourceMonitorRustflagsEnv,
   resolveWindowsServerAsarIgnoreGlobs,
   resourceMonitorExecutableName,
   resolveGitHubPublishConfig,
@@ -567,6 +568,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
       "!**/node_modules/@anthropic-ai/claude-agent-sdk-*/**/*",
       "!**/*.map",
       "!**/*.d.cts",
+      "!**/node_modules/.modules.yaml",
       "!apps/desktop/resources/browser-secret",
       "!apps/desktop/resources/browser-secret/**/*",
       "!apps/desktop/prod-resources/browser-secret",
@@ -665,6 +667,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         "**/node_modules/@anthropic-ai/claude-agent-sdk-*/**",
         "**/node_modules/.bin",
         "**/node_modules/.bin/**",
+        "**/node_modules/.modules.yaml",
         "**/*.map",
       ]);
       assert.deepStrictEqual(mac.dmg, {
@@ -2084,6 +2087,33 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         manifestPath,
       }),
       [...build, "aarch64-apple-darwin"],
+    );
+  });
+
+  it("keeps the builder's home folder out of the resource monitor (Polaris)", () => {
+    assert.deepStrictEqual(
+      resourceMonitorRustflagsEnv({
+        rustTarget: "aarch64-apple-darwin",
+        homeDir: "/Users/someone",
+        env: {},
+      }),
+      { CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS: "--remap-path-prefix=/Users/someone=/build" },
+    );
+    // Existing target flags (cargo-xwin's linker flags on Windows) are kept.
+    assert.deepStrictEqual(
+      resourceMonitorRustflagsEnv({
+        rustTarget: "x86_64-pc-windows-msvc",
+        homeDir: "/Users/someone",
+        env: { CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS: "-C linker=lld" },
+      }),
+      {
+        CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS:
+          "-C linker=lld --remap-path-prefix=/Users/someone=/build",
+      },
+    );
+    assert.deepStrictEqual(
+      resourceMonitorRustflagsEnv({ rustTarget: "aarch64-apple-darwin", homeDir: "", env: {} }),
+      {},
     );
   });
 

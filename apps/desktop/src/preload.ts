@@ -450,4 +450,8 @@ contextBridge.exposeInMainWorld("polarisBridge", {
       };
     },
   },
+  updates: {
+    getInvite: () => ipcRenderer.invoke(IpcChannels.POLARIS_UPDATES_GET_INVITE_CHANNEL),
+    setInvite: (code) => ipcRenderer.invoke(IpcChannels.POLARIS_UPDATES_SET_INVITE_CHANNEL, code),
+  },
 } satisfies PolarisBridge);

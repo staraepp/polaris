@@ -1,0 +1,14 @@
+[Unit]
+Description=cloudflared tunnel for polaris.sstarvfx.com (Polaris server)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared/polaris.yml tunnel run
+Restart=always
+RestartSec=5
+SyslogIdentifier=cloudflared-polaris
+
+[Install]
+WantedBy=multi-user.target

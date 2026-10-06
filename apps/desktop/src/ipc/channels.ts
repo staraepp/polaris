@@ -130,3 +130,5 @@ export const POLARIS_VOICE_SET_SECRET_CHANNEL = "polaris:voice-set-secret";
 export const POLARIS_VOICE_TRANSCRIBE_CHANNEL = "polaris:voice-transcribe";
 export const POLARIS_VOICE_WATCH_CLIDE_CHANNEL = "polaris:voice-watch-clide";
 export const POLARIS_VOICE_CLIDE_EVENT_CHANNEL = "polaris:voice-clide-event";
+export const POLARIS_UPDATES_GET_INVITE_CHANNEL = "polaris:updates-get-invite";
+export const POLARIS_UPDATES_SET_INVITE_CHANNEL = "polaris:updates-set-invite";

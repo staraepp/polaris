@@ -31,6 +31,10 @@
       "types": "./src/polarisDesktopIdentity.ts",
       "import": "./src/polarisDesktopIdentity.ts"
     },
+    "./polarisUpdateFeed": {
+      "types": "./src/polarisUpdateFeed.ts",
+      "import": "./src/polarisUpdateFeed.ts"
+    },
     "./polarisVoiceHttp": {
       "types": "./src/polarisVoiceHttp.ts",
       "import": "./src/polarisVoiceHttp.ts"
