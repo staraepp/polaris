@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 import { BorderBeam } from "../vendor/border-beam";
-import { beamLookFor, parsePaletteToken } from "./beamLooks";
+import { beamLookFor, IDLE_BEAM_LOOK, parsePaletteToken } from "./beamLooks";
 import type { EffortTier } from "./effortTier";
 
 /** The tier's palette from its CSS token, re-read when the theme flips. */
@@ -27,13 +27,16 @@ function usePaletteToken(token: string | null, theme: "light" | "dark"): string[
 export function EffortBeam({
   tier,
   active,
+  idle = false,
   theme,
 }: {
   readonly tier: EffortTier;
   readonly active: boolean;
+  /** Draw the subtle idle look instead of the tier's. */
+  readonly idle?: boolean;
   readonly theme: "light" | "dark";
 }) {
-  const look = beamLookFor(tier);
+  const look = idle ? IDLE_BEAM_LOOK : beamLookFor(tier);
   const colors = usePaletteToken(look.paletteToken, theme);
   const rootRef = useRef<HTMLDivElement>(null);
   const [radius, setRadius] = useState<number | undefined>(undefined);
@@ -48,7 +51,7 @@ export function EffortBeam({
       ref={rootRef}
       aria-hidden
       data-polaris-effort-beam
-      data-tier={tier}
+      data-tier={idle ? "idle" : tier}
       active={active}
       size={look.size}
       colorVariant={look.colorVariant}

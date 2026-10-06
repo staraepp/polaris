@@ -6,6 +6,7 @@ import { cn } from "~/lib/utils";
 
 import type { EffortTier } from "../fx/effortTier";
 import { usePrefersReducedMotion } from "../fx/usePrefersReducedMotion";
+import { botColorClassFor, botTypeFor } from "./botLook";
 import { cssColorToRgb, firstPaletteColor } from "./cssColor";
 import {
   ORBIE_ACCESSORY_PROPS,
@@ -13,7 +14,6 @@ import {
   ORBIE_SMALL_BELOW_PX,
   ORBIE_SMALL_SHADING,
   ORBIE_STATE_TEXT,
-  ORBIE_TYPE,
 } from "./orbie";
 import { useThemeEpoch } from "../theme/useThemeEpoch";
 
@@ -43,9 +43,11 @@ function usePageVisible(): boolean {
 const RAINBOW_TIER: EffortTier = "high";
 
 /**
- * Orbie, the assistant's bot (`bot-avatars`, MIT). Its body color is the CSS
- * `color` of its box: the brand by default, a project's color when the caller
- * sets one, and the effort tier's color while it works. Only `live` bots
+ * Orbie, the assistant's bot (`bot-avatars`, MIT). Given a project, it is that
+ * project's bot: its own shape and color (Settings → Effects → Orbie decides
+ * mixed or fixed shapes, varied or brand colors). Its body color is the CSS
+ * `color` of its box: the brand by default, the project's color when varied,
+ * and the effort tier's color while it works. Only `live` bots
  * animate; every other one holds a still pose (`paused`), and all of them stop
  * while the page is hidden. Reduced motion: the library holds still, and so
  * do we.
@@ -56,6 +58,7 @@ export function OrbieAvatar({
   live = false,
   tier = null,
   label = null,
+  project = null,
   className,
 }: {
   /** CSS pixels, or "fill" to take the box size from `className` (project icons). */
@@ -67,10 +70,16 @@ export function OrbieAvatar({
   readonly tier?: EffortTier | null;
   /** Spoken name (the state is added); decorative, hidden from assistive tech, when null. */
   readonly label?: string | null;
+  /** The project's name: draw that project's bot. Null is Orbie itself. */
+  readonly project?: string | null;
   /** Sizing and, to recolor it, a text color class. */
   readonly className?: string;
 }) {
   const accessory = useClientSettings((settings) => settings.botAccessory);
+  const shape = useClientSettings((settings) => settings.botShape);
+  const colors = useClientSettings((settings) => settings.botColors);
+  const type = botTypeFor(project, shape);
+  const colorClassName = botColorClassFor(project, colors);
   const visible = usePageVisible();
   const reducedMotion = usePrefersReducedMotion();
   const epoch = useThemeEpoch();
@@ -93,7 +102,7 @@ export function OrbieAvatar({
       source = firstPaletteColor(raw) ?? source;
     }
     setColor(cssColorToRgb(source));
-  }, [epoch, tintTier, rainbow, className]);
+  }, [epoch, tintTier, rainbow, className, colorClassName]);
 
   const animate = live && visible && !reducedMotion;
   return (
@@ -104,6 +113,7 @@ export function OrbieAvatar({
       className={cn(
         "polaris-orbie-body inline-flex shrink-0 items-center justify-center",
         rainbow && animate && "polaris-orbie-rainbow",
+        colorClassName,
         className,
       )}
       {...(size === "fill" ? {} : { style: { width: size, height: size } })}
@@ -112,7 +122,7 @@ export function OrbieAvatar({
       <Suspense fallback={null}>
         {color === undefined ? null : (
           <BotAvatar
-            type={ORBIE_TYPE}
+            type={type}
             {...(rainbow ? { color: "rgb(255, 92, 138)" } : color === null ? {} : { color })}
             state={state}
             size={size === "fill" ? "100%" : size}

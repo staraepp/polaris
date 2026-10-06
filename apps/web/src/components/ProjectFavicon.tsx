@@ -113,29 +113,27 @@ export function ProjectFavicon(input: {
 }
 
 /**
- * A project with no icon of its own: Polaris shows Orbie in the project's color
- * (a still pose; dozens can be on screen) instead of upstream's initials, unless
- * Orbie is switched off. Icons the user picked are never replaced.
+ * A project with no icon of its own: Polaris shows the project's bot (its own
+ * shape and color, a still pose; dozens can be on screen) instead of upstream's
+ * initials, unless Orbie is switched off. Icons the user picked are never replaced.
  */
 function AutomaticProjectAvatar({
   monogram,
   color,
+  projectName,
   className,
 }: {
   readonly monogram: string;
   readonly color: ProjectIconColor;
+  readonly projectName: string;
   readonly className?: string | undefined;
 }) {
   const orbieEnabled = useOrbieEnabled();
   if (!orbieEnabled) {
     return <ProjectMonogram text={monogram} color={color} className={className} />;
   }
-  return (
-    <OrbieAvatar
-      size="fill"
-      className={cn("size-4", projectIconColorClassName(color), className)}
-    />
-  );
+  // The project's own bot: shape and (when varied) color follow its name.
+  return <OrbieAvatar size="fill" project={projectName} className={cn("size-4", className)} />;
 }
 
 function ProjectFaviconFallback({
@@ -155,6 +153,7 @@ function ProjectFaviconFallback({
       <AutomaticProjectAvatar
         monogram={identity.monogram}
         color={identity.color}
+        projectName={projectName}
         className={className}
       />
     );

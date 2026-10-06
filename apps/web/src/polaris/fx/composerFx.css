@@ -3,7 +3,8 @@
    The beam itself is the vendored border-beam (EffortBeam.tsx, beamLooks.ts); its
    per-tier colors are these tokens, comma-separated hex, light on :root and dark
    on .dark, so a theme can retune them. high is the library's own rainbow.
-   Beam colors deliberately avoid the brand green and purple. */
+   Tier colors deliberately avoid the brand green and purple; only the optional
+   idle beam is green, because it is Polaris at rest, not a turn. */
 
 :root {
   /* low: a true blue, breathing */
@@ -14,6 +15,8 @@
   --polaris-beam-xhigh: #0d9488, #0891b2, #0f766e, #06b6d4;
   /* max: icy blue, a steel-ice on light */
   --polaris-beam-max: #4a90c8, #8fc4ea, #2f6fa3, #b8dcf5;
+  /* idle (optional, off by default): the brand green, faint and slow */
+  --polaris-beam-idle: #0f8a6c, #14a37f, #0b6e57;
   --polaris-beam-width: 2px;
   --polaris-flash-color: var(--destructive);
   /* Quota low, after the flash: a red-coral badge beside the usage meter (never
@@ -29,6 +32,7 @@
   --polaris-beam-xhigh: #2dd4bf, #22d3ee, #5eead4, #67e8f9;
   /* icy white-blue shimmer */
   --polaris-beam-max: #f0f9ff, #bae6fd, #e0f2fe, #7dd3fc;
+  --polaris-beam-idle: #2fbf95, #5ad8b0, #1fa37e;
   --polaris-quota-low: #ff7a6b;
 }
 

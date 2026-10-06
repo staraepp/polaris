@@ -1,4 +1,4 @@
-import type { BotAccessory } from "@t3tools/contracts";
+import type { BotAccessory, BotColors, BotShape } from "@t3tools/contracts";
 import type { BotAvatarProps, BotAvatarState } from "bot-avatars";
 
 /** The assistant's bot. Rename it here; nothing else spells the name. */
@@ -68,3 +68,14 @@ export const ORBIE_ACCESSORY_LABELS = {
   headphones: "Headphones",
   bowTie: "Bow tie",
 } as const satisfies Record<BotAccessory, string>;
+
+/** The shape setting in words: "mixed", or the library's shape name, capitalized. */
+export function botShapeLabel(shape: BotShape): string {
+  if (shape === "mixed") return "Mixed, one per project";
+  return shape.charAt(0).toUpperCase() + shape.slice(1);
+}
+
+export const BOT_COLOR_LABELS = {
+  varied: "Varied, one per project",
+  brand: "Brand green",
+} as const satisfies Record<BotColors, string>;

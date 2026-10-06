@@ -1,8 +1,11 @@
 import { lazy, Suspense, useMemo } from "react";
 
+import { useClientSettings } from "~/hooks/useSettings";
+
 import { resolveComposerFx, type ComposerFxInput, type ComposerFxState } from "./composerFxState";
 import { readDevFxOverride } from "./devFxOverride";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
+import { useWindowActive } from "./useWindowActive";
 
 /** What ChatView knows about the turn and the quota; the composer adds the idle ring. */
 export type ComposerFxSignals = Pick<
@@ -19,13 +22,17 @@ export const IDLE_COMPOSER_FX_SIGNALS: ComposerFxSignals = {
 
 export function useComposerFx(signals: ComposerFxSignals, keywordIdle: boolean): ComposerFxState {
   const reducedMotion = usePrefersReducedMotion();
+  // The idle beam is decoration: only while the window is in front of the user.
+  const idleBeamSetting = useClientSettings((settings) => settings.composerIdleBeamEnabled);
+  const windowActive = useWindowActive();
+  const idleBeam = idleBeamSetting && windowActive;
   // Dev builds only: forced states for screenshots (see devFxOverride.ts).
   const forced = readDevFxOverride();
   const forcedKey = forced === null ? "" : JSON.stringify(forced);
   return useMemo(() => {
     const override = forcedKey === "" ? {} : (readDevFxOverride() ?? {});
-    return resolveComposerFx({ ...signals, ...override, keywordIdle, reducedMotion });
-  }, [signals, keywordIdle, reducedMotion, forcedKey]);
+    return resolveComposerFx({ ...signals, ...override, keywordIdle, idleBeam, reducedMotion });
+  }, [signals, keywordIdle, idleBeam, reducedMotion, forcedKey]);
 }
 
 /**
@@ -61,7 +68,12 @@ export function ComposerFx({
   return (
     <>
       <Suspense fallback={null}>
-        <EffortBeam tier={state.tier} active={state.layer === "beam"} theme={theme} />
+        <EffortBeam
+          tier={state.tier}
+          active={state.layer === "beam" || state.layer === "idle"}
+          idle={state.layer === "idle"}
+          theme={theme}
+        />
       </Suspense>
       {voice !== null && state.layer === "voice" && state.animated ? (
         <Suspense fallback={null}>

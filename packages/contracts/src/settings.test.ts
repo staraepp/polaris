@@ -1219,6 +1219,36 @@ describe("ClientSettings bot avatars (Polaris)", () => {
   });
 });
 
+describe("ClientSettings bot looks, orbs and the idle beam (Polaris, V 4.5.0)", () => {
+  it("defaults to mixed shapes, varied colors, orbs on and no idle beam", () => {
+    const settings = decodeClientSettings({});
+    expect(settings.botShape).toBe("mixed");
+    expect(settings.botColors).toBe("varied");
+    expect(settings.activityOrbsEnabled).toBe(true);
+    expect(settings.composerIdleBeamEnabled).toBe(false);
+  });
+
+  it("accepts a fixed shape and the brand color, and rejects unknown values", () => {
+    expect(decodeClientSettings({ botShape: "ghost" }).botShape).toBe("ghost");
+    expect(decodeClientSettings({ botColors: "brand" }).botColors).toBe("brand");
+    expect(() => decodeClientSettings({ botShape: "dragon" })).toThrow();
+    expect(() => decodeClientSettings({ botColors: "rainbow" })).toThrow();
+    expect(
+      decodeClientSettingsPatch({
+        botShape: "flower",
+        botColors: "varied",
+        activityOrbsEnabled: false,
+        composerIdleBeamEnabled: true,
+      }),
+    ).toEqual({
+      botShape: "flower",
+      botColors: "varied",
+      activityOrbsEnabled: false,
+      composerIdleBeamEnabled: true,
+    });
+  });
+});
+
 describe("ClientSettings composer usage meter (Polaris)", () => {
   it("is on by default and can be turned off", () => {
     expect(decodeClientSettings({}).composerUsageMeterEnabled).toBe(true);

@@ -83,6 +83,20 @@ export const BEAM_LOOKS = {
   },
 } as const satisfies Record<BeamTier, BeamLook>;
 
+/**
+ * The optional idle beam (Settings → Effects, off by default): a slow, faint
+ * line in the brand green, so an idle composer reads as alive without looking
+ * like a running turn. Colors in `--polaris-beam-idle`.
+ */
+export const IDLE_BEAM_LOOK: BeamLook = {
+  size: "line",
+  colorVariant: "forest",
+  paletteToken: "--polaris-beam-idle",
+  staticColors: true,
+  strength: 0.6,
+  duration: 7,
+};
+
 export function beamLookFor(tier: EffortTier): BeamLook {
   return BEAM_LOOKS[tier === "none" ? "neutral" : tier];
 }

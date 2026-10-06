@@ -661,8 +661,20 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: ORBIE_NAME,
     to: "/settings/general",
     searchTerms: [
-      "bot avatar mascot assistant animation status working sleeping accessory hat spectacles headphones",
+      "bot avatar mascot assistant animation status working sleeping accessory hat spectacles headphones shape ghost flower cat star color project",
     ],
+  },
+  {
+    id: "activity-orbs",
+    title: "Thinking orbs",
+    to: "/settings/general",
+    searchTerms: ["orb orbs thinking working loading animation spinner dots effects"],
+  },
+  {
+    id: "composer-effects",
+    title: "Composer effects",
+    to: "/settings/general",
+    searchTerms: ["beam border glow outline effort voice idle preview composer animation effects"],
   },
   {
     id: "discord-presence",

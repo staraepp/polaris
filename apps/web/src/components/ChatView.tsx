@@ -3263,7 +3263,12 @@ export default function ChatView(props: ChatViewProps) {
   const polarisDevFx = readDevFxOverride();
   const polarisDevForcedRunning = polarisDevFx?.running === true;
   const polarisOrbieTier = polarisDevFx?.tier ?? polarisRunEffort.tier;
-  const polarisOrbieRun = useMemo(() => ({ tier: polarisOrbieTier }), [polarisOrbieTier]);
+  // The thread's bot is its project's bot (shape and color follow the project name).
+  const polarisBotProject = activeProject?.title ?? null;
+  const polarisOrbieRun = useMemo(
+    () => ({ tier: polarisOrbieTier, project: polarisBotProject }),
+    [polarisOrbieTier, polarisBotProject],
+  );
   const polarisLastActivityAt = useMemo(() => {
     const stamp =
       activeLatestRun?.completedAt ?? activeLatestRun?.startedAt ?? activeLatestRun?.requestedAt;
@@ -10940,6 +10945,7 @@ export default function ChatView(props: ChatViewProps) {
               }
               lastActivityAt={polarisLastActivityAt}
               tier={polarisOrbieTier}
+              project={polarisBotProject}
             />
           ) : null}
           <ChatHeader

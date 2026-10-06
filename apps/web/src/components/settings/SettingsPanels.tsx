@@ -168,7 +168,9 @@ import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BackgroundSetting } from "./polaris/BackgroundSetting";
+import { ActivityOrbsSetting } from "./polaris/ActivityOrbsSetting";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
+import { ComposerEffectsSetting } from "./polaris/ComposerEffectsSetting";
 import { LaunchPageSetting } from "./polaris/LaunchPageSetting";
 import { UsernameSetting } from "./polaris/UsernameSetting";
 import { ORBIE_NAME } from "../../polaris/bots/orbie";
@@ -557,8 +559,16 @@ export function useSettingsRestore(onRestored?: () => void) {
         : []),
       ...(settings.botAvatarsEnabled !== DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled ||
       settings.botAccessory !== DEFAULT_UNIFIED_SETTINGS.botAccessory ||
+      settings.botShape !== DEFAULT_UNIFIED_SETTINGS.botShape ||
+      settings.botColors !== DEFAULT_UNIFIED_SETTINGS.botColors ||
       Object.keys(settings.botAvatarByDriver).length > 0
         ? [ORBIE_NAME]
+        : []),
+      ...(settings.activityOrbsEnabled !== DEFAULT_UNIFIED_SETTINGS.activityOrbsEnabled
+        ? ["Thinking orbs"]
+        : []),
+      ...(settings.composerIdleBeamEnabled !== DEFAULT_UNIFIED_SETTINGS.composerIdleBeamEnabled
+        ? ["Idle beam"]
         : []),
       ...(settings.gooeyComposerMenuEnabled !== DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled
         ? ["Liquid composer menu"]
@@ -729,6 +739,10 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.composerUsageMeterEnabled,
       settings.botAvatarsEnabled,
       settings.botAccessory,
+      settings.botShape,
+      settings.botColors,
+      settings.activityOrbsEnabled,
+      settings.composerIdleBeamEnabled,
       settings.botAvatarByDriver,
       settings.gooeyComposerMenuEnabled,
       settings.voiceInputEnabled,
@@ -844,6 +858,10 @@ export function useSettingsRestore(onRestored?: () => void) {
       composerUsageMeterEnabled: DEFAULT_UNIFIED_SETTINGS.composerUsageMeterEnabled,
       botAvatarsEnabled: DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled,
       botAccessory: DEFAULT_UNIFIED_SETTINGS.botAccessory,
+      botShape: DEFAULT_UNIFIED_SETTINGS.botShape,
+      botColors: DEFAULT_UNIFIED_SETTINGS.botColors,
+      activityOrbsEnabled: DEFAULT_UNIFIED_SETTINGS.activityOrbsEnabled,
+      composerIdleBeamEnabled: DEFAULT_UNIFIED_SETTINGS.composerIdleBeamEnabled,
       botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
       gooeyComposerMenuEnabled: DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled,
       voiceInputEnabled: DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled,
@@ -3384,8 +3402,10 @@ export function GeneralSettingsPanel() {
         <QuotaLowThresholdSetting />
       </SettingsSection>
       <SettingsSection id="effects" title="Effects">
-        <GooeyComposerMenuSetting />
+        <ComposerEffectsSetting />
+        <ActivityOrbsSetting />
         <BotAvatarsSetting />
+        <GooeyComposerMenuSetting />
       </SettingsSection>
       <SettingsSection id="voice" title="Voice">
         <VoiceSettings />

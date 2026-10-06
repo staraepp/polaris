@@ -24,16 +24,27 @@ export function ThreadBot({
   waitingOnUser,
   lastActivityAt,
   tier,
+  project = null,
 }: {
   readonly running: boolean;
   readonly waitingOnUser: boolean;
   readonly lastActivityAt: number | null;
   readonly tier: EffortTier;
+  /** The thread's project name: the header shows that project's bot. */
+  readonly project?: string | null;
 }) {
   const now = useMinuteClock();
   const state =
     ORBIE_STATE_BY_STATUS[orbieStatusFor({ running, waitingOnUser, lastActivityAt, now })];
   return (
-    <OrbieAvatar size={28} state={state} live tier={tier} label={ORBIE_NAME} className="me-2" />
+    <OrbieAvatar
+      size={28}
+      state={state}
+      live
+      tier={tier}
+      label={ORBIE_NAME}
+      project={project}
+      className="me-2"
+    />
   );
 }

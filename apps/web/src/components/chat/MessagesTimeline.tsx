@@ -1,7 +1,12 @@
 import { ComputerUseAppIcon } from "~/components/Icons";
 import { ORBIE_NAME } from "~/polaris/bots/orbie";
 import { OrbieAvatar } from "~/polaris/bots/OrbieAvatar";
-import { useOrbieEnabled, useOrbieRun } from "~/polaris/bots/OrbieRunContext";
+import {
+  useActivityOrbsEnabled,
+  useOrbieEnabled,
+  useOrbieRun,
+} from "~/polaris/bots/OrbieRunContext";
+import { ActivityOrb } from "~/polaris/orbs/ActivityOrb";
 import { useChatCanvas } from "./ChatCanvasContext";
 import { WorkLogBlock, WorkLogButton, WorkLogDetails, WorkLogList, WorkLogRow } from "./WorkLog";
 import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
@@ -1944,13 +1949,14 @@ function MessageAuthorHeading({ children }: { children: string }) {
 }
 
 /**
- * Polaris: each turn's answer is signed by Orbie, a still bot beside its name
- * (history does not animate; the live Orbie is the working row's).
+ * Polaris: each turn's answer is signed by the thread's bot (its project's
+ * shape and color), still beside the name; history does not animate.
  */
 function OrbieAuthorHeading() {
+  const { project } = useOrbieRun();
   return (
     <h3 className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground select-none">
-      <OrbieAvatar size={18} />
+      <OrbieAvatar size={18} project={project} />
       {ORBIE_NAME}
     </h3>
   );
@@ -1959,9 +1965,10 @@ function OrbieAuthorHeading() {
 /** The empty thread: upstream's hint, with Orbie waiting above it when enabled. */
 function EmptyTimelinePlaceholder() {
   const orbieEnabled = useOrbieEnabled();
+  const { project } = useOrbieRun();
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3">
-      {orbieEnabled ? <OrbieAvatar size={56} live label={ORBIE_NAME} /> : null}
+      {orbieEnabled ? <OrbieAvatar size={56} live label={ORBIE_NAME} project={project} /> : null}
       <p
         className={cn(
           "text-sm",
@@ -3434,8 +3441,8 @@ function toolIconAcceptsTint(
 function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "working" }> }) {
   const { isCompacting, isPreparingWorktree, backgroundWorktreeSetup } =
     use(TimelineRowActivityCtx);
-  // Polaris: Orbie is the working animation, in the turn's effort color.
-  const orbieEnabled = useOrbieEnabled();
+  // Polaris: a thinking-orbs orb is the working animation, in the turn's effort color.
+  const orbsEnabled = useActivityOrbsEnabled();
   const orbieRun = useOrbieRun();
   // One span for every label so the setup-to-working handoff swaps text in
   // place instead of remounting the row.
@@ -3456,14 +3463,14 @@ function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "workin
       <div
         className={cn(
           "flex h-6 min-w-0 text-sm leading-relaxed text-muted-foreground tabular-nums",
-          // With Orbie, the same 24 px icon slot and gap as the work-log rows
+          // With the orb, the same 24 px icon slot and gap as the work-log rows
           // below it, so "Working" and "Thinking" start in one column.
-          orbieEnabled ? "items-center gap-1.5 px-0.5" : "items-baseline gap-2 px-1",
+          orbsEnabled ? "items-center gap-1.5 px-0.5" : "items-baseline gap-2 px-1",
         )}
       >
-        {orbieEnabled ? (
+        {orbsEnabled ? (
           <span className="flex size-6 shrink-0 items-center justify-center">
-            <OrbieAvatar size={20} state="working" live tier={orbieRun.tier} />
+            <ActivityOrb kind="working" tier={orbieRun.tier} />
           </span>
         ) : null}
         <span
@@ -3534,8 +3541,9 @@ function CompactingLabel() {
 
 function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "thinking" }> }) {
   const ctx = use(TimelineRowCtx);
-  // Polaris: a still Orbie stands in for the brain icon (the live one is the working row's).
-  const orbieEnabled = useOrbieEnabled();
+  // Polaris: a thinking-orbs orb stands in for the brain icon, in the turn's effort color.
+  const orbsEnabled = useActivityOrbsEnabled();
+  const orbieRun = useOrbieRun();
   const { isCompacting, isPreparingWorktree } = use(TimelineRowActivityCtx);
   // Reserve the activity row during setup so the handoff keeps the same height.
   if (isPreparingWorktree || isCompacting) return <WorkLogRow label="" />;
@@ -3545,7 +3553,7 @@ function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "think
       iconName="brain"
       active
       shimmer
-      {...(orbieEnabled ? { iconNode: <OrbieAvatar size={18} /> } : {})}
+      {...(orbsEnabled ? { iconNode: <ActivityOrb kind="thinking" tier={orbieRun.tier} /> } : {})}
     />
   );
   const { groupId } = row;
@@ -3574,7 +3582,7 @@ function LiveActivityRow({
   label: ReactNode;
   iconName?: WorkEntryIconName;
   toolIcon?: ToolActivityIcon | undefined;
-  /** Polaris: an icon element in place of the named one (Orbie on the thinking row). */
+  /** Polaris: an icon element in place of the named one (the orb on the thinking row). */
   iconNode?: ReactNode;
   failed?: boolean;
   active?: boolean;
@@ -3603,7 +3611,7 @@ function LiveActivityRow({
             iconName={iconName}
             toolIcon={toolIcon}
             // The shimmer copy keeps the slot but never paints a second icon over a custom one.
-            iconNode={iconNode === undefined ? undefined : <span aria-hidden className="size-4" />}
+            iconNode={iconNode === undefined ? undefined : <span aria-hidden className="size-5" />}
             highlighted
           />
         </ActivityShimmerOverlay>

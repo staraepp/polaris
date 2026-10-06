@@ -137,6 +137,14 @@ export const BOT_AVATAR_TYPES = [
 ] as const;
 export const BotAvatarType = Schema.Literals(BOT_AVATAR_TYPES);
 export type BotAvatarType = typeof BotAvatarType.Type;
+/** Polaris: the bots' shape, one per project ("mixed") or one shape for every bot. */
+export const BOT_SHAPES = ["mixed", ...BOT_AVATAR_TYPES] as const;
+export const BotShape = Schema.Literals(BOT_SHAPES);
+export type BotShape = typeof BotShape.Type;
+/** Polaris: the bots' colors, one per project ("varied") or the brand color. */
+export const BOT_COLOR_MODES = ["varied", "brand"] as const;
+export const BotColors = Schema.Literals(BOT_COLOR_MODES);
+export type BotColors = typeof BotColors.Type;
 /** Polaris: what Orbie, the assistant's bot, may wear. */
 export const BOT_ACCESSORIES = ["none", "hat", "glasses", "headphones", "bowTie"] as const;
 export const BotAccessory = Schema.Literals(BOT_ACCESSORIES);
@@ -495,6 +503,14 @@ export const ClientSettingsSchema = Schema.Struct({
   botAvatarByDriver: Schema.Record(Schema.String, BotAvatarType).pipe(
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
+  /** Polaris (V 4.5.0): each project's bot gets its own shape, or every bot one shape. */
+  botShape: BotShape.pipe(Schema.withDecodingDefault(Effect.succeed("mixed" as const))),
+  /** Polaris (V 4.5.0): each project's bot wears the project's color, or the brand. */
+  botColors: BotColors.pipe(Schema.withDecodingDefault(Effect.succeed("varied" as const))),
+  /** Polaris (V 4.5.0): `thinking-orbs` on the timeline's working and thinking rows. */
+  activityOrbsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /** Polaris (V 4.5.0): a faint beam around the idle composer; off by default. */
+  composerIdleBeamEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
   ),
@@ -1895,6 +1911,10 @@ export const ClientSettingsPatch = Schema.Struct({
   voiceOpenAiModel: Schema.optionalKey(Schema.String),
   voiceLanguage: Schema.optionalKey(Schema.String),
   botAvatarByDriver: Schema.optionalKey(Schema.Record(Schema.String, BotAvatarType)),
+  botShape: Schema.optionalKey(BotShape),
+  botColors: Schema.optionalKey(BotColors),
+  activityOrbsEnabled: Schema.optionalKey(Schema.Boolean),
+  composerIdleBeamEnabled: Schema.optionalKey(Schema.Boolean),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),
