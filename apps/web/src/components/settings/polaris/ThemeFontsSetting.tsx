@@ -1,3 +1,4 @@
+import { isFontFamilyAvailable } from "../../../appearanceFonts";
 import { useClientSettings, useUpdateClientSettings } from "../../../hooks/useSettings";
 import { useTheme } from "../../../hooks/useTheme";
 import {
@@ -23,6 +24,12 @@ export function ThemeFontsSetting() {
   const themeLabel =
     key === DEFAULT_THEME_FONT_KEY ? "the default theme" : (getThemeDefinition(key)?.label ?? key);
   const current = themeFonts[key];
+  // A misspelled or uninstalled family falls back silently; say so.
+  const missing = (["sans", "code"] as const).flatMap((role) => {
+    const family = current?.[role]?.trim();
+    return family && !isFontFamilyAvailable(family) ? [{ role, family }] : [];
+  });
+  const missingRole = (role: "sans" | "code") => missing.some((entry) => entry.role === role);
   const setFamily = (role: "sans" | "code", family: string) =>
     void updateSettings({ themeFonts: withThemeFont(themeFonts, key, role, family) });
 
@@ -49,6 +56,7 @@ export function ThemeFontsSetting() {
             placeholder="Interface font"
             maxLength={200}
             value={current?.sans ?? ""}
+            aria-invalid={missingRole("sans") || undefined}
             onCommit={(family) => setFamily("sans", family)}
           />
           <CommitInput
@@ -56,8 +64,15 @@ export function ThemeFontsSetting() {
             placeholder="Monospace font"
             maxLength={200}
             value={current?.code ?? ""}
+            aria-invalid={missingRole("code") || undefined}
             onCommit={(family) => setFamily("code", family)}
           />
+          {missing.map(({ role, family }) => (
+            <p key={role} role="status" className="text-xs text-muted-foreground">
+              “{family}” is not installed here, so the {role === "sans" ? "interface" : "monospace"}{" "}
+              font above is used.
+            </p>
+          ))}
         </div>
       }
     />

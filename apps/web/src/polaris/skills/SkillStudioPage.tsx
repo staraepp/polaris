@@ -7,6 +7,7 @@ import type { ServerProvider } from "@t3tools/contracts";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Select,
@@ -16,6 +17,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { SidebarInset } from "~/components/ui/sidebar";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { sortScopedProjectsForSidebar } from "~/components/Sidebar.logic";
 import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "~/components/WorkspaceBreadcrumb";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
@@ -41,8 +43,9 @@ const trimSlash = (path: string) => path.replaceAll("\\", "/").replace(/\/+$/, "
  * project, grouped by where they live, beside an editor for the project's
  * own SKILL.md files and Polaris's frontend templates.
  */
+const stayOnPage = () => {};
+
 export function SkillStudioPage() {
-  useEscapeToGoBack();
   const projects = useProjects();
   const threads = useThreadShells();
   const sortedProjects = useMemo(
@@ -109,6 +112,15 @@ export function SkillStudioPage() {
   );
   const allSkills = useMemo(() => allGroups.flatMap((group) => group.skills), [allGroups]);
   const [selection, setSelection] = useState<StudioSelection | null>(null);
+  // Unsaved SKILL.md edits by skill key, so moving between skills keeps them.
+  const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
+  // Esc goes back, except while there are unsaved edits it would throw away.
+  useEscapeToGoBack(Object.keys(drafts).length > 0 ? stayOnPage : undefined);
+  const setDraft = (key: string, draft: string | null) =>
+    setDrafts((current) => {
+      const { [key]: _dropped, ...rest } = current;
+      return draft === null ? rest : { ...rest, [key]: draft };
+    });
   const selectedSkill =
     selection?.type === "skill"
       ? allSkills.find((entry) => entry.key === selection.key)
@@ -117,11 +129,16 @@ export function SkillStudioPage() {
     selection?.type === "template"
       ? SKILL_TEMPLATES.find((template) => template.id === selection.id)
       : undefined;
+  // With nothing picked, open on the project's own first skill, else on a
+  // Polaris template, so a huge personal folder does not take over the page.
+  const firstProjectSkill = allGroups.find(
+    (group) => group.kind === "project" || group.kind === "repo",
+  )?.skills[0];
   const shown: StudioSelection | null =
     selectedSkill || selectedTemplate
       ? selection
-      : allSkills[0]
-        ? { type: "skill", key: allSkills[0].key }
+      : firstProjectSkill
+        ? { type: "skill", key: firstProjectSkill.key }
         : SKILL_TEMPLATES[0]
           ? { type: "template", id: SKILL_TEMPLATES[0].id }
           : null;
@@ -164,54 +181,22 @@ export function SkillStudioPage() {
               <h1>Skills</h1>
             </WorkspaceBreadcrumbItem>
           </WorkspaceBreadcrumb>
-          {sortedProjects.length > 0 ? (
-            <Select
-              value={project ? projectKey(project) : ""}
-              onValueChange={(value) => {
-                setProjectChoice(String(value));
-                setSelection(null);
-              }}
-            >
-              <SelectTrigger size="sm" className="w-auto min-w-0 max-w-48" aria-label="Project">
-                <SelectValue>{project?.title ?? "Project"}</SelectValue>
-              </SelectTrigger>
-              <SelectPopup align="end" alignItemWithTrigger={false}>
-                {sortedProjects.map((entry) => (
-                  <SelectItem key={projectKey(entry)} hideIndicator value={projectKey(entry)}>
-                    {entry.title}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
-          ) : null}
-          {providers.length > 0 ? (
-            <Select
-              value={provider?.instanceId ?? ""}
-              onValueChange={(value) => {
-                setProviderChoice(String(value));
-                setSelection(null);
-              }}
-            >
-              <SelectTrigger size="sm" className="w-auto min-w-0 max-w-40" aria-label="Provider">
-                <SelectValue>{provider ? providerLabel(provider) : "Provider"}</SelectValue>
-              </SelectTrigger>
-              <SelectPopup align="end" alignItemWithTrigger={false}>
-                {providers.map((entry) => (
-                  <SelectItem key={entry.instanceId} hideIndicator value={entry.instanceId}>
-                    {providerLabel(entry)}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
-          ) : null}
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={provider === null || scanning}
-            onClick={() => void scan(true)}
-          >
-            {scanning ? "Scanning…" : "Rescan"}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={scanning ? "Scanning for skills" : "Rescan skills"}
+                  disabled={provider === null || scanning}
+                  onClick={() => void scan(true)}
+                >
+                  <RefreshIcon refreshing={scanning} />
+                </Button>
+              }
+            />
+            <TooltipPopup side="bottom">Rescan skills</TooltipPopup>
+          </Tooltip>
           <Button
             size="sm"
             disabled={project === null}
@@ -228,7 +213,60 @@ export function SkillStudioPage() {
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 md:grid-cols-[18rem_minmax(0,1fr)]">
             <aside className="surface-glass min-h-0 border-border/60 md:border-r">
               <ScrollArea className="h-full">
-                <div className="p-3">
+                <div className="flex flex-col gap-3 p-3">
+                  {/* Which project and provider the list describes. */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {sortedProjects.length > 0 ? (
+                      <Select
+                        value={project ? projectKey(project) : ""}
+                        onValueChange={(value) => {
+                          setProjectChoice(String(value));
+                          setSelection(null);
+                        }}
+                      >
+                        <SelectTrigger size="sm" className="w-full min-w-0" aria-label="Project">
+                          <SelectValue>{project?.title ?? "Project"}</SelectValue>
+                        </SelectTrigger>
+                        <SelectPopup align="start" alignItemWithTrigger={false}>
+                          {sortedProjects.map((entry) => (
+                            <SelectItem
+                              key={projectKey(entry)}
+                              hideIndicator
+                              value={projectKey(entry)}
+                            >
+                              {entry.title}
+                            </SelectItem>
+                          ))}
+                        </SelectPopup>
+                      </Select>
+                    ) : null}
+                    {providers.length > 0 ? (
+                      <Select
+                        value={provider?.instanceId ?? ""}
+                        onValueChange={(value) => {
+                          setProviderChoice(String(value));
+                          setSelection(null);
+                        }}
+                      >
+                        <SelectTrigger size="sm" className="w-full min-w-0" aria-label="Provider">
+                          <SelectValue>
+                            {provider ? providerLabel(provider) : "Provider"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectPopup align="start" alignItemWithTrigger={false}>
+                          {providers.map((entry) => (
+                            <SelectItem
+                              key={entry.instanceId}
+                              hideIndicator
+                              value={entry.instanceId}
+                            >
+                              {providerLabel(entry)}
+                            </SelectItem>
+                          ))}
+                        </SelectPopup>
+                      </Select>
+                    ) : null}
+                  </div>
                   <SkillList
                     groups={groups}
                     templates={SKILL_TEMPLATES}
@@ -237,6 +275,7 @@ export function SkillStudioPage() {
                     selection={shown}
                     onSelect={setSelection}
                     pending={scanning && allSkills.length === 0}
+                    unsavedKeys={drafts}
                   />
                 </div>
               </ScrollArea>
@@ -250,6 +289,9 @@ export function SkillStudioPage() {
                     environmentId={project.environmentId}
                     cwd={cwd}
                     groupLabel={groupLabelOf(shownSkill.key)}
+                    draft={drafts[shownSkill.key] ?? null}
+                    onDraftChange={(draft) => setDraft(shownSkill.key, draft)}
+                    onRescan={() => void scan(true)}
                   />
                 ) : shownTemplate ? (
                   <TemplateDetail

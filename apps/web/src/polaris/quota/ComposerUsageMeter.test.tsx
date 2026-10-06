@@ -59,13 +59,13 @@ describe("ComposerUsageMeter", () => {
     const button = container.querySelector("button")!;
     expect(button.getAttribute("aria-label")).toBe("Usage limits: Weekly 45% left");
     expect(button.dataset.low).toBe("false");
-    expect(container.querySelectorAll('rect[data-low="true"]')).toHaveLength(0);
+    expect(container.querySelectorAll('circle[data-low="true"]')).toHaveLength(0);
   });
 
-  it("turns only the low window's bar amber", async () => {
+  it("turns only the low window's ring amber", async () => {
     await render(model(12));
     expect(container.querySelector("button")!.dataset.low).toBe("true");
-    expect(container.querySelectorAll('rect[data-low="true"]')).toHaveLength(1);
-    expect(container.querySelectorAll('rect[data-low="false"]')).toHaveLength(1);
+    expect(container.querySelectorAll('circle[data-low="true"]')).toHaveLength(1);
+    expect(container.querySelectorAll('circle[data-low="false"]')).toHaveLength(1);
   });
 });

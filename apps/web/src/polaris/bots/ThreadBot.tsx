@@ -60,7 +60,7 @@ export function ThreadBot({
   const state = botStateFor({ running, waitingOnUser, lastActivityAt, now });
   return (
     <span
-      className="inline-flex size-6 shrink-0 items-center justify-center"
+      className="me-2 inline-flex size-7 shrink-0 items-center justify-center"
       data-bot-state={state}
     >
       <Suspense fallback={null}>
@@ -68,7 +68,7 @@ export function ThreadBot({
           type={look.type}
           color={look.color}
           state={state}
-          size={24}
+          size={28}
           paused={!visible}
           aria-label={`${providerLabel} ${STATE_TEXT[state]}`}
         />

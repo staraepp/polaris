@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 
@@ -13,12 +15,14 @@ function Row({
   detail,
   selected,
   muted,
+  unsaved = false,
   onSelect,
 }: {
   readonly label: string;
   readonly detail: string | undefined;
   readonly selected: boolean;
   readonly muted?: boolean;
+  readonly unsaved?: boolean;
   readonly onSelect: () => void;
 }) {
   return (
@@ -32,10 +36,18 @@ function Row({
           selected && "bg-accent text-accent-foreground hover:bg-accent",
         )}
       >
-        <span
-          className={cn("truncate text-sm", muted ? "text-muted-foreground" : "text-foreground")}
-        >
-          {label}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span
+            className={cn("truncate text-sm", muted ? "text-muted-foreground" : "text-foreground")}
+          >
+            {label}
+          </span>
+          {unsaved ? (
+            <>
+              <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-primary" />
+              <span className="sr-only">, unsaved changes</span>
+            </>
+          ) : null}
         </span>
         {detail ? <span className="truncate text-xs text-muted-foreground">{detail}</span> : null}
       </button>
@@ -47,6 +59,52 @@ function GroupHeading({ children }: { readonly children: string }) {
   return (
     <h3 className="px-2.5 pb-1 text-2xs font-medium tracking-wide text-muted-foreground/80 uppercase">
       {children}
+    </h3>
+  );
+}
+
+/** Groups longer than this start folded, so one big folder does not bury the rest. */
+const COLLAPSE_FROM = 12;
+
+function GroupToggle({
+  label,
+  count,
+  open,
+  onToggle,
+}: {
+  readonly label: string;
+  readonly count: number;
+  readonly open: boolean;
+  readonly onToggle: () => void;
+}) {
+  return (
+    <h3>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className="flex w-full items-center gap-1.5 rounded-md px-2.5 pb-1 text-2xs font-medium tracking-wide text-muted-foreground/80 uppercase outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <svg
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+          className={cn(
+            "size-3 transition-transform duration-150 motion-reduce:transition-none",
+            open && "rotate-90",
+          )}
+        >
+          <path
+            d="M6 4l4 4-4 4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+        <span className="tabular-nums normal-case tracking-normal">{count}</span>
+      </button>
     </h3>
   );
 }
@@ -63,6 +121,7 @@ export function SkillList({
   selection,
   onSelect,
   pending,
+  unsavedKeys,
 }: {
   readonly groups: readonly StudioSkillGroup[];
   readonly templates: readonly SkillTemplate[];
@@ -71,7 +130,18 @@ export function SkillList({
   readonly selection: StudioSelection | null;
   readonly onSelect: (selection: StudioSelection) => void;
   readonly pending: boolean;
+  /** Skills with edits not yet saved, keyed like the entries. */
+  readonly unsavedKeys: Readonly<Record<string, string>>;
 }) {
+  // A group the user folded or unfolded keeps that choice; otherwise long ones
+  // start folded unless a filter is on or the selection lives inside.
+  const [toggled, setToggled] = useState<Partial<Record<string, boolean>>>({});
+  const filtering = query.trim().length > 0;
+  const isOpen = (group: StudioSkillGroup) =>
+    toggled[group.kind] ??
+    (filtering ||
+      group.skills.length <= COLLAPSE_FROM ||
+      group.skills.some((entry) => isSelectedSkill(selection, entry)));
   return (
     <nav aria-label="Skills" className="flex min-h-0 flex-col gap-3">
       <Input
@@ -81,6 +151,13 @@ export function SkillList({
         placeholder="Filter skills"
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
+        onKeyDown={(event) => {
+          // Esc clears the filter (then leaves the field) instead of leaving the page.
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          if (query) onQueryChange("");
+          else event.currentTarget.blur();
+        }}
       />
       <div className="flex min-h-0 flex-col">
         {groups.length === 0 ? (
@@ -94,14 +171,22 @@ export function SkillList({
         ) : (
           groups.map((group) => (
             <section key={group.kind} aria-label={group.label} className="mt-3 first:mt-0">
-              <GroupHeading>{group.label}</GroupHeading>
-              <ul className="flex flex-col">
+              <GroupToggle
+                label={group.label}
+                count={group.skills.length}
+                open={isOpen(group)}
+                onToggle={() =>
+                  setToggled((current) => ({ ...current, [group.kind]: !isOpen(group) }))
+                }
+              />
+              <ul className={cn("flex flex-col", !isOpen(group) && "hidden")}>
                 {group.skills.map((entry) => (
                   <Row
                     key={entry.key}
                     label={entry.label}
                     detail={entry.skill.shortDescription ?? entry.skill.description}
                     muted={!entry.skill.enabled}
+                    unsaved={unsavedKeys[entry.key] !== undefined}
                     selected={isSelectedSkill(selection, entry)}
                     onSelect={() => onSelect({ type: "skill", key: entry.key })}
                   />

@@ -10,12 +10,13 @@ import type { ThreadUsage } from "../threadUsage/threadUsage";
 import { ThreadUsageSection } from "../threadUsage/ThreadUsageSection";
 import type { UsageMeterModel } from "./usageMeterModel";
 
-const TRACK_X = 2;
-const TRACK_WIDTH = 16;
+/** Ring radii, outside in: the first window (usually 5 hours) rings the second. */
+const RING_RADII = [7.25, 3.75] as const;
+const RING_STROKE = 2;
 
 /**
- * Quota gauge beside the send button (Polaris): one thin bar per window,
- * filled by what is left. Neutral until a window drops to the quota-low
+ * Quota gauge beside the send button (Polaris): one ring per window, the
+ * first outside, each drawn around by what is left. Neutral until a window drops to the quota-low
  * threshold, then that bar turns amber, the same signal as the outline.
  */
 export function ComposerUsageMeter({
@@ -27,7 +28,7 @@ export function ComposerUsageMeter({
 }) {
   // Reset countdowns are read when the popover opens, not on every render.
   const [now, setNow] = useState(() => Date.now());
-  const rows = model.bars.length === 1 ? [10] : [7, 13];
+  const radii: readonly number[] = model.bars.length === 1 ? [6] : RING_RADII;
   return (
     <Popover
       onOpenChange={(open) => {
@@ -46,29 +47,32 @@ export function ComposerUsageMeter({
             data-low={model.low}
             aria-label={`Usage limits: ${model.tightest.label} ${model.tightest.remainingPercent}% left`}
           >
-            <svg viewBox="0 0 20 20" className="size-5" aria-hidden="true">
+            <svg viewBox="0 0 20 20" className="size-5 -rotate-90" aria-hidden="true">
               {model.bars.map((bar, index) => {
-                const y = rows[index] ?? 10;
-                const fill = (TRACK_WIDTH * Math.max(0, Math.min(100, bar.remainingPercent))) / 100;
+                const radius = radii[index] ?? 7;
+                const left = Math.max(0, Math.min(100, bar.remainingPercent));
                 return (
                   <g key={bar.id}>
-                    <rect
-                      x={TRACK_X}
-                      y={y - 1.5}
-                      width={TRACK_WIDTH}
-                      height={3}
-                      rx={1.5}
-                      className="fill-muted-foreground/24"
+                    <circle
+                      cx="10"
+                      cy="10"
+                      r={radius}
+                      fill="none"
+                      strokeWidth={RING_STROKE}
+                      className="stroke-muted-foreground/20"
                     />
-                    {fill > 0 ? (
-                      <rect
-                        x={TRACK_X}
-                        y={y - 1.5}
-                        width={Math.max(3, fill)}
-                        height={3}
-                        rx={1.5}
+                    {left > 0 ? (
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r={radius}
+                        fill="none"
+                        strokeWidth={RING_STROKE}
+                        strokeLinecap="round"
+                        pathLength={100}
+                        strokeDasharray={`${left} 100`}
                         data-low={bar.low}
-                        className="fill-muted-foreground/72 transition-[width] duration-500 ease-out motion-reduce:transition-none data-[low=true]:fill-warning"
+                        className="stroke-muted-foreground/72 transition-[stroke-dasharray] duration-500 ease-out motion-reduce:transition-none data-[low=true]:stroke-warning"
                       />
                     ) : null}
                   </g>

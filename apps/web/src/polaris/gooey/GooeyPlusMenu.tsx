@@ -50,8 +50,18 @@ export default function GooeyPlusMenu({
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
+    // Opened by pointer, focus stays in the prompt, so Esc is heard here too.
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape" || rootRef.current?.contains(document.activeElement)) return;
+      event.preventDefault();
+      setOpen(false);
+    };
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
   }, [open]);
 
   const close = (refocus: boolean) => {
@@ -131,10 +141,14 @@ export default function GooeyPlusMenu({
               aria-expanded={open}
               aria-controls={menuId}
               onPointerDown={(event) => event.preventDefault()}
-              onClick={() => {
+              onClick={(event) => {
                 const next = !open;
                 setOpen(next);
-                if (next) requestAnimationFrame(() => itemRefs.current[0]?.focus());
+                // Only a keyboard open (detail 0) walks focus into the chips; a
+                // click leaves it in the prompt instead of ringing the first chip.
+                if (next && event.detail === 0) {
+                  requestAnimationFrame(() => itemRefs.current[0]?.focus());
+                }
               }}
               className="pointer-events-auto flex size-8 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
             >

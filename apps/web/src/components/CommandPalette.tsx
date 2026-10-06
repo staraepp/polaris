@@ -190,6 +190,8 @@ import { openLinkPullRequestDialog } from "./pullRequest/LinkPullRequestDialog";
 import { ProjectContentSearchDialog } from "./search/ProjectContentSearchDialog";
 import { toggleThemeEditorForTheme } from "./settings/themeEditorStore";
 import { searchSettings, SETTINGS_SECTION_LABELS } from "./settings/settingsSearch";
+import { DashboardGlyph } from "../polaris/dashboard/DashboardGlyph";
+import { SkillsGlyph } from "../polaris/skills/SkillsGlyph";
 import {
   COMMAND_PALETTE_META_ICON_CLASS,
   CommandPaletteMetaDot,
@@ -2240,6 +2242,29 @@ function OpenCommandPaletteDialog(props: {
     shortcutCommand: "usage.open",
     run: async () => {
       await navigate({ to: "/usage" });
+    },
+  });
+
+  // Polaris: the workspace pages, so they are reachable without the footer icons.
+  actionItems.push({
+    kind: "action",
+    value: "action:dashboard",
+    searchTerms: ["dashboard", "home", "overview", "bento", "today", "activity"],
+    title: "Open dashboard",
+    icon: <DashboardGlyph className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/dashboard" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:skills",
+    searchTerms: ["skills", "skill studio", "skill.md", "agents", "templates", "prompts"],
+    title: "Open skill studio",
+    icon: <SkillsGlyph className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/skills" });
     },
   });
 
