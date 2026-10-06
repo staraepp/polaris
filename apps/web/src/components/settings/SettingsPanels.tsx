@@ -172,6 +172,7 @@ import { ActivityOrbsSetting } from "./polaris/ActivityOrbsSetting";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
 import { ComposerEffectsSetting } from "./polaris/ComposerEffectsSetting";
 import { LaunchPageSetting } from "./polaris/LaunchPageSetting";
+import { UpdateInviteSetting } from "./polaris/UpdateInviteSetting";
 import { UsernameSetting } from "./polaris/UsernameSetting";
 import { ORBIE_NAME } from "../../polaris/bots/orbie";
 import { GooeyComposerMenuSetting } from "./polaris/GooeyComposerMenuSetting";
@@ -3412,7 +3413,10 @@ export function GeneralSettingsPanel() {
       </SettingsSection>
       <SettingsSection id="about" title="About">
         {isElectron || HOSTED_APP_CHANNEL ? (
-          <AboutVersionSection />
+          <>
+            <AboutVersionSection />
+            <UpdateInviteSetting />
+          </>
         ) : (
           <>
             <SettingsRow

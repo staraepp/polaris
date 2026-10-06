@@ -54,6 +54,7 @@ import * as DesktopClientSettings from "./settings/DesktopClientSettings.ts";
 import * as DesktopSavedEnvironments from "./settings/DesktopSavedEnvironments.ts";
 import * as DesktopSnapShot from "./snapShot/DesktopSnapShot.ts";
 import * as DiscordPresence from "./polaris/discord/DiscordPresence.ts";
+import * as PolarisUpdateInvite from "./polaris/updates/PolarisUpdateInvite.ts";
 import * as PolarisVoice from "./polaris/voice/PolarisVoice.ts";
 import * as DesktopAppSettings from "./settings/DesktopAppSettings.ts";
 import * as DesktopPreReadyFileSystem from "./app/DesktopPreReadyFileSystem.ts";
@@ -135,7 +136,7 @@ const electronLayer = Layer.mergeAll(
   ElectronSafeStorage.layer,
   ElectronShell.layer,
   ElectronTheme.layer,
-  ElectronUpdater.layer,
+  ElectronUpdater.polarisLayer,
   ElectronWindow.layer,
   DesktopIpc.layer(Electron.ipcMain),
 );
@@ -212,6 +213,7 @@ const desktopApplicationLayer = Layer.mergeAll(
   DesktopLifecycle.layer,
   DiscordPresence.layer,
   PolarisVoice.layer,
+  PolarisUpdateInvite.layer,
   desktopAppActivationLayer,
   DesktopApplicationMenu.layer,
   DesktopLinuxUrlHandler.layer,

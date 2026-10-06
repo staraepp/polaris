@@ -52,6 +52,13 @@ export type ClideLiveEvent =
       readonly status: "connected" | "reconnecting" | "unauthorized" | "stopped";
     };
 
+/** The private update feed's invite code (V 4.7.0); the renderer never reads the code back. */
+export interface UpdateInviteState {
+  readonly hasCode: boolean;
+  /** False when `safeStorage` is unavailable: the code then lasts until the app quits. */
+  readonly persistent: boolean;
+}
+
 export interface PolarisBridge {
   readonly discordPresence: {
     readonly getState: () => Promise<DiscordPresenceState>;
@@ -66,5 +73,11 @@ export interface PolarisBridge {
     /** Follows Clide's event stream on this port; `null` stops following. */
     readonly watchClide: (port: number | null) => Promise<void>;
     readonly onClideEvent: (listener: (event: ClideLiveEvent) => void) => () => void;
+  };
+  /** Absent on desktop builds older than V 4.7.0. */
+  readonly updates?: {
+    readonly getInvite: () => Promise<UpdateInviteState>;
+    /** An empty value removes the code; a malformed one is refused. */
+    readonly setInvite: (code: string) => Promise<UpdateInviteState>;
   };
 }

@@ -4,7 +4,16 @@ import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as Scope from "effect/Scope";
 
+import { HostProcessPlatform } from "@t3tools/shared/hostProcess";
+import { POLARIS_INVITE_HEADER, POLARIS_UPDATE_FEED_URL } from "@t3tools/shared/polarisUpdateFeed";
+import { app, net, shell } from "electron";
 import { autoUpdater } from "electron-updater";
+
+import {
+  currentInviteCode,
+  MISSING_INVITE_CODE_MESSAGE,
+} from "../polaris/updates/inviteCodeState.ts";
+import { MacManualUpdater } from "../polaris/updates/macManualUpdater.ts";
 
 type AutoUpdater = typeof autoUpdater;
 
@@ -170,3 +179,103 @@ export const make = ElectronUpdater.of({
 });
 
 export const layer = Layer.succeed(ElectronUpdater, make);
+
+/**
+ * Polaris (V 4.7.0): updates come from the private feed and every request
+ * carries the user's invite code. Windows and Linux keep electron-updater,
+ * with the code as a request header. macOS uses `MacManualUpdater`: an
+ * unsigned app cannot replace itself, so it downloads the dmg and opens it.
+ */
+function withInviteHeader<A, E>(
+  effect: Effect.Effect<A, E>,
+  fail: (cause: Error) => E,
+): Effect.Effect<A, E> {
+  return Effect.suspend(() => {
+    const code = currentInviteCode();
+    if (code === null) return Effect.fail(fail(new Error(MISSING_INVITE_CODE_MESSAGE)));
+    autoUpdater.requestHeaders = { ...autoUpdater.requestHeaders, [POLARIS_INVITE_HEADER]: code };
+    return effect;
+  });
+}
+
+const makePolarisFeedUpdater = (): ElectronUpdater["Service"] =>
+  ElectronUpdater.of({
+    ...make,
+    checkForUpdates: withInviteHeader(
+      make.checkForUpdates,
+      (cause) => new ElectronUpdaterCheckForUpdatesError({ channel: autoUpdater.channel, cause }),
+    ),
+    downloadUpdate: withInviteHeader(
+      make.downloadUpdate,
+      (cause) => new ElectronUpdaterDownloadUpdateError({ channel: autoUpdater.channel, cause }),
+    ),
+  });
+
+const makePolarisMacUpdater = (): ElectronUpdater["Service"] => {
+  const updater = new MacManualUpdater({
+    appVersion: () => app.getVersion(),
+    downloadsDir: () => app.getPath("downloads"),
+    fetch: (url, init) => net.fetch(url, init),
+    openPath: (path) => shell.openPath(path),
+    showItemInFolder: (path) => shell.showItemInFolder(path),
+    quit: () => app.quit(),
+  });
+  let channel: string | null = null;
+  return ElectronUpdater.of({
+    setFeedURL: (options) =>
+      Effect.sync(() => {
+        const url =
+          typeof options === "object" && options !== null && "url" in options ? options.url : null;
+        updater.feedUrl = typeof url === "string" && url.length > 0 ? url : POLARIS_UPDATE_FEED_URL;
+        if (!updater.feedUrl.endsWith("/")) updater.feedUrl += "/";
+      }),
+    setAutoDownload: () => Effect.void,
+    setAutoInstallOnAppQuit: () => Effect.void,
+    setChannel: (next) =>
+      Effect.sync(() => {
+        channel = next;
+      }),
+    setAllowPrerelease: () => Effect.void,
+    allowDowngrade: Effect.sync(() => updater.allowDowngrade),
+    setAllowDowngrade: (value) =>
+      Effect.sync(() => {
+        updater.allowDowngrade = value;
+      }),
+    setFullChangelog: () => Effect.void,
+    setDisableDifferentialDownload: () => Effect.void,
+    checkForUpdates: Effect.tryPromise({
+      try: () => updater.checkForUpdates(),
+      catch: (cause) => new ElectronUpdaterCheckForUpdatesError({ channel, cause }),
+    }),
+    downloadUpdate: Effect.tryPromise({
+      try: () => updater.downloadUpdate(),
+      catch: (cause) => new ElectronUpdaterDownloadUpdateError({ channel, cause }),
+    }),
+    quitAndInstall: ({ isSilent, isForceRunAfter }) =>
+      Effect.try({
+        try: () => updater.quitAndInstall(),
+        catch: (cause) =>
+          new ElectronUpdaterQuitAndInstallError({ channel, isSilent, isForceRunAfter, cause }),
+      }),
+    on: (eventName, listener) => {
+      const untypedListener = listener as unknown as (...args: Array<unknown>) => void;
+      return Effect.acquireRelease(
+        Effect.sync(() => {
+          updater.on(eventName, untypedListener);
+        }),
+        () =>
+          Effect.sync(() => {
+            updater.removeListener(eventName, untypedListener);
+          }),
+      ).pipe(Effect.asVoid);
+    },
+  });
+};
+
+/** The layer the Polaris desktop app uses (main.ts); `layer` stays upstream's. */
+export const polarisLayer = Layer.effect(
+  ElectronUpdater,
+  Effect.map(HostProcessPlatform, (platform) =>
+    platform === "darwin" ? makePolarisMacUpdater() : makePolarisFeedUpdater(),
+  ),
+);

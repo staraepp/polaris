@@ -318,6 +318,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude Code — V 4.7.0: private updates from the VPS, invite code, username out of builds
+
+- Status: done
+- What changed: a private update feed on the VPS (`infra/polaris-server/`: nginx container `polaris-updates` on 127.0.0.1:3095, its own Cloudflare tunnel `polaris` → `https://polaris.sstarvfx.com`, files in `/opt/polaris/updates`, invite codes in `/opt/polaris/nginx/invites.map`, never in git). Builds bake in the feed (`packages/shared/src/polarisUpdateFeed.ts`, generic publish target in `scripts/build-desktop-artifact.ts`). The desktop app sends the user's invite code with every update request (`ElectronUpdater.polarisLayer`, code stored by `apps/desktop/src/polaris/updates/PolarisUpdateInvite.ts` with `safeStorage`, IPC `polaris:updates-*`, `window.polarisBridge.updates`). Windows uses electron-updater; macOS uses `MacManualUpdater` (download the dmg into Downloads, sha512 check, open it, quit) because the app is unsigned. Code entry: onboarding's first step and Settings → General → Updates (`UpdateInviteSetting.tsx`). Release: `node scripts/polaris-publish-update.mjs`. Builds no longer carry the builder's home path (rustflags `--remap-path-prefix`, `.modules.yaml` excluded).
+- How verified: unit tests for the feed parser, the Mac updater (fake server: missing/rejected code, nothing new, download + checksum, tampered file) and the build helpers; desktop, shared, web and scripts typechecks; full gate (MORNING V 4.7.0); live feed: `/health` 200, no or wrong code 401, right code 200; the real 4.7.0 release published and fetched through `MacManualUpdater` with the real code (see MORNING).
+- Risks: the in-app install itself (opening the dmg, Windows restart into the new version) was not run, because that needs the packaged app launched. Windows updating is untested on Windows. A mistaken DNS record `polaris.staraep.fun.sstarvfx.com` (to the deepseek-harness tunnel, answers 404) must be deleted in the Cloudflare dashboard.
+- Next action: V 5.0.0 collaboration on the same VPS service (sync server, Excalidraw, Tiptap docs, chat) in a Workspace hub.
+- Open questions: None.
+
 ### 2026-10-06 — Claude Code — V 4.6.0: one Tools hub instead of four sidebar buttons
 
 - Status: done
@@ -354,17 +363,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.5.0 bots and motion (Star: bot shapes and colors, thinking orbs via `thinking-orbs`, beam and voice visibility), then the four hubs, then Workspace (VPS collaboration).
 - Open questions: none new.
 
-### 2026-10-06 — Claude (session 8) — V 4.3.0: import sessions any time; app version = V number
-
-- Status: done; gate passed (see MORNING V 4.3.0); merged into `main` and tagged `v4.3.0`
-- What changed: branch `import-sessions`: new `/import` page (`apps/web/src/polaris/import/ImportSessionsPage.tsx`, route `routes/import.tsx`, regenerated `routeTree.gen.ts`) reached from the command palette ("Import Claude Code and Codex sessions") and the dashboard Start tile ("Import past sessions"). It reuses the welcome wizard's picker (`ImportCandidate` and `ImportCandidateList` are now exported from `WelcomeWizard.tsx`) and upstream's `agentSessions.scan`/`import` RPCs (no contract change). Pure run and summary logic in `sessionImport.ts` (+6 tests). `/import` is a sidebar utility page (Back button). Branch `version-4.3.0`: `node scripts/update-release-package-versions.ts 4.3.0` set desktop, web, server and contracts to `4.3.0` (Settings → About, the dmg name `Polaris-4.3.0-arm64.dmg`).
-- How verified: worktree dev stack (`polaris-dev.mjs`, ports 14646/6606; Star's stack untouched): the page found 26 folders from this Mac's Claude Code and Codex history; imported one folder into the temp dev database (2 threads, project created), imported it again (no duplicates; the server counts already-imported sessions as imported, so the result line says "2 threads from 1 folder are in Polaris"); palette entry found; narrow (420 px) and dark checked. Shots in `.playwright-mcp/v4.3.0/`.
-- Risks: imported finished conversations land under Settled in the sidebar, not under the project (upstream's settle rule); the page says so. Only the primary environment is scanned. With the version at 4.3.0 the server applies the V2 provider compatibility policy (`t3CodeRange >=0.0.46`), which matches the V2 orchestrator this fork runs; `t3 update` (upstream's npm package) now counts upstream's 0.0.x as a downgrade and refuses without `--allow-downgrade`.
-- Next action: Star tries `/import` in the dev app and the rebuilt dmg.
-- Open questions: does "import threads" also mean bringing in T3 Code's own threads from `~/.t3`? (Not built: it reads another app's database.)
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — V 4.3.0: import sessions any time; app version = V number. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.2.0: Polaris as its own desktop app. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.1.1 gate: passed, merged, tagged `v4.1.1`. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 023: first steps in any order. Rolled up; see `git log`.

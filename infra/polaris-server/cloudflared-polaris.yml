@@ -1,0 +1,9 @@
+# /etc/cloudflared/polaris.yml on the VPS: the Polaris server's own tunnel
+# (separate from every other tunnel there). TUNNEL_ID is filled in on deploy.
+tunnel: TUNNEL_ID
+credentials-file: /root/.cloudflared/TUNNEL_ID.json
+
+ingress:
+  - hostname: polaris.sstarvfx.com
+    service: http://127.0.0.1:3095
+  - service: http_status:404

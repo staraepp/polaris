@@ -1,6 +1,16 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.6.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.7.0**. Start with "Look at these first" at the bottom.
+
+## V 4.7.0 (private updates for your friends), tag `v4.7.0`
+
+- **Updates come from your VPS, behind an invite code.** `https://polaris.sstarvfx.com` serves new versions only to requests carrying a valid invite code; everyone else gets "401" and learns nothing. No GitHub, no tokens inside the app. Your code is in `/tmp/polaris-tools/invite-code.txt` on this Mac (and on the VPS in `/opt/polaris/nginx/invites.map`); share it only with friends.
+- **Friends enter the code once:** on the first welcome step, or later in Settings → General → Updates. It is stored encrypted by the system keychain.
+- **Windows** downloads the update and restarts into it. **Mac** downloads the new dmg into Downloads, checks it, opens it and quits Polaris; your friend drags the new Polaris into Applications (macOS does not let unsigned apps replace themselves; a $99/year Apple certificate would remove that step).
+- **Publishing a new version** (for me or any agent): build the dmg and exe, then `node scripts/polaris-publish-update.mjs`. Details in `infra/polaris-server/README.md`.
+- **Your name is out of the builds:** the Mac account name no longer appears in the installers.
+- **One thing for you:** during setup I created a wrong DNS record, `polaris.staraep.fun.sstarvfx.com`. It is harmless (it answers 404), but please delete it in the Cloudflare dashboard (DNS of sstarvfx.com). I cannot delete DNS records from the VPS.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged). Contracts 537, shared 1,120, client-runtime 1,998, desktop 1,420 (+44 skipped), web 5,992, scripts 343 + the 1 known failure, server the 8 known failures / 6,432 passed.
 
 ## V 4.6.0 (one Tools hub, fewer buttons), tag `v4.6.0`
 

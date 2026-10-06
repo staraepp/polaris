@@ -1,0 +1,16 @@
+# Polaris server on Star's VPS (/opt/polaris). V 4.7.0: the private update
+# feed. Reachable only through the `polaris` Cloudflare tunnel
+# (polaris.sstarvfx.com → 127.0.0.1:3095); nothing listens publicly.
+# Deploy: see README.md next to this file.
+services:
+  updates:
+    image: nginx:1.27-alpine
+    container_name: polaris-updates
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3095:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # One `"<code>" 1;` line per invite code. Lives only on the VPS, never in git.
+      - ./nginx/invites.map:/etc/nginx/polaris-invites.map:ro
+      - ./updates:/srv/updates:ro

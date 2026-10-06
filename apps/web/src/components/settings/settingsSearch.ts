@@ -645,6 +645,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["gooey liquid plus menu attach composer chips effects"],
   },
   {
+    id: "update-invite",
+    title: "Updates",
+    to: "/settings/general",
+    searchTerms: ["update updates invite code private server download new version upgrade"],
+    desktopOnly: true,
+  },
+  {
     id: "collab-username",
     title: "Username",
     to: "/settings/general",
