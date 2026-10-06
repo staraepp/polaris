@@ -1,6 +1,16 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.1.1**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.2.0**. Start with "Look at these first" at the bottom.
+
+## V 4.2.0 (Polaris as its own desktop app), tag `v4.2.0`
+
+You said yes on 2026-10-06, so the desktop app now has its own identity and installs beside T3 Code:
+
+- **Identity, in one place** (`packages/shared/src/polarisDesktopIdentity.ts`): bundle id `app.polaris.desktop`, URL scheme `polaris://` (`polaris-dev://` in dev), Electron profile `~/Library/Application Support/polaris`, server home `~/.polaris` (`T3CODE_HOME` still wins), and the bundled server scans for a port from 3783 instead of 3773. Separate profile means a separate single-instance lock, so both apps can run at once.
+- **Never touches T3 Code's data:** the old upstream migrations (copying `T3 Code (Alpha)` Windows keys, importing V1 local storage) are off, and tests fail if Polaris even inspects those folders. Sign-in return links only go back to `polaris://`; the server still accepts a T3 Code desktop client (harmless, additive).
+- **The app:** `release/Polaris-0.0.45-arm64.dmg` (and `.zip`), unsigned, Apple Silicon. Bundle id, name ("Polaris (Alpha)"), and URL schemes checked in its Info.plist; no update feed is baked in, so it never auto-updates. Open the dmg, drag to Applications, then right-click → Open the first time (Gatekeeper). macOS will ask once to let "Polaris (Alpha)" use its own keychain entry ("Polaris (Alpha) Safe Storage"); that is where sign-in and voice secrets are kept.
+- Gate: fmt and lint clean (0 errors, 867 warnings); contracts 531, shared 1,115, client-runtime 1,998, desktop 1,415 (+44 skipped), web 5,968, scripts 341 + the 1 known failure, server the 8 known failures / 6,430 passed.
+- **Not done:** the version string is still upstream's `0.0.45` (the V numbers live in git tags); Linux names (window class, `.desktop` entry) are still upstream's; I could not click through the first launch myself (see below).
 
 ## V 4.1.1 (polish 014 to 023), tag `v4.1.1`
 
@@ -89,6 +99,7 @@ One focused change per cycle, on branch `polish` (001 to 013) and `polish-2` (01
 
 ## Skipped or held back
 
+- **Desktop first launch, end to end:** I launched the packaged app once with a temporary home. It started, created its own `polaris` profile (not T3 Code's) and then waited on the macOS keychain prompt for its own "Polaris (Alpha) Safe Storage" entry, which needs your click. I stopped that test run, removed the empty profile it made, and no keychain entry was created. If that prompt was still on your screen this morning, it was from my test: Deny is fine. The window, pairing and dashboard inside the packaged app are therefore checked only through the web build, not by me in the app.
 - **Polish cycles** stopped at 23 of 25. They had paused at 13 while V 4.0.0 and V 4.1.0 were built, then resumed. The last scans (thread view, usage, a 1920 px dashboard, Orbie up close) found nothing clearly better to change, so two cycles were left unused instead of spent on taste changes.
 - **Plugin API:** not built (blueprint rule, amendment guard).
 - **Slack-like chat and the planning suite:** design notes only; see "Needs Star's approval".
@@ -127,7 +138,6 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Slack-like chat.** Not built. Design note in "Guards (V 4.0.0)" below: pick between the two readings (several people in one server, or a Slack-like layout for your own agent threads); the second has a safe first slice.
 - **Planning suite.** Not built. The AFFiNE docs spike is done (see "Guards (V 4.0.0)"); the recommendation there needs your yes before anything is installed or embedded.
 - **Plugin API.** Not built, by the blueprint's rule and the amendment; hard-fork editing still works.
-- **A desktop app of its own (your "full desktop app" ask).** The Electron shell in `apps/desktop` builds and its tests pass, but a packaged Polaris would still be **T3 Code to macOS**: app id `com.t3tools.t3code` (`scripts/build-desktop-artifact.ts:57`), Electron profile `~/Library/Application Support/t3code-v2` (`t3code-dev` in dev; `apps/desktop/src/app/DesktopUserData.ts`), server state in `~/.t3`, the `t3code://` scheme and window class `t3code`. Installed next to your real T3 Code, it would share that data and its single-instance lock (whichever opens second gives way), and the auto-updater still follows upstream's feed (see "App version string"). These are the internal identifiers `AGENTS.md` says to leave alone unless you ask, so I did not change them and did not run or package Electron. Proposed change, one branch, when you say yes: app id `app.polaris.desktop` (or a reverse-domain id you own), profile `polaris` / `polaris-dev`, home `~/.polaris` (with `T3CODE_HOME` still honored), scheme `polaris://`, window class `polaris`, the updater feed off until you have releases, then `vp run dist:desktop:dmg:arm64` for an unsigned local `.dmg` (Gatekeeper: right-click → Open). Nothing to migrate: no Polaris desktop data exists yet.
 
 ## Questions for Star
 
@@ -166,5 +176,5 @@ Sources: [The New Stack, hands-on review of Conductor](https://thenewstack.io/a-
 1. **Open Polaris**: it lands on the dashboard now. Check the greeting, First steps (any step, any order) and Customize (move, resize, add a Note or Links widget). Settings → General → "Open Polaris on" switches back to the old draft landing.
 2. **Settings → Appearance → Background**: pick a photo or a short video and try Dim and Blur. Look at a thread over it in light and dark; the contrast floor note says when Polaris is dimming more than you asked.
 3. **Effort colors and Orbie**: the composer beam per tier (blue, gold, rainbow, teal, ice) and Orbie in the header, the working row and as the project avatar. Forced screenshots: `../.playwright-mcp/v4/sheet-tiers.png`.
-4. **"Needs Star's approval"** below, especially the desktop identity: a packaged Polaris would still be `com.t3tools.t3code` and share data with T3 Code. Say yes (and pick an app id) and that is one small branch.
+4. **The desktop app**: open `release/Polaris-0.0.45-arm64.dmg`, drag Polaris to Applications, right-click → Open, allow its keychain entry. It runs next to T3 Code with its own data.
 5. **Chat icons and Skills**: right-click a thread → Choose icon… (it shows on the dashboard too); then open Skills and read one in Preview.
