@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 021: the note says it saved
+
+- Status: done
+- What changed: `polaris/dashboard/NoteWidget.tsx`: after each save (debounced or on blur) a muted `text-2xs` "Saved" mark shows under the text at the end edge and fades out after 1.6 s (`SAVED_MARK_MS`); its timer is cleared on unmount. The mark is `aria-hidden` (saving is automatic; announcing every pause would be noise) and does not animate under reduced motion.
+- How verified: web typecheck and lint clean; `vp test run apps/web/src/polaris/dashboard` 20 passed (no new pure logic). Isolated Playwright contexts, light and dark, with a seeded note: mark opacity 0 at rest, 1 about 1 s after typing, 0 again 2.2 s later; the typed line was in the stored layout. Shots `.playwright-mcp/polish/021-*`.
+- Risks: None known.
+- Next action: next polish cycle (022).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — polish 020: links show where they go
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (018).
 - Open questions: None.
 
-### 2026-10-06 — Claude (session 8) — polish 016: skills read as documents
-
-- Status: done
-- What changed: `polaris/skills/SkillDetail.tsx`: a Preview / Source segmented switch. Preview renders the SKILL.md through the existing `ChatMarkdown`, without the frontmatter (new `skillBody` in `skillStudio.ts`, now also used by `newSkillDocument`), with relative links resolved beside the file. Read-only skills and templates default to Preview; editable skills default to Source, and Preview there shows the unsaved draft. The note beside the switch says which case you are in.
-- How verified: `vp test run apps/web/src/polaris/skills` 4 passed (new `skillBody` test: LF, CRLF, a body `---` rule kept); web typecheck and lint clean. Isolated Playwright contexts, light and dark: a repository skill showed 6 rendered headings, Source showed the raw file; a Polaris template rendered with no page errors. Shots `.playwright-mcp/polish/016-*`.
-- Risks: Clicking a file chip in a read-only skill uses ChatMarkdown's normal file-link handling without a thread; not clicked here.
-- Next action: next polish cycle (017).
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — polish 016: skills read as documents. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`. Rolled up; see `git log`.
