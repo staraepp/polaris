@@ -96,6 +96,13 @@ export const GlassOpacity = Schema.Int.check(
 );
 export type GlassOpacity = typeof GlassOpacity.Type;
 const DEFAULT_GLASS_OPACITY: GlassOpacity = 80;
+// Polaris: remaining quota (percent) at or below which the composer warns. 0 turns it off.
+export const QUOTA_LOW_THRESHOLD_OPTIONS = [0, 10, 15, 20, 25, 30] as const;
+export const QuotaLowThresholdPercent = Schema.Int.check(
+  Schema.isBetween({ minimum: 0, maximum: 50 }),
+);
+export type QuotaLowThresholdPercent = typeof QuotaLowThresholdPercent.Type;
+export const DEFAULT_QUOTA_LOW_THRESHOLD_PERCENT: QuotaLowThresholdPercent = 20;
 
 export const MIN_APPEARANCE_CONTRAST = 50;
 export const MAX_APPEARANCE_CONTRAST = 200;
@@ -376,6 +383,9 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   glassOpacity: GlassOpacity.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_GLASS_OPACITY)),
+  ),
+  quotaLowThresholdPercent: QuotaLowThresholdPercent.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_QUOTA_LOW_THRESHOLD_PERCENT)),
   ),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
@@ -1759,6 +1769,7 @@ export const ClientSettingsPatch = Schema.Struct({
   diffLayout: Schema.optionalKey(DiffLayout),
   environmentIdentificationMode: Schema.optionalKey(EnvironmentIdentificationMode),
   glassOpacity: Schema.optionalKey(GlassOpacity),
+  quotaLowThresholdPercent: Schema.optionalKey(QuotaLowThresholdPercent),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),

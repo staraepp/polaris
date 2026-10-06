@@ -62,11 +62,22 @@ export function isModelCostUnknown(model: ModelTotals): boolean {
   return model.records > 0 && model.unpricedRecords >= model.records;
 }
 
+export interface DailyModelTotals {
+  readonly provider: UsageProviderKind;
+  readonly model: string;
+  readonly costUsd: number;
+  readonly totalTokens: number;
+  /** Tool calls, from servers that count them (Polaris). */
+  readonly toolCalls?: number;
+}
+
 export interface DailyTotals {
   readonly day: string;
   readonly costUsd: number;
   readonly totalTokens: number;
   readonly byProvider: ReadonlyMap<UsageProviderKind, { costUsd: number; totalTokens: number }>;
+  /** Keyed `"<provider> <model>"`, the same key the model table uses. */
+  readonly byModel?: ReadonlyMap<string, DailyModelTotals>;
 }
 
 export interface HourlyTotals {
@@ -121,6 +132,8 @@ export interface MergedUsage {
   readonly totalTokens: number;
   readonly records: number;
   readonly sessions: number;
+  /** Tool calls across the window; 0 when no server counts them (Polaris). */
+  readonly toolCalls: number;
   readonly providers: readonly ProviderTotals[];
   readonly models: readonly ModelTotals[];
   readonly daily: readonly DailyTotals[];
@@ -328,6 +341,7 @@ const EMPTY_MERGED: MergedUsage = {
   totalTokens: 0,
   records: 0,
   sessions: 0,
+  toolCalls: 0,
   providers: [],
   models: [],
   daily: [],
@@ -394,6 +408,7 @@ export function mergeUsage(
   let reasoningTokens = 0;
   let records = 0;
   let sessions = 0;
+  let toolCalls = 0;
   let cacheSavingsUsd = 0;
   let providerReportedRecords = 0;
   let unpricedRecords = 0;
@@ -422,6 +437,16 @@ export function mergeUsage(
       costUsd: number;
       totalTokens: number;
       byProvider: Map<UsageProviderKind, { costUsd: number; totalTokens: number }>;
+      byModel: Map<
+        string,
+        {
+          provider: UsageProviderKind;
+          model: string;
+          costUsd: number;
+          totalTokens: number;
+          toolCalls: number;
+        }
+      >;
     }
   >();
   const hourlyAccumulator = new Map<
@@ -469,6 +494,7 @@ export function mergeUsage(
       outputTokens += bucket.totals.outputTokens;
       reasoningTokens += bucket.totals.reasoningTokens;
       records += bucket.records;
+      toolCalls += bucket.toolCalls ?? 0;
       unpricedRecords += bucket.unpricedRecords;
       if (bucket.costSource === "providerReported") providerReportedRecords += bucket.records;
       if (bucket.categoryCostUsd !== undefined) {
@@ -528,7 +554,19 @@ export function mergeUsage(
         costUsd: 0,
         totalTokens: 0,
         byProvider: new Map<UsageProviderKind, { costUsd: number; totalTokens: number }>(),
+        byModel: new Map(),
       };
+      const dayModel = day.byModel.get(modelKey) ?? {
+        provider: bucket.provider,
+        model: bucket.model,
+        costUsd: 0,
+        totalTokens: 0,
+        toolCalls: 0,
+      };
+      dayModel.costUsd += bucket.costUsd;
+      dayModel.totalTokens += tokens;
+      dayModel.toolCalls += bucket.toolCalls ?? 0;
+      day.byModel.set(modelKey, dayModel);
       day.costUsd += bucket.costUsd;
       day.totalTokens += tokens;
       const dayProvider = day.byProvider.get(bucket.provider) ?? { costUsd: 0, totalTokens: 0 };
@@ -594,6 +632,7 @@ export function mergeUsage(
       costUsd: totals.costUsd,
       totalTokens: totals.totalTokens,
       byProvider: totals.byProvider,
+      byModel: totals.byModel,
     }))
     .sort((a, b) => a.day.localeCompare(b.day));
 
@@ -611,6 +650,7 @@ export function mergeUsage(
     totalTokens,
     records,
     sessions,
+    toolCalls,
     providers,
     models,
     daily,

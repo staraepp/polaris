@@ -151,6 +151,7 @@ import {
   useComposerFx,
   type ComposerFxSignals,
 } from "~/polaris/fx/ComposerFx";
+import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
 import {
   ComposerBannerStack,
   type ComposerBannerStackContent,
@@ -1355,6 +1356,8 @@ const ComposerFooterModeControls = memo(function ComposerFooterModeControls(prop
 const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(props: {
   compact: boolean;
   activeContextWindow: ContextWindowSnapshot | null;
+  /** Polaris: per-thread usage for the context popover. */
+  threadUsage?: ThreadUsage | null | undefined;
   reserveContextWindowMeter: boolean;
   activeThreadModelDisplayName: string | null;
   isPreparingWorktree: boolean;
@@ -1397,6 +1400,7 @@ const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(
           onCompact={props.onCompactContext}
           compactDisabled={props.compactDisabled}
           compactDisabledReason={props.compactDisabledReason}
+          threadUsage={props.threadUsage}
         />
       ) : props.reserveContextWindowMeter ? (
         <ContextWindowMeterPlaceholder />
@@ -1535,6 +1539,8 @@ export interface ChatComposerProps {
   phase: SessionPhase;
   /** Polaris: quota and running-turn signals for the composer outline. */
   polarisFx?: ComposerFxSignals;
+  /** Polaris: per-thread usage shown in the context window popover. */
+  polarisThreadUsage?: ThreadUsage | null | undefined;
   /** Stop is offered: a run is preparing, starting, or running. */
   canInterrupt: boolean;
   isConnecting: boolean;
@@ -1713,6 +1719,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     projectSelectionRequired,
     phase,
     polarisFx = IDLE_COMPOSER_FX_SIGNALS,
+    polarisThreadUsage,
     canInterrupt,
     isConnecting,
     isSendBusy,
@@ -7525,6 +7532,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     activeContextWindow={
                       settings.contextWindowMeterEnabled ? activeContextWindow : null
                     }
+                    threadUsage={polarisThreadUsage}
                     reserveContextWindowMeter={reserveContextWindowMeter}
                     activeThreadModelDisplayName={activeThreadModelDisplayName}
                     pendingAction={pendingPrimaryAction}

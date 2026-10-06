@@ -80,6 +80,7 @@ import { UsageLimitsSection } from "./UsageLimits";
 import { UsagePriceOverrides } from "./UsagePriceOverrides";
 import { UsageProviderChart } from "./UsageProviderChart";
 import { SpeedPremium, UsageModelDialog } from "./UsageModelDialog";
+import { UsageModelTrend } from "./UsageModelTrend";
 import { UsageShareBar } from "./UsageShareBar";
 import {
   costTypeSegments,
@@ -680,6 +681,23 @@ export function UsagePage() {
                     )}
                   </section>
                 ) : null}
+
+                {isPast24Hours ? null : (
+                  <UsageModelTrend
+                    days={days}
+                    daily={merged.daily}
+                    metric={metric === "tokens" ? "tokens" : "cost"}
+                  />
+                )}
+
+                {isPast24Hours || merged.toolCalls === 0 ? null : (
+                  <UsageModelTrend
+                    days={days}
+                    daily={merged.daily}
+                    metric="toolCalls"
+                    title="Tool calls over time"
+                  />
+                )}
 
                 <section className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">

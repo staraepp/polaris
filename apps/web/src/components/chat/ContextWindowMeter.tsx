@@ -7,6 +7,8 @@ import {
 } from "./ContextWindowMeter.logic";
 import { Minimize2Icon } from "lucide-react";
 import { composerFloatingLayerProps } from "./composerEventScope";
+import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
+import { ThreadUsageSection } from "~/polaris/threadUsage/ThreadUsageSection";
 
 function formatPercentage(value: number | null): string | null {
   if (value === null || !Number.isFinite(value)) {
@@ -24,6 +26,8 @@ export function ContextWindowMeter(props: {
   onCompact?: (() => void) | undefined;
   compactDisabled?: boolean | undefined;
   compactDisabledReason?: string | null | undefined;
+  /** Polaris: per-thread totals shown under the context figures. */
+  threadUsage?: ThreadUsage | null | undefined;
 }) {
   const { usage, modelDisplayName, onCompact, compactDisabled, compactDisabledReason } = props;
   const usedPercentage = formatPercentage(usage.usedPercentage);
@@ -149,6 +153,7 @@ export function ContextWindowMeter(props: {
               {formatContextWindowCompactionMessage(modelDisplayName, usage.autoCompactThreshold)}
             </div>
           ) : null}
+          {props.threadUsage ? <ThreadUsageSection usage={props.threadUsage} /> : null}
           {onCompact ? (
             <>
               <Button

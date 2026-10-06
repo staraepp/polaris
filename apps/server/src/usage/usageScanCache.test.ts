@@ -93,6 +93,7 @@ describe("scan cache round trip", () => {
           sawSessionMeta: true,
           suppressingForkCopies: false,
           forkCopyAnchorMs: 0,
+          pendingToolCalls: 0,
         },
       }),
     });
@@ -104,6 +105,24 @@ describe("scan cache round trip", () => {
     expect(restored.get("/b.jsonl")).toEqual(original.get("/b.jsonl"));
     expect(restored.get("/grok.jsonl")).toEqual(original.get("/grok.jsonl"));
     expect(restored.get("/codex.jsonl")).toEqual(original.get("/codex.jsonl"));
+  });
+
+  it("round-trips tool call counts (Polaris)", () => {
+    const original = cacheWith([["/a.jsonl", 100, [record({ toolCalls: 4 }), record()]]]);
+    const restored = decodeScanCache(JSON.parse(JSON.stringify(encodeScanCache(original))));
+    expect(restored.get("/a.jsonl")).toEqual(original.get("/a.jsonl"));
+  });
+
+  it("keeps a file saved before tool counting but makes it re-parse (Polaris)", () => {
+    const encoded = encodeScanCache(cacheWith([["/a.jsonl", 100, [record()]]]));
+    const { tc: _tc, ...legacy } = encoded.files["/a.jsonl"]!;
+    const restored = decodeScanCache(
+      JSON.parse(JSON.stringify({ ...encoded, files: { "/a.jsonl": legacy } })),
+    ).get("/a.jsonl");
+
+    expect(restored?.records).toEqual([record()]);
+    expect(restored?.size).toBe(-1);
+    expect(restored?.position.resumeOffset).toBe(0);
   });
 
   it("drops an entry whose persisted parse state is corrupt", () => {
@@ -259,6 +278,17 @@ describe("dedupeWithinFile", () => {
 
     expect(kept).toHaveLength(2);
     expect(kept[0]?.totals.outputTokens).toBe(1);
+  });
+
+  it("hands a dropped repeat's tool calls to the kept record (Polaris)", () => {
+    const kept = dedupeWithinFile([
+      record(),
+      record({ toolCalls: 1 }),
+      record({ toolCalls: 2 }),
+      record({ dedupeKey: "msg_2:", toolCalls: 1 }),
+    ]);
+
+    expect(kept.map((item) => item.toolCalls)).toEqual([3, 1]);
   });
 
   it("keeps every record that has no dedupe key", () => {

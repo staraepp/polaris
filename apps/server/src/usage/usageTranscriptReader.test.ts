@@ -244,6 +244,26 @@ describe("readTranscriptRecords resume", () => {
     );
   });
 
+  it("reads Codex tool call lines that carry no token_count (Polaris)", async () => {
+    const path = NodePath.join(dir, "rollout-tools.jsonl");
+    const toolLine = `${JSON.stringify({
+      type: "response_item",
+      timestamp: "2026-08-01T10:00:02Z",
+      payload: { type: "function_call", name: "shell", arguments: "{}", call_id: "call_1" },
+    })}\n`;
+    await NodeFSP.writeFile(
+      path,
+      codexMetaLine() +
+        codexModelLine("gpt-5.2-codex") +
+        toolLine +
+        toolLine +
+        codexUsageLine(9, 5),
+    );
+    const result = await readTranscriptRecords(path, "codex");
+    assert.isNotNull(result);
+    assert.strictEqual(result.records[0]?.toolCalls, 2);
+  });
+
   it("returns null for an unreadable file", async () => {
     assert.isNull(await readTranscriptRecords(NodePath.join(dir, "missing.jsonl"), "claude"));
   });

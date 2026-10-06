@@ -40,6 +40,7 @@ import { usageLimitsBannerItem } from "./chat/ComposerUsageLimits";
 import type { ComposerFxSignals } from "../polaris/fx/ComposerFx";
 import { resolveRunEffort } from "../polaris/fx/effortTier";
 import { useQuotaLowSignal } from "../polaris/quota/useQuotaLowSignal";
+import { useThreadUsage } from "../polaris/threadUsage/useThreadUsage";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
 import * as Schema from "effect/Schema";
 import { Minimize2Icon } from "lucide-react";
@@ -1669,6 +1670,7 @@ export default function ChatView(props: ChatViewProps) {
     }
     return null;
   }, [serverProjection?.providerTurns]);
+  const polarisThreadUsage = useThreadUsage(serverProjection);
   const serverVisibleTurnItems = useThreadVisibleTurnItems(routeThreadDetailRef);
   const serverThreadHistory = useThreadHistory(routeThreadDetailRef);
   const threadHistoryControls = useMemo<MessagesTimelineHistoryControls | undefined>(() => {
@@ -3211,7 +3213,8 @@ export default function ChatView(props: ChatViewProps) {
     conversationProviderStatus.supportsConversationRollback !== false;
   const phase = derivePhase(activeRuntime);
   // Polaris: signals for the composer FX slot (quota-low flash and accent, effort beam).
-  const polarisQuota = useQuotaLowSignal(activeProviderStatus);
+  const polarisQuotaThreshold = useClientSettings((settings) => settings.quotaLowThresholdPercent);
+  const polarisQuota = useQuotaLowSignal(activeProviderStatus, polarisQuotaThreshold);
   const polarisActiveRun = useMemo(
     () => serverProjection?.runs.find((run) => run.id === activeActivityRun?.runId) ?? null,
     [serverProjection, activeActivityRun?.runId],
@@ -11195,6 +11198,7 @@ export default function ChatView(props: ChatViewProps) {
                               }
                               phase={phase}
                               polarisFx={polarisFxSignals}
+                              polarisThreadUsage={polarisThreadUsage}
                               canInterrupt={canInterruptRunningThread}
                               isConnecting={isConnecting}
                               isSendBusy={isSendBusy || isSavingQueuedEdit || isResuming}

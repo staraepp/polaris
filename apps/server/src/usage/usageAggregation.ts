@@ -81,6 +81,7 @@ interface MutableBucket {
   unpricedRecords: number;
   providerReportedRecords: number;
   sessions: Set<string>;
+  toolCalls: number;
 }
 
 export interface AggregateOptions {
@@ -239,6 +240,7 @@ export class UsageAggregator {
     if (priced.costSource === "unpriced") bucket.unpricedRecords += 1;
     if (priced.costSource === "providerReported") bucket.providerReportedRecords += 1;
     if (record.sessionId.length > 0) bucket.sessions.add(record.sessionId);
+    bucket.toolCalls += record.toolCalls ?? 0;
     return true;
   }
 
@@ -291,6 +293,7 @@ export class UsageAggregator {
         unpricedRecords: 0,
         providerReportedRecords: 0,
         sessions: new Set<string>(),
+        toolCalls: 0,
       };
       this.#buckets.set(key, bucket);
     }
@@ -334,6 +337,7 @@ export class UsageAggregator {
         records: bucket.records,
         unpricedRecords: bucket.unpricedRecords,
         sessions: bucket.sessions.size,
+        ...(bucket.toolCalls === 0 ? {} : { toolCalls: bucket.toolCalls }),
       });
     }
     // Stable ordering keeps payloads diffable and snapshot tests meaningful.

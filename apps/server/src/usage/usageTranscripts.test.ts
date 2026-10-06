@@ -3,6 +3,7 @@ import { describe, expect, it } from "@effect/vitest";
 import {
   GROK_COST_USD_TICKS_PER_DOLLAR,
   initialCodexScanState,
+  mightBeCodexToolCall,
   parseClaudeLine,
   parseCodexLine,
   parseGrokLine,
@@ -74,6 +75,18 @@ describe("parseClaudeLine", () => {
     expect(text?.totals).toEqual(toolUse?.totals);
   });
 
+  it("counts tool_use blocks as tool calls (Polaris)", () => {
+    expect(
+      parseClaudeLine(claudeLine({ messageId: "m", contentType: "tool_use" }))?.toolCalls,
+    ).toBe(1);
+    expect(
+      parseClaudeLine(claudeLine({ messageId: "m", contentType: "server_tool_use" }))?.toolCalls,
+    ).toBe(1);
+    expect(parseClaudeLine(claudeLine({ messageId: "m", contentType: "text" }))).not.toHaveProperty(
+      "toolCalls",
+    );
+  });
+
   it("ignores records that are not assistant messages", () => {
     expect(parseClaudeLine(JSON.stringify({ type: "user", message: {} }))).toBeNull();
     expect(parseClaudeLine("not json")).toBeNull();
@@ -108,6 +121,27 @@ describe("parseCodexLine", () => {
         },
       },
     });
+
+  const toolCall = (type: string) =>
+    JSON.stringify({
+      type: "response_item",
+      timestamp: "2026-08-01T05:17:45.000Z",
+      payload: { type, name: "shell", arguments: '{"cmd":"ls"}', call_id: "call_1" },
+    });
+
+  it("carries tool calls onto the next usage event (Polaris)", () => {
+    const state = initialCodexScanState();
+    parseCodexLine(turnContext, state);
+    expect(parseCodexLine(toolCall("function_call"), state)).toBeNull();
+    parseCodexLine(toolCall("local_shell_call"), state);
+    parseCodexLine(toolCall("function_call_output"), state);
+    const first = parseCodexLine(tokenCount(100, 0, 10, 0), state);
+    expect(first?.toolCalls).toBe(2);
+    const second = parseCodexLine(tokenCount(200, 0, 20, 0), state);
+    expect(second).not.toHaveProperty("toolCalls");
+    expect(mightBeCodexToolCall(toolCall("web_search_call"))).toBe(true);
+    expect(mightBeCodexToolCall(toolCall("function_call_output"))).toBe(false);
+  });
 
   it("attributes usage to the model from the preceding turn context", () => {
     const state = initialCodexScanState();
@@ -242,6 +276,23 @@ describe("parseCodexLine", () => {
         state,
       );
       expect(next).not.toBeNull();
+    });
+
+    it("drops tool calls copied in the fork burst and keeps the child's own (Polaris)", () => {
+      const state = initialCodexScanState();
+      const forkInstant = "2026-08-01T05:00:00.000Z";
+      parseCodexLine(meta({ id: "child", timestamp: forkInstant, forkedFromId: "parent" }), state);
+      parseCodexLine(stamped(forkInstant, turnContext), state);
+      parseCodexLine(stamped("2026-08-01T05:00:00.001Z", toolCall("function_call")), state);
+      parseCodexLine(stamped("2026-08-01T05:00:00.002Z", tokenCount(100, 0, 10, 0)), state);
+      parseCodexLine(stamped("2026-08-01T05:00:00.003Z", toolCall("function_call")), state);
+
+      parseCodexLine(stamped("2026-08-01T05:00:05.000Z", toolCall("custom_tool_call")), state);
+      const real = parseCodexLine(
+        stamped("2026-08-01T05:00:06.000Z", tokenCount(300, 0, 30, 0)),
+        state,
+      );
+      expect(real?.toolCalls).toBe(1);
     });
 
     it("recognizes subagent spawns without forked_from_id", () => {
