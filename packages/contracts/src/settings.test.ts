@@ -1169,6 +1169,19 @@ describe("ClientSettings app background (Polaris)", () => {
   });
 });
 
+describe("ClientSettings collaboration username (Polaris)", () => {
+  it("starts empty and accepts only short, plain usernames", () => {
+    expect(decodeClientSettings({}).collabUsername).toBe("");
+    expect(decodeClientSettings({ collabUsername: "star.aep" }).collabUsername).toBe("star.aep");
+    for (const bad of ["a", "has space", "x".repeat(25), "emoji🙂"]) {
+      expect(() => decodeClientSettings({ collabUsername: bad })).toThrow();
+    }
+    expect(decodeClientSettingsPatch({ collabUsername: "Breno_1" })).toEqual({
+      collabUsername: "Breno_1",
+    });
+  });
+});
+
 describe("ClientSettings launch page (Polaris)", () => {
   it("opens on the dashboard by default and accepts only known pages", () => {
     expect(decodeClientSettings({}).launchPage).toBe("dashboard");

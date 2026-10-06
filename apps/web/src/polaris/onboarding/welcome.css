@@ -1,0 +1,112 @@
+/*
+ * Polaris welcome backdrop: a soft aurora in the brand green over a quiet
+ * star field. Colors come from the theme tokens; motion stops under
+ * prefers-reduced-motion.
+ */
+[data-polaris-welcome="backdrop"] {
+  background:
+    radial-gradient(
+      60% 55% at 18% 22%,
+      color-mix(in oklab, var(--primary) 34%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 50% at 82% 78%,
+      color-mix(in oklab, var(--primary) 22%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      40% 40% at 70% 18%,
+      color-mix(in oklab, var(--primary-hover, var(--primary)) 16%, transparent),
+      transparent 70%
+    ),
+    color-mix(in oklab, var(--background) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(1.1);
+}
+
+[data-polaris-welcome="aurora"] {
+  position: absolute;
+  inset: -20%;
+  background: conic-gradient(
+    from 210deg at 50% 50%,
+    transparent 0deg,
+    color-mix(in oklab, var(--primary) 18%, transparent) 70deg,
+    transparent 140deg,
+    color-mix(in oklab, var(--primary) 12%, transparent) 230deg,
+    transparent 320deg
+  );
+  filter: blur(60px);
+  animation: polaris-welcome-drift 38s linear infinite;
+  pointer-events: none;
+}
+
+[data-polaris-welcome="stars"] {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(
+      1px 1px at 12% 18%,
+      color-mix(in oklab, var(--foreground) 55%, transparent) 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      1px 1px at 28% 72%,
+      color-mix(in oklab, var(--foreground) 40%, transparent) 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 46% 34%,
+      color-mix(in oklab, var(--primary) 70%, transparent) 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      1px 1px at 63% 12%,
+      color-mix(in oklab, var(--foreground) 45%, transparent) 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      1px 1px at 77% 58%,
+      color-mix(in oklab, var(--foreground) 35%, transparent) 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      1.5px 1.5px at 88% 26%,
+      color-mix(in oklab, var(--primary) 60%, transparent) 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      1px 1px at 8% 86%,
+      color-mix(in oklab, var(--foreground) 40%, transparent) 50%,
+      transparent 51%
+    ),
+    radial-gradient(
+      1px 1px at 54% 90%,
+      color-mix(in oklab, var(--foreground) 30%, transparent) 50%,
+      transparent 51%
+    );
+  opacity: 0.7;
+  animation: polaris-welcome-twinkle 7s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes polaris-welcome-drift {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes polaris-welcome-twinkle {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-polaris-welcome="aurora"],
+  [data-polaris-welcome="stars"] {
+    animation: none;
+  }
+}

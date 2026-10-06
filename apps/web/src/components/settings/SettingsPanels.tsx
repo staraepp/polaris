@@ -170,6 +170,7 @@ import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BackgroundSetting } from "./polaris/BackgroundSetting";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
 import { LaunchPageSetting } from "./polaris/LaunchPageSetting";
+import { UsernameSetting } from "./polaris/UsernameSetting";
 import { ORBIE_NAME } from "../../polaris/bots/orbie";
 import { GooeyComposerMenuSetting } from "./polaris/GooeyComposerMenuSetting";
 import { ThemeFontsSetting } from "./polaris/ThemeFontsSetting";
@@ -2519,6 +2520,7 @@ export function GeneralSettingsPanel() {
       </SettingsSection>
 
       <SettingsSection id="behavior" title="Behavior">
+        <UsernameSetting />
         <LaunchPageSetting />
         <NotificationSettings />
         <SettingsRow

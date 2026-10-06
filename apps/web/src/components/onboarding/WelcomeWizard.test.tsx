@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from "react";
+import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { EnvironmentId, ProjectId } from "@t3tools/contracts";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   toast: vi.fn(),
   projects: [] as Array<{ id: string; environmentId: string; workspaceRoot: string }>,
+  t3Scan: { data: null as unknown, error: null, isPending: false, refresh: () => {} },
 }));
 vi.mock("../../state/agentSessions", () => ({ agentSessionImport: "import" }));
 vi.mock("../../state/projects", () => ({ projectEnvironment: { create: "create" } }));
@@ -82,6 +83,21 @@ vi.mock("../settings/CodexSetupSection", () => ({
 vi.mock("../cloud/CloudEnvironmentConnectList", () => ({
   CloudEnvironmentConnectRows: () => null,
 }));
+// Polaris: the welcome shell, the username step and the T3 Code step.
+vi.mock("../../polaris/onboarding/WelcomeShell", () => ({
+  WelcomeShell: ({ children }: { children: ReactNode }) => children,
+}));
+vi.mock("../../polaris/onboarding/YouStep", () => ({
+  YouStep: ({ onContinue }: { onContinue: () => void }) =>
+    createElement("button", { type: "button", onClick: onContinue }, "Continue"),
+}));
+vi.mock("../../polaris/import/useT3HistoryScan", () => ({
+  useT3HistoryScan: () => mocks.t3Scan,
+}));
+vi.mock("../../polaris/onboarding/T3Step", () => ({
+  T3Step: ({ onFinish }: { onFinish: () => void }) =>
+    createElement("button", { type: "button", onClick: onFinish }, "Finish setup"),
+}));
 vi.mock("../ui/toast", () => ({
   toastManager: { add: mocks.toast, close: vi.fn(), update: vi.fn() },
 }));
@@ -106,6 +122,7 @@ beforeEach(() => {
     value: () => [],
   });
   mocks.projects = [{ id: "test-project", environmentId: "test-env", workspaceRoot: "/project" }];
+  mocks.t3Scan = { data: null, error: null, isPending: false, refresh: () => {} };
   mocks.complete.mockResolvedValue(undefined);
   mocks.refresh.mockResolvedValue(undefined);
   mocks.importThreads.mockResolvedValue({
@@ -137,6 +154,7 @@ it("enters the workspace after a partial import and warns after navigation finis
   });
   const onDone = vi.fn(() => navigation);
   await act(async () => root.render(<WelcomeWizard localAvailable onDone={onDone} />));
+  await click("Continue");
   await click("Continue");
   await click("Continue");
   await click("Import 1 project");
@@ -174,6 +192,7 @@ it.each([
     await act(async () => root.render(<WelcomeWizard localAvailable onDone={onDone} />));
     await click("Continue");
     await click("Continue");
+    await click("Continue");
     await click("Import 1 project");
     expect(onDone).toHaveBeenCalledOnce();
     if (warning === null && importedCount > 0) {
@@ -197,6 +216,7 @@ it("keeps setup open when saving completion fails and preserves the import warni
   await act(async () => root.render(<WelcomeWizard localAvailable onDone={onDone} />));
   await click("Continue");
   await click("Continue");
+  await click("Continue");
   await click("Import 1 project");
   expect(onDone).not.toHaveBeenCalled();
   expect(mocks.toast).toHaveBeenCalledWith(
@@ -211,4 +231,34 @@ it("keeps setup open when saving completion fails and preserves the import warni
       description: "Imported 28 threads. 1 thread could not be imported.",
     }),
   );
+});
+
+it("offers T3 Code threads before finishing when T3 Code has new history", async () => {
+  mocks.t3Scan = {
+    data: {
+      _tag: "available",
+      projects: [
+        {
+          sourceProjectId: "t3-project",
+          title: "Site",
+          workspaceRoot: "/site",
+          threadCount: 3,
+          importedThreadCount: 0,
+          lastActiveAt: null,
+        },
+      ],
+    },
+    error: null,
+    isPending: false,
+    refresh: () => {},
+  };
+  const onDone = vi.fn();
+  await act(async () => root.render(<WelcomeWizard localAvailable onDone={onDone} />));
+  await click("Continue");
+  await click("Continue");
+  await click("Continue");
+  await click("Do not import projects");
+  expect(onDone).not.toHaveBeenCalled();
+  await click("Finish setup");
+  expect(onDone).toHaveBeenCalledOnce();
 });
