@@ -43,6 +43,13 @@ describe("Codex desktop handoff", () => {
       returnUrl: input.returnUrl,
     });
   });
+  it("opens Polaris, not T3 Code", () => {
+    const link = codexAuthHandoffUrl(input);
+    expect(link.startsWith("polaris://auth/codex?")).toBe(true);
+    expect(codexAuthHandoffUrl(input, true).startsWith("polaris-dev://auth/codex?")).toBe(true);
+    expect(readCodexAuthHandoff(link.replace("polaris://", "t3code://"), false)).toBeUndefined();
+  });
+
   it("rejects other handlers, schemes, arbitrary return sites, and non-OpenAI authorization", () => {
     const link = codexAuthHandoffUrl(input);
     expect(readCodexAuthHandoff(link, true)).toBeUndefined();

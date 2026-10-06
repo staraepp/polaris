@@ -27,6 +27,10 @@
       "types": "./src/polarisBridge.ts",
       "import": "./src/polarisBridge.ts"
     },
+    "./polarisDesktopIdentity": {
+      "types": "./src/polarisDesktopIdentity.ts",
+      "import": "./src/polarisDesktopIdentity.ts"
+    },
     "./polarisVoiceHttp": {
       "types": "./src/polarisVoiceHttp.ts",
       "import": "./src/polarisVoiceHttp.ts"

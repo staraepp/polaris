@@ -9,15 +9,26 @@ import * as Path from "effect/Path";
 import * as DesktopPreReadyFileSystem from "./DesktopPreReadyFileSystem.ts";
 import * as DesktopUserData from "./DesktopUserData.ts";
 
-const resolveWindowsUserData = (appDataDirectory: string) =>
-  DesktopUserData.resolveUserDataPath({
-    appDataDirectory,
-    isDevelopment: false,
-    platform: "win32",
-  }).pipe(Effect.provide(DesktopPreReadyFileSystem.layer));
+const preReady = DesktopPreReadyFileSystem.make;
 
 it.layer(NodeServices.layer)("DesktopPreReadyFileSystem", (it) => {
-  it.effect("migrates the legacy Windows profile state", () =>
+  it.effect("creates, writes and reads synchronously", () =>
+    Effect.gen(function* () {
+      const fileSystem = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const root = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-pre-ready-fs-" });
+      const directory = path.join(root, "nested", "profile");
+      const file = path.join(directory, "Local State");
+
+      assert.isFalse(yield* preReady.exists(directory));
+      yield* preReady.makeDirectory(directory, { recursive: true });
+      yield* preReady.writeFileString(file, "keys");
+      assert.isTrue(yield* preReady.exists(file));
+      assert.equal(yield* preReady.readFileString(file), "keys");
+    }),
+  );
+
+  it.effect("leaves T3 Code's Windows profile alone when resolving Polaris's", () =>
     Effect.gen(function* () {
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
@@ -25,23 +36,28 @@ it.layer(NodeServices.layer)("DesktopPreReadyFileSystem", (it) => {
       yield* fileSystem.makeDirectory(path.join(root, "T3 Code (Alpha)"));
       yield* fileSystem.writeFileString(path.join(root, "T3 Code (Alpha)", "Local State"), "keys");
 
-      const userData = yield* resolveWindowsUserData(root);
+      const userData = yield* DesktopUserData.resolveUserDataPath({
+        appDataDirectory: root,
+        isDevelopment: false,
+        platform: "win32",
+      }).pipe(Effect.provide(DesktopPreReadyFileSystem.layer));
 
-      assert.equal(userData, path.join(root, "t3code-v2"));
-      assert.equal(yield* fileSystem.readFileString(path.join(userData, "Local State")), "keys");
+      assert.equal(userData, path.join(root, "polaris"));
+      assert.isFalse(yield* fileSystem.exists(userData));
     }),
   );
 
   it.effect.skipIf(HostProcessPlatform.defaultValue() === "win32" || process.getuid?.() === 0)(
-    "fails instead of treating an unreadable profile as missing",
+    "fails instead of treating an unreadable path as missing",
     () =>
       Effect.gen(function* () {
         const fileSystem = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
         const root = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-pre-ready-fs-" });
         yield* fileSystem.chmod(root, 0o000);
         yield* Effect.addFinalizer(() => fileSystem.chmod(root, 0o700).pipe(Effect.orDie));
 
-        const exit = yield* Effect.exit(resolveWindowsUserData(root));
+        const exit = yield* Effect.exit(preReady.exists(path.join(root, "Local State")));
 
         assert.isTrue(Exit.isFailure(exit));
       }),

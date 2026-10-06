@@ -11,13 +11,13 @@ import * as Schema from "effect/Schema";
 import * as Scope from "effect/Scope";
 
 import * as Electron from "electron";
+import { polarisDesktopScheme } from "@t3tools/shared/polarisDesktopIdentity";
 
 export const DESKTOP_HOST = "app";
-const DESKTOP_PRODUCTION_SCHEME = "t3code";
-const DESKTOP_DEVELOPMENT_SCHEME = "t3code-dev";
 
+// Polaris serves its renderer from its own scheme, not upstream's `t3code`.
 export function getDesktopScheme(isDevelopment: boolean): string {
-  return isDevelopment ? DESKTOP_DEVELOPMENT_SCHEME : DESKTOP_PRODUCTION_SCHEME;
+  return polarisDesktopScheme(isDevelopment);
 }
 
 function getDesktopOrigin(isDevelopment: boolean): string {
@@ -119,7 +119,7 @@ function withContentSecurityPolicy(response: Response, policy: string): Response
 function registerDesktopSchemePrivilegesSync(): void {
   Electron.protocol.registerSchemesAsPrivileged([
     {
-      scheme: DESKTOP_PRODUCTION_SCHEME,
+      scheme: getDesktopScheme(false),
       privileges: {
         standard: true,
         secure: true,
@@ -132,7 +132,7 @@ function registerDesktopSchemePrivilegesSync(): void {
       },
     },
     {
-      scheme: DESKTOP_DEVELOPMENT_SCHEME,
+      scheme: getDesktopScheme(true),
       privileges: {
         standard: true,
         secure: true,
