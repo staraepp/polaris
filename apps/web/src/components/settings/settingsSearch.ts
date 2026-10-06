@@ -614,6 +614,36 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["quota limit usage threshold low warning flash amber five hour weekly"],
   },
   {
+    id: "theme-fonts",
+    title: "Theme fonts",
+    to: "/settings/appearance",
+    searchTerms: ["typography family per theme font interface monospace"],
+  },
+  {
+    id: "composer-usage-meter",
+    title: "Usage meter in the composer",
+    to: "/settings/general",
+    searchTerms: ["quota limit usage meter gauge composer five hour weekly remaining"],
+  },
+  {
+    id: "voice-input",
+    title: "Voice input",
+    to: "/settings/general",
+    searchTerms: ["voice dictation microphone push to talk clide whisper transcription speech"],
+  },
+  {
+    id: "gooey-composer-menu",
+    title: "Liquid composer menu",
+    to: "/settings/general",
+    searchTerms: ["gooey liquid plus menu attach composer chips effects"],
+  },
+  {
+    id: "bot-avatars",
+    title: "Bot avatars",
+    to: "/settings/general",
+    searchTerms: ["bot avatar mascot animation status working sleeping provider"],
+  },
+  {
     id: "discord-presence",
     title: "Discord Rich Presence",
     to: "/settings/integrations",

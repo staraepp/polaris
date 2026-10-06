@@ -167,6 +167,11 @@ import {
 import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
+import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
+import { GooeyComposerMenuSetting } from "./polaris/GooeyComposerMenuSetting";
+import { ThemeFontsSetting } from "./polaris/ThemeFontsSetting";
+import { VoiceSettings } from "./polaris/VoiceSettings";
+import { ComposerUsageMeterSetting } from "./polaris/ComposerUsageMeterSetting";
 import { QuotaLowThresholdSetting } from "./polaris/QuotaLowThresholdSetting";
 
 const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, string> = {
@@ -540,6 +545,23 @@ export function useSettingsRestore(onRestored?: () => void) {
         ? ["Contrast"]
         : []),
       ...(settings.glassOpacity !== DEFAULT_UNIFIED_SETTINGS.glassOpacity ? ["Glass opacity"] : []),
+      ...(settings.quotaLowThresholdPercent !== DEFAULT_UNIFIED_SETTINGS.quotaLowThresholdPercent
+        ? ["Low quota warning"]
+        : []),
+      ...(settings.composerUsageMeterEnabled !== DEFAULT_UNIFIED_SETTINGS.composerUsageMeterEnabled
+        ? ["Usage meter in the composer"]
+        : []),
+      ...(settings.botAvatarsEnabled !== DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled ||
+      Object.keys(settings.botAvatarByDriver).length > 0
+        ? ["Bot avatars"]
+        : []),
+      ...(settings.gooeyComposerMenuEnabled !== DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled
+        ? ["Liquid composer menu"]
+        : []),
+      ...(settings.voiceInputEnabled !== DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled
+        ? ["Voice input"]
+        : []),
+      ...(Object.keys(settings.themeFonts).length > 0 ? ["Theme fonts"] : []),
       ...(settings.diffColorScheme !== DEFAULT_UNIFIED_SETTINGS.diffColorScheme
         ? ["Diff colors"]
         : []),
@@ -698,6 +720,13 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.fontSizePrompt,
       settings.fontSizeTerminal,
       settings.glassOpacity,
+      settings.quotaLowThresholdPercent,
+      settings.composerUsageMeterEnabled,
+      settings.botAvatarsEnabled,
+      settings.botAvatarByDriver,
+      settings.gooeyComposerMenuEnabled,
+      settings.voiceInputEnabled,
+      settings.themeFonts,
       settings.panelAnimationDurationMs,
       settings.responseStreamingMode,
       settings.persistComposerContextStrip,
@@ -805,6 +834,13 @@ export function useSettingsRestore(onRestored?: () => void) {
       contextWindowMeterEnabled: DEFAULT_UNIFIED_SETTINGS.contextWindowMeterEnabled,
       environmentIdentificationMode: DEFAULT_UNIFIED_SETTINGS.environmentIdentificationMode,
       glassOpacity: DEFAULT_UNIFIED_SETTINGS.glassOpacity,
+      quotaLowThresholdPercent: DEFAULT_UNIFIED_SETTINGS.quotaLowThresholdPercent,
+      composerUsageMeterEnabled: DEFAULT_UNIFIED_SETTINGS.composerUsageMeterEnabled,
+      botAvatarsEnabled: DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled,
+      botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
+      gooeyComposerMenuEnabled: DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled,
+      voiceInputEnabled: DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled,
+      themeFonts: DEFAULT_UNIFIED_SETTINGS.themeFonts,
       panelAnimationDurationMs: DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs,
       sidebarThreadPreviewCount: DEFAULT_UNIFIED_SETTINGS.sidebarThreadPreviewCount,
       sidebarProjectGroupingMode: DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
@@ -1825,6 +1861,7 @@ function TypographySection() {
       }
     >
       {advanced ? <FontSettingsGroup /> : <SimpleFontRows />}
+      <ThemeFontsSetting />
       <WordWrapRow />
     </SettingsSection>
   );
@@ -3332,7 +3369,15 @@ export function GeneralSettingsPanel() {
       </SettingsSection>
 
       <SettingsSection id="usage" title="Usage">
+        <ComposerUsageMeterSetting />
         <QuotaLowThresholdSetting />
+      </SettingsSection>
+      <SettingsSection id="effects" title="Effects">
+        <GooeyComposerMenuSetting />
+        <BotAvatarsSetting />
+      </SettingsSection>
+      <SettingsSection id="voice" title="Voice">
+        <VoiceSettings />
       </SettingsSection>
       <SettingsSection id="about" title="About">
         {isElectron || HOSTED_APP_CHANNEL ? (

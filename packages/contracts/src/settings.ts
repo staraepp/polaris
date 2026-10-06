@@ -102,6 +102,42 @@ export const QuotaLowThresholdPercent = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 50 }),
 );
 export type QuotaLowThresholdPercent = typeof QuotaLowThresholdPercent.Type;
+/** Polaris: body shapes of the `bot-avatars` package, for the per-provider bot. */
+export const BOT_AVATAR_TYPES = [
+  "clover",
+  "flower",
+  "triangle",
+  "square",
+  "blob",
+  "ghost",
+  "circle",
+  "drop",
+  "star",
+  "droid",
+  "mech",
+  "alien",
+  "hexagon",
+  "cat",
+  "cloud",
+  "pill",
+  "pebble",
+  "puddle",
+] as const;
+export const BotAvatarType = Schema.Literals(BOT_AVATAR_TYPES);
+export type BotAvatarType = typeof BotAvatarType.Type;
+
+/** Polaris: where voice clips are transcribed (`clide-api-spec.md`, or an OpenAI-compatible server). */
+export const VoiceBackendSetting = Schema.Literals(["clide", "openaiCompatible"]);
+export type VoiceBackendSetting = typeof VoiceBackendSetting.Type;
+export const VoiceClidePort = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 65_535 }));
+
+/** Polaris: fonts a theme wears while it is active; empty or missing means the global font. */
+export const ThemeFontOverrides = Schema.Struct({
+  sans: Schema.optional(Schema.String),
+  code: Schema.optional(Schema.String),
+});
+export type ThemeFontOverrides = typeof ThemeFontOverrides.Type;
+
 export const DEFAULT_QUOTA_LOW_THRESHOLD_PERCENT: QuotaLowThresholdPercent = 20;
 
 export const MIN_APPEARANCE_CONTRAST = 50;
@@ -386,6 +422,32 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   quotaLowThresholdPercent: QuotaLowThresholdPercent.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_QUOTA_LOW_THRESHOLD_PERCENT)),
+  ),
+  /** Polaris: quota gauge next to the send button (amber only when low). */
+  composerUsageMeterEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /** Polaris: the composer's "+" pops out liquid action chips instead of a paperclip. */
+  gooeyComposerMenuEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  /** Polaris: push-to-talk in the composer. Off until set up; secrets live in the desktop shell. */
+  voiceInputEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  voiceBackend: VoiceBackendSetting.pipe(
+    Schema.withDecodingDefault(Effect.succeed("clide" as const)),
+  ),
+  /** Clide's Local API port; 0 means not set. */
+  voiceClidePort: VoiceClidePort.pipe(Schema.withDecodingDefault(Effect.succeed(0))),
+  /** OpenAI-compatible base URL such as `http://localhost:8080/v1`; empty means not set. */
+  voiceOpenAiBaseUrl: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+  voiceOpenAiModel: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+  /** ISO language hint for transcription; empty means detect. */
+  voiceLanguage: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+  /** Polaris: per-theme fonts, keyed by theme id (`default` for the stock look). */
+  themeFonts: Schema.Record(Schema.String, ThemeFontOverrides).pipe(
+    Schema.withDecodingDefault(Effect.succeed({})),
+  ),
+  /** Polaris: a small animated bot in the thread header that mirrors the run. */
+  botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  /** Polaris: bot shape per provider driver; missing drivers use the built-in pick. */
+  botAvatarByDriver: Schema.Record(Schema.String, BotAvatarType).pipe(
+    Schema.withDecodingDefault(Effect.succeed({})),
   ),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
@@ -1770,6 +1832,17 @@ export const ClientSettingsPatch = Schema.Struct({
   environmentIdentificationMode: Schema.optionalKey(EnvironmentIdentificationMode),
   glassOpacity: Schema.optionalKey(GlassOpacity),
   quotaLowThresholdPercent: Schema.optionalKey(QuotaLowThresholdPercent),
+  composerUsageMeterEnabled: Schema.optionalKey(Schema.Boolean),
+  botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
+  gooeyComposerMenuEnabled: Schema.optionalKey(Schema.Boolean),
+  voiceInputEnabled: Schema.optionalKey(Schema.Boolean),
+  themeFonts: Schema.optionalKey(Schema.Record(Schema.String, ThemeFontOverrides)),
+  voiceBackend: Schema.optionalKey(VoiceBackendSetting),
+  voiceClidePort: Schema.optionalKey(VoiceClidePort),
+  voiceOpenAiBaseUrl: Schema.optionalKey(Schema.String),
+  voiceOpenAiModel: Schema.optionalKey(Schema.String),
+  voiceLanguage: Schema.optionalKey(Schema.String),
+  botAvatarByDriver: Schema.optionalKey(Schema.Record(Schema.String, BotAvatarType)),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),

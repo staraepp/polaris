@@ -4,7 +4,7 @@ import type { EffortTier } from "./effortTier";
 export type ComposerFxLayer = "voice" | "flash" | "beam" | "ring" | "none";
 
 export interface ComposerFxInput {
-  /** Reserved for the voice provider (v2); the web composer has no voice capture yet. */
+  /** Voice input is listening or transcribing (ours, or Clide's own dictation). */
   readonly voiceListening: boolean;
   readonly quotaFlashing: boolean;
   readonly quotaLow: boolean;

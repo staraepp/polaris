@@ -125,3 +125,8 @@ export const COMPLETE_LEGACY_LOCAL_STORAGE_CHANNEL = "desktop:complete-legacy-lo
 // Polaris-only channels (fork features; see packages/shared/src/polarisBridge.ts).
 export const POLARIS_DISCORD_PRESENCE_GET_STATE_CHANNEL = "polaris:discord-presence-get-state";
 export const POLARIS_DISCORD_PRESENCE_SET_ENABLED_CHANNEL = "polaris:discord-presence-set-enabled";
+export const POLARIS_VOICE_GET_SECRETS_CHANNEL = "polaris:voice-get-secrets";
+export const POLARIS_VOICE_SET_SECRET_CHANNEL = "polaris:voice-set-secret";
+export const POLARIS_VOICE_TRANSCRIBE_CHANNEL = "polaris:voice-transcribe";
+export const POLARIS_VOICE_WATCH_CLIDE_CHANNEL = "polaris:voice-watch-clide";
+export const POLARIS_VOICE_CLIDE_EVENT_CHANNEL = "polaris:voice-clide-event";

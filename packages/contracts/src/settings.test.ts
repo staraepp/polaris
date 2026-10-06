@@ -1106,6 +1106,77 @@ describe("branch naming settings", () => {
   );
 });
 
+describe("ClientSettings theme fonts (Polaris)", () => {
+  it("defaults to no per-theme fonts and keeps partial overrides", () => {
+    expect(decodeClientSettings({}).themeFonts).toEqual({});
+    expect(decodeClientSettings({ themeFonts: { grove: { sans: "Inter" } } }).themeFonts).toEqual({
+      grove: { sans: "Inter" },
+    });
+    expect(() => decodeClientSettings({ themeFonts: { grove: { sans: 4 } } })).toThrow();
+  });
+});
+
+describe("ClientSettings voice input (Polaris)", () => {
+  it("is off and unconfigured by default", () => {
+    expect(decodeClientSettings({})).toMatchObject({
+      voiceInputEnabled: false,
+      voiceBackend: "clide",
+      voiceClidePort: 0,
+      voiceOpenAiBaseUrl: "",
+      voiceOpenAiModel: "",
+      voiceLanguage: "",
+    });
+  });
+
+  it("validates the backend and the port", () => {
+    expect(decodeClientSettings({ voiceBackend: "openaiCompatible" }).voiceBackend).toBe(
+      "openaiCompatible",
+    );
+    expect(() => decodeClientSettings({ voiceBackend: "cloud" })).toThrow();
+    expect(() => decodeClientSettingsPatch({ voiceClidePort: 70_000 })).toThrow();
+    expect(decodeClientSettingsPatch({ voiceClidePort: 4567 })).toEqual({ voiceClidePort: 4567 });
+  });
+});
+
+describe("ClientSettings gooey composer menu (Polaris)", () => {
+  it("is off by default", () => {
+    expect(decodeClientSettings({}).gooeyComposerMenuEnabled).toBe(false);
+    expect(decodeClientSettingsPatch({ gooeyComposerMenuEnabled: true })).toEqual({
+      gooeyComposerMenuEnabled: true,
+    });
+  });
+});
+
+describe("ClientSettings bot avatars (Polaris)", () => {
+  it("is off by default with no per-provider picks", () => {
+    const settings = decodeClientSettings({});
+    expect(settings.botAvatarsEnabled).toBe(false);
+    expect(settings.botAvatarByDriver).toEqual({});
+  });
+
+  it("accepts known shapes per driver and rejects unknown ones", () => {
+    expect(
+      decodeClientSettings({ botAvatarByDriver: { codex: "droid" } }).botAvatarByDriver,
+    ).toEqual({ codex: "droid" });
+    expect(() => decodeClientSettings({ botAvatarByDriver: { codex: "dragon" } })).toThrow();
+    expect(decodeClientSettingsPatch({ botAvatarsEnabled: true })).toEqual({
+      botAvatarsEnabled: true,
+    });
+  });
+});
+
+describe("ClientSettings composer usage meter (Polaris)", () => {
+  it("is on by default and can be turned off", () => {
+    expect(decodeClientSettings({}).composerUsageMeterEnabled).toBe(true);
+    expect(
+      decodeClientSettings({ composerUsageMeterEnabled: false }).composerUsageMeterEnabled,
+    ).toBe(false);
+    expect(decodeClientSettingsPatch({ composerUsageMeterEnabled: false })).toEqual({
+      composerUsageMeterEnabled: false,
+    });
+  });
+});
+
 describe("ClientSettings quota-low threshold (Polaris)", () => {
   it("defaults to 20 percent remaining", () => {
     expect(decodeClientSettings({}).quotaLowThresholdPercent).toBe(20);

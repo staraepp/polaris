@@ -152,6 +152,11 @@ import {
   type ComposerFxSignals,
 } from "~/polaris/fx/ComposerFx";
 import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
+import { ComposerUsageMeter } from "~/polaris/quota/ComposerUsageMeter";
+import { composerPlusActions, LazyGooeyPlusMenu } from "~/polaris/gooey/gooeyPlusActions";
+import { useVoiceInput } from "~/polaris/voice/useVoiceInput";
+import { VoiceButton } from "~/polaris/voice/VoiceButton";
+import type { UsageMeterModel } from "~/polaris/quota/usageMeterModel";
 import {
   ComposerBannerStack,
   type ComposerBannerStackContent,
@@ -1358,6 +1363,8 @@ const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(
   activeContextWindow: ContextWindowSnapshot | null;
   /** Polaris: per-thread usage for the context popover. */
   threadUsage?: ThreadUsage | null | undefined;
+  /** Polaris: quota gauge beside the send button; `null` hides it. */
+  usageMeter?: UsageMeterModel | null | undefined;
   reserveContextWindowMeter: boolean;
   activeThreadModelDisplayName: string | null;
   isPreparingWorktree: boolean;
@@ -1393,6 +1400,9 @@ const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(
 }) {
   return (
     <>
+      {props.usageMeter ? (
+        <ComposerUsageMeter model={props.usageMeter} threadUsage={props.threadUsage} />
+      ) : null}
       {props.activeContextWindow ? (
         <ContextWindowMeter
           usage={props.activeContextWindow}
@@ -1400,7 +1410,7 @@ const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(
           onCompact={props.onCompactContext}
           compactDisabled={props.compactDisabled}
           compactDisabledReason={props.compactDisabledReason}
-          threadUsage={props.threadUsage}
+          threadUsage={props.usageMeter ? null : props.threadUsage}
         />
       ) : props.reserveContextWindowMeter ? (
         <ContextWindowMeterPlaceholder />
@@ -1541,6 +1551,8 @@ export interface ChatComposerProps {
   polarisFx?: ComposerFxSignals;
   /** Polaris: per-thread usage shown in the context window popover. */
   polarisThreadUsage?: ThreadUsage | null | undefined;
+  /** Polaris: the selected provider's quota gauge; `null` hides it. */
+  polarisUsageMeter?: UsageMeterModel | null | undefined;
   /** Stop is offered: a run is preparing, starting, or running. */
   canInterrupt: boolean;
   isConnecting: boolean;
@@ -1720,6 +1732,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     phase,
     polarisFx = IDLE_COMPOSER_FX_SIGNALS,
     polarisThreadUsage,
+    polarisUsageMeter,
     canInterrupt,
     isConnecting,
     isSendBusy,
@@ -2314,8 +2327,35 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   );
 
   const selectedPromptEffort = composerProviderState.promptEffort;
+  // Polaris voice: the transcript lands at the cursor once the editor helpers exist below.
+  const polarisVoiceInsertRef = useRef<(text: string) => void>(() => {});
+  const polarisVoiceConfig = useMemo(
+    () => ({
+      backend: settings.voiceBackend,
+      clidePort: settings.voiceClidePort,
+      baseUrl: settings.voiceOpenAiBaseUrl,
+      model: settings.voiceOpenAiModel,
+      language: settings.voiceLanguage,
+    }),
+    [
+      settings.voiceBackend,
+      settings.voiceClidePort,
+      settings.voiceOpenAiBaseUrl,
+      settings.voiceOpenAiModel,
+      settings.voiceLanguage,
+    ],
+  );
+  const polarisVoice = useVoiceInput({
+    enabled: settings.voiceInputEnabled,
+    config: polarisVoiceConfig,
+    onTranscript: (text) => polarisVoiceInsertRef.current(text),
+  });
+  const polarisFxWithVoice = useMemo(
+    () => ({ ...polarisFx, voiceListening: polarisVoice.glow !== null }),
+    [polarisFx, polarisVoice.glow],
+  );
   const polarisFxState = useComposerFx(
-    polarisFx,
+    polarisFxWithVoice,
     composerProviderState.composerFrameClassName !== undefined,
   );
   // Upstream's keyword ring is the idle indicator only; any Polaris layer replaces it.
@@ -6117,6 +6157,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       importContextFragment,
     ],
   );
+  useEffect(() => {
+    polarisVoiceInsertRef.current = (text) => {
+      insertComposerText(text, "cursor", { ensureLeadingBoundary: true });
+    };
+  }, [insertComposerText]);
 
   const insertComposerTextAtEnd = useCallback<ChatComposerHandle["insertTextAtEnd"]>(
     (text, options) => {
@@ -6810,7 +6855,18 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           }
           className={composerFrameClassName}
         >
-          <ComposerFx state={polarisFxState} />
+          <ComposerFx
+            state={polarisFxState}
+            voice={
+              polarisVoice.glow === null
+                ? null
+                : {
+                    level: polarisVoice.level,
+                    processing: polarisVoice.glow === "processing",
+                    theme: resolvedTheme,
+                  }
+            }
+          />
           <div
             ref={composerSurfaceRef}
             data-chat-composer-surface="true"
@@ -7490,6 +7546,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   }
                   className="flex shrink-0 flex-nowrap items-center justify-end gap-2"
                 >
+                  {settings.voiceInputEnabled ? <VoiceButton voice={polarisVoice} /> : null}
                   {showComposerAttachAction ? (
                     <>
                       <input
@@ -7508,23 +7565,37 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                           });
                         }}
                       />
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              onPointerDown={(event) => event.preventDefault()}
-                              onClick={() => attachmentInputRef.current?.click()}
-                              aria-label="Attach files"
-                            />
-                          }
-                        >
-                          <PaperclipIcon />
-                        </TooltipTrigger>
-                        <TooltipPopup>Attach files</TooltipPopup>
-                      </Tooltip>
+                      {settings.gooeyComposerMenuEnabled ? (
+                        <LazyGooeyPlusMenu
+                          actions={composerPlusActions({
+                            onAttach: () => attachmentInputRef.current?.click(),
+                            onCommand: () => {
+                              insertComposerText("/", "cursor", { ensureLeadingBoundary: true });
+                            },
+                            onMention: () => {
+                              insertComposerText("@", "cursor", { ensureLeadingBoundary: true });
+                            },
+                          })}
+                        />
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onPointerDown={(event) => event.preventDefault()}
+                                onClick={() => attachmentInputRef.current?.click()}
+                                aria-label="Attach files"
+                              />
+                            }
+                          >
+                            <PaperclipIcon />
+                          </TooltipTrigger>
+                          <TooltipPopup>Attach files</TooltipPopup>
+                        </Tooltip>
+                      )}
                     </>
                   ) : null}
                   <ComposerFooterPrimaryActions
@@ -7533,6 +7604,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       settings.contextWindowMeterEnabled ? activeContextWindow : null
                     }
                     threadUsage={polarisThreadUsage}
+                    usageMeter={polarisUsageMeter}
                     reserveContextWindowMeter={reserveContextWindowMeter}
                     activeThreadModelDisplayName={activeThreadModelDisplayName}
                     pendingAction={pendingPrimaryAction}
