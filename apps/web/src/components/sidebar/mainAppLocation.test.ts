@@ -3,13 +3,14 @@ import { describe, expect, it } from "vite-plus/test";
 import { isSidebarUtilityPage } from "./mainAppLocation";
 
 describe("isSidebarUtilityPage", () => {
-  it("treats settings, usage, skills and pull requests as utility pages", () => {
+  it("treats settings, usage, skills, import and pull requests as utility pages", () => {
     for (const path of [
       "/settings",
       "/settings/appearance",
       "/projects/abc",
       "/usage",
       "/skills",
+      "/import",
       "/pull-requests",
     ]) {
       expect(isSidebarUtilityPage(path)).toBe(true);

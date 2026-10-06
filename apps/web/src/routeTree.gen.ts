@@ -14,6 +14,7 @@ import { Route as UsageRouteImport } from './routes/usage'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PairRouteImport } from './routes/pair'
+import { Route as ImportRouteImport } from './routes/import'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ChatRouteImport } from './routes/_chat'
@@ -60,6 +61,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const PairRoute = PairRouteImport.update({
   id: '/pair',
   path: '/pair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/': typeof ChatIndexRoute
   '/connect': typeof ConnectRoute
   '/dashboard': typeof DashboardRoute
+  '/import': typeof ImportRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
   '/skills': typeof SkillsRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/connect': typeof ConnectRoute
   '/dashboard': typeof DashboardRoute
+  '/import': typeof ImportRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
   '/skills': typeof SkillsRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/_chat': typeof ChatRouteWithChildren
   '/connect': typeof ConnectRoute
   '/dashboard': typeof DashboardRoute
+  '/import': typeof ImportRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
   '/skills': typeof SkillsRoute
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/'
     | '/connect'
     | '/dashboard'
+    | '/import'
     | '/pair'
     | '/settings'
     | '/skills'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
   to:
     | '/connect'
     | '/dashboard'
+    | '/import'
     | '/pair'
     | '/settings'
     | '/skills'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/_chat'
     | '/connect'
     | '/dashboard'
+    | '/import'
     | '/pair'
     | '/settings'
     | '/skills'
@@ -352,6 +364,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRouteWithChildren
   ConnectRoute: typeof ConnectRoute
   DashboardRoute: typeof DashboardRoute
+  ImportRoute: typeof ImportRoute
   PairRoute: typeof PairRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SkillsRoute: typeof SkillsRoute
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/pair'
       fullPath: '/pair'
       preLoaderRoute: typeof PairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -612,6 +632,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRouteWithChildren,
   ConnectRoute: ConnectRoute,
   DashboardRoute: DashboardRoute,
+  ImportRoute: ImportRoute,
   PairRoute: PairRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SkillsRoute: SkillsRoute,
