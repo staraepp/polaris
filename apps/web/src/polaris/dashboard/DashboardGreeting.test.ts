@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { dashboardPulse, greetingFor, pulseSentence } from "./DashboardGreeting";
+import { dashboardPulse, greetingFor, nextForReview, pulseSentence } from "./DashboardGreeting";
 import type { DashboardThread } from "./dashboardThreads";
 
 const entry = (label: string | null) =>
@@ -30,5 +30,11 @@ describe("dashboard greeting", () => {
     expect(pulseSentence({ working: 0, needsYou: 0 })).toBe(
       "All quiet. Start something new below.",
     );
+  });
+
+  it("picks the first thread waiting on the user for Review next", () => {
+    const waiting = entry("Awaiting Input");
+    expect(nextForReview([entry("Working"), waiting, entry("Plan Ready")])).toBe(waiting);
+    expect(nextForReview([entry("Working"), entry(null)])).toBeNull();
   });
 });

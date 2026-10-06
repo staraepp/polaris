@@ -1,3 +1,7 @@
+import { Link } from "@tanstack/react-router";
+
+import { Button } from "~/components/ui/button";
+
 import { ORBIE_NAME } from "../bots/orbie";
 import { OrbieAvatar } from "../bots/OrbieAvatar";
 import type { DashboardThread } from "./dashboardThreads";
@@ -28,6 +32,11 @@ export function dashboardPulse(active: readonly DashboardThread[]): {
   return { working, needsYou };
 }
 
+/** The thread that wants you most: the first one waiting on you (the list is ranked). */
+export function nextForReview(active: readonly DashboardThread[]): DashboardThread | null {
+  return active.find((entry) => NEEDS_YOU.has(entry.status?.label ?? "")) ?? null;
+}
+
 export function pulseSentence(pulse: { readonly working: number; readonly needsYou: number }) {
   const parts: string[] = [];
   if (pulse.needsYou > 0) {
@@ -42,6 +51,8 @@ export function pulseSentence(pulse: { readonly working: number; readonly needsY
 /**
  * The dashboard's welcome (Polaris): Orbie, a greeting for the time of day and
  * one live line about what is going on, announced politely as it changes.
+ * When a thread waits on you, "Review next" opens it: the dashboard doubles as
+ * the review queue.
  */
 export function DashboardGreeting({
   active,
@@ -51,6 +62,7 @@ export function DashboardGreeting({
   readonly now?: Date;
 }) {
   const pulse = dashboardPulse(active);
+  const next = nextForReview(active);
   return (
     <div className="flex items-center gap-3.5 pb-1">
       <OrbieAvatar
@@ -67,6 +79,21 @@ export function DashboardGreeting({
           {pulseSentence(pulse)}
         </p>
       </div>
+      {next === null ? null : (
+        <Button
+          size="sm"
+          className="ms-auto"
+          render={
+            <Link
+              to="/$environmentId/$threadId"
+              params={{ environmentId: next.thread.environmentId, threadId: next.thread.id }}
+            />
+          }
+        >
+          Review next
+          <span className="sr-only">: {next.thread.title || "Untitled"}</span>
+        </Button>
+      )}
     </div>
   );
 }

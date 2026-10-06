@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next
+
+- Status: done
+- What changed: The dashboard greeting shows a "Review next" button whenever a thread waits on you (pending approval, awaiting input, plan ready); it opens the top-ranked one, so the dashboard doubles as the review queue (the habit seen in the Codex app and Cursor's Agents window). `nextForReview` in `DashboardGreeting.tsx`; the button's accessible name includes the thread title.
+- How verified: `vp test run apps/web/src/polaris/dashboard` (new: picks the first waiting thread, none when nothing waits); typecheck and lint clean. Not seen live: no thread in the dev stack was waiting on input, and starting a real turn to make one would spend quota.
+- Risks: the button appears only with a waiting thread, so it has no screenshot.
+- Next action: V 4.1.0 item 3 commit (First steps), then the V 4.1.0 gate.
+- Open questions: None.
+
 ### 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.0.0 gate (full fmt + lint, every suite at baseline, light + dark screenshots under `.playwright-mcp/v4-*`, a `polaris-dev.mjs` smoke), then merge `v4` into `main` with `--no-ff` and tag `v4.0.0` plus `v1.0.0`/`v2.0.0`/`v3.0.0` on the done commits.
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards
-
-- Status: done
-- What changed: New `scripts/polaris-clide-stub.ts` (stub Clide Local API from `clide-api-spec.md`, no dependencies, keeps every security rule; `--demo` loops a fake dictation) and its test `scripts/polaris-clide-stub.test.ts`, which drives it with Polaris's own voice client. HANDOFF "Guards (V 4.0.0)" holds the AFFiNE docs-only spike (license is mixed: MIT outside `packages/backend` and `packages/common/native`, Enterprise Edition license inside them, MPL-2.0 for CE and client-side parts; BlockSuite MPL-2.0), the Slack-like chat design note (two readings; neither built), the gooey check (real buttons, nothing to change) and the plugin-API refusal. "Needs Star's approval" updated. `AGENTS.md` voice line points to the stub.
-- How verified: `vp test run --config ../vite.config.ts polaris-clide-stub` in `scripts/` (4 passed: auth, Host/Origin blocks, transcription through `transcribeWithClide` plus 415 on webm, the SSE state/level/transcript sequence); `vp run --filter @t3tools/scripts typecheck` exit 0; lint clean on both files; `node scripts/polaris-clide-stub.ts --demo` answered `/v1/health` with `state: "recording"` and stopped on SIGTERM. License texts read with curl from `raw.githubusercontent.com` and the GitHub API (the only network calls; none from the app).
-- Risks: voice was checked against the stub, not real Clide. The AFFiNE feature fit comes from public docs; nothing was self-hosted (docs-only by the amendment).
-- Next action: V 4.0.0 item 6, the secrets scan over the whole diff since the fork's first commit, with the result written for MORNING.md.
-- Open questions: Slack-like chat reading (1 or 2) and the planning-suite next step, both under "Needs Star's approval".
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 4: the dashboard is home, with your own widgets. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 3: Orbie everywhere. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 2: quota-low without amber. Rolled up; see `git log`.
