@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons
+
+- Status: done
+- What changed: Right-click a thread in the sidebar → "Choose icon…" opens upstream's project icon picker (Lucide icon in a project color, emoji, or monogram), titled for threads; "Remove icon" appears once one is set. The icon shows before the thread's title in the sidebar row. Kept per device in localStorage `polaris:thread-icons:v1`, keyed by `scopedThreadKey` (`apps/web/src/polaris/threadIcons/`). Upstream touches, all small: `ProjectIconPickerDialog` gained optional `title`/`description` props (defaults unchanged); `threadActionMenu.logic.ts` gained `set-icon`/`clear-icon`, shown only when the sidebar passes the new optional `threadIcon` state (upstream's order tests untouched); `contextMenuFallback.ts` gained two Lucide paths (`shapes`, `circle-off`); `Sidebar.tsx` holds the map, the menu cases, the row prop and the dialog.
+- How verified: `vp test run apps/web/src/components apps/web/src/polaris` passed (new: menu order with and without an icon, set/replace/clear and decoding of stored icons); typecheck exit 0; lint on `Sidebar.tsx` has exactly `main`'s warnings (compared rule by rule), the other touched files none. Isolated Playwright contexts, light and dark: right-click → Choose icon… → rocket, teal → Save icon; stored entry present, the row shows the icon, the menu then offers Remove icon. Shots `.playwright-mcp/v4.1/thread-icon-*`.
+- Risks: icons do not follow a thread to another device (by design, like the rest of the per-device UI state). The native Electron context menu shows no icons for these items (it draws icons only for destructive ones, as before).
+- Next action: V 4.1.0 item 3, First steps on the dashboard, and item 4, Review next in the greeting.
+- Open questions: None.
+
 ### 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.0.0 item 6, the secrets scan over the whole diff since the fork's first commit, with the result written for MORNING.md.
 - Open questions: Slack-like chat reading (1 or 2) and the planning-suite next step, both under "Needs Star's approval".
 
-### 2026-10-05 — Claude (session 8) — V 4.0.0 item 4: the dashboard is home, with your own widgets
-
-- Status: done
-- What changed: Polaris now opens on the dashboard (`launchPage`, default `"dashboard"`; Settings → General → Behavior → "Open Polaris on" switches back to a fresh draft). `routes/_chat.index.tsx` redirects to `/dashboard` when projects exist (the no-project hero is unchanged). Upstream's welcome handler in `routes/__root.tsx` sent "/" into the server's bootstrap thread; it now leaves the dashboard alone when that is the launch page (it still expands the bootstrap project). The dashboard (`apps/web/src/polaris/dashboard/`) has a greeting with a live Orbie and one polite live line ("2 threads need you, 1 thread is working."), and a v2 layout (`polaris:dashboard-layout:v2`, migrated from the v1 order): "Customize" lets you drag or arrow-move widgets, pick a size (Auto, Small, Medium, Large, Full width), remove any widget and add it back, and add your own **Note** (debounced autosave, saved on blur and unmount) and **Links** (in-app paths open inside Polaris; web addresses open outside; no favicons, so no network calls; duplicate and unsafe URLs refused) widgets, renamed in place. Edit controls sit on their own row so small widgets keep a readable title.
-- How verified: `vp test run apps/web/src/polaris/dashboard` (12 tests: layout repair, migration, add/remove/move/resize, link resolution, greeting and pulse); whole suites web 5,943, contracts 529, desktop 1,414 (+44 skipped) passed; typechecks web/contracts/desktop exit 0; `vp lint` exit 0 (no new warnings; the `_chat.index.tsx` effect-deps warning is pre-existing); `vp fmt --check` exit 0. Isolated Playwright contexts (one at a time, closed after): pairing lands on `/dashboard` in light and dark; removing Today puts it under "Put back"; adding a Note works. Shots: `.playwright-mcp/v4/dashboard-{landing,customize}-{light,dark}.png`.
-- Risks: the bootstrap-thread skip changes where a server started inside a project directory opens; with launch page "New thread" upstream's behavior is unchanged. Layout lives in localStorage per device, as before. Drag and drop was not exercised by the e2e run (the arrows and the reorder logic were).
-- Next action: V 4.0.0 item 5, the guards (design notes, the AFFiNE docs spike and LICENSE check, the Clide stub provider, a gooey real-button check).
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.0.0 item 4: the dashboard is home, with your own widgets. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 3: Orbie everywhere. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 2: quota-low without amber. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 1: vendored `border-beam` and the final effort colors. Rolled up; see `git log`.
