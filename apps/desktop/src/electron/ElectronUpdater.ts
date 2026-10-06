@@ -4,6 +4,7 @@ import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as Scope from "effect/Scope";
 
+import { HostProcessPlatform } from "@t3tools/shared/hostProcess";
 import { POLARIS_INVITE_HEADER, POLARIS_UPDATE_FEED_URL } from "@t3tools/shared/polarisUpdateFeed";
 import { app, net, shell } from "electron";
 import { autoUpdater } from "electron-updater";
@@ -272,6 +273,9 @@ const makePolarisMacUpdater = (): ElectronUpdater["Service"] => {
 };
 
 /** The layer the Polaris desktop app uses (main.ts); `layer` stays upstream's. */
-export const polarisLayer = Layer.sync(ElectronUpdater, () =>
-  process.platform === "darwin" ? makePolarisMacUpdater() : makePolarisFeedUpdater(),
+export const polarisLayer = Layer.effect(
+  ElectronUpdater,
+  Effect.map(HostProcessPlatform, (platform) =>
+    platform === "darwin" ? makePolarisMacUpdater() : makePolarisFeedUpdater(),
+  ),
 );

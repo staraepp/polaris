@@ -32,6 +32,7 @@ describe("MacManualUpdater (Polaris)", () => {
   let latest: string;
   let opened: string[];
   let quits: number;
+  let onQuit: () => void;
 
   const host = (status = 200): MacManualUpdaterHost => ({
     appVersion: () => "4.6.0",
@@ -48,6 +49,7 @@ describe("MacManualUpdater (Polaris)", () => {
     showItemInFolder: () => {},
     quit: () => {
       quits += 1;
+      onQuit();
     },
   });
 
@@ -71,6 +73,7 @@ describe("MacManualUpdater (Polaris)", () => {
     requests = [];
     opened = [];
     quits = 0;
+    onQuit = () => {};
     latest = manifest("4.7.0");
     setCurrentInviteCode("polaris-test-code");
   });
@@ -118,8 +121,11 @@ describe("MacManualUpdater (Polaris)", () => {
     expect(new Uint8Array(NodeFS.readFileSync(target))).toEqual(DMG);
     expect(requests.at(-1)?.code).toBe("polaris-test-code");
 
+    const quitted = new Promise<void>((resolve) => {
+      onQuit = resolve;
+    });
     updater.quitAndInstall();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await quitted;
     expect(opened).toEqual([target]);
     expect(quits).toBe(1);
   });

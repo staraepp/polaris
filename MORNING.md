@@ -10,7 +10,7 @@ Star, this is the summary of the overnight run. Everything is local on this Mac:
 - **Publishing a new version** (for me or any agent): build the dmg and exe, then `node scripts/polaris-publish-update.mjs`. Details in `infra/polaris-server/README.md`.
 - **Your name is out of the builds:** the Mac account name no longer appears in the installers.
 - **One thing for you:** during setup I created a wrong DNS record, `polaris.staraep.fun.sstarvfx.com`. It is harmless (it answers 404), but please delete it in the Cloudflare dashboard (DNS of sstarvfx.com). I cannot delete DNS records from the VPS.
-- Gate: GATE_LINE
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged). Contracts 537, shared 1,120, client-runtime 1,998, desktop 1,420 (+44 skipped), web 5,992, scripts 343 + the 1 known failure, server the 8 known failures / 6,432 passed.
 
 ## V 4.6.0 (one Tools hub, fewer buttons), tag `v4.6.0`
 

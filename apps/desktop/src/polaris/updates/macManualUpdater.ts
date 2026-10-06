@@ -1,6 +1,6 @@
 // @effect-diagnostics nodeBuiltinImport:off -- Like electron-updater, which it stands in for, this streams the download outside any Effect fiber.
 import * as NodeCrypto from "node:crypto";
-import { EventEmitter } from "node:events";
+import * as NodeEvents from "node:events";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
@@ -41,7 +41,7 @@ interface PendingUpdate {
  * Applications. It speaks electron-updater's events, so `DesktopUpdates`
  * drives it exactly like the real updater.
  */
-export class MacManualUpdater extends EventEmitter {
+export class MacManualUpdater extends NodeEvents.EventEmitter {
   feedUrl = POLARIS_UPDATE_FEED_URL;
   allowDowngrade = false;
   private pending: PendingUpdate | null = null;
