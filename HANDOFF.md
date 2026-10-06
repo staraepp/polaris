@@ -222,7 +222,7 @@ Every deviation from `blueprint.md`, with its reason. Newest last.
 
 ## Version numbers (Star, 2026-10-05)
 
-Polaris versions are **V MAJOR.MINOR.PATCH**. An enormous change bumps MAJOR; features bump MINOR; fixes and polish bump PATCH. The amendment is **V 4.0.0** (v1–v3 are V 1.0.0, V 2.0.0 and V 3.0.0). Git tags from now on are `vMAJOR.MINOR.PATCH`; the older `vN-done` tags stay as they are (nothing is renamed or deleted) and get `v1.0.0`, `v2.0.0`, `v3.0.0` tags on the same commits. The app's own version string (Settings, the updater) is **not** changed: the update feed still points at upstream, so that waits for you (see "Questions for Star").
+Polaris versions are **V MAJOR.MINOR.PATCH**. An enormous change bumps MAJOR; features bump MINOR; fixes and polish bump PATCH. The amendment is **V 4.0.0** (v1–v3 are V 1.0.0, V 2.0.0 and V 3.0.0). Git tags from now on are `vMAJOR.MINOR.PATCH`; the older `vN-done` tags stay as they are (nothing is renamed or deleted) and get `v1.0.0`, `v2.0.0`, `v3.0.0` tags on the same commits. Since V 4.3.0 (Star, 2026-10-06) the app's own version string is the V number too: `node scripts/update-release-package-versions.ts <version>` sets desktop, web, server and contracts together. No update feed is baked into Polaris builds, and upstream's `t3 update` now sees T3 Code's 0.0.x as a downgrade.
 
 ## Version plan: V 4.1.0 (Star, during the run: "customizable everything")
 
@@ -305,17 +305,24 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Slack-like chat.** Not built. Design note in "Guards (V 4.0.0)" below: pick between the two readings (several people in one server, or a Slack-like layout for your own agent threads); the second has a safe first slice.
 - **Planning suite.** Not built. The AFFiNE docs spike is done (see "Guards (V 4.0.0)"); the recommendation there needs your yes before anything is installed or embedded.
 - **Plugin API.** Not built, by the blueprint's rule and the amendment; hard-fork editing still works.
-- **A desktop app of its own (your "full desktop app" ask).** The Electron shell in `apps/desktop` builds and its tests pass, but a packaged Polaris would still be **T3 Code to macOS**: app id `com.t3tools.t3code` (`scripts/build-desktop-artifact.ts:57`), Electron profile `~/Library/Application Support/t3code-v2` (`t3code-dev` in dev; `apps/desktop/src/app/DesktopUserData.ts`), server state in `~/.t3`, the `t3code://` scheme and window class `t3code`. Installed next to your real T3 Code, it would share that data and its single-instance lock (whichever opens second gives way), and the auto-updater still follows upstream's feed (see "App version string"). These are the internal identifiers `AGENTS.md` says to leave alone unless you ask, so I did not change them and did not run or package Electron. Proposed change, one branch, when you say yes: app id `app.polaris.desktop` (or a reverse-domain id you own), profile `polaris` / `polaris-dev`, home `~/.polaris` (with `T3CODE_HOME` still honored), scheme `polaris://`, window class `polaris`, the updater feed off until you have releases, then `vp run dist:desktop:dmg:arm64` for an unsigned local `.dmg` (Gatekeeper: right-click → Open). Nothing to migrate: no Polaris desktop data exists yet.
 
 ## Questions for Star
 
-- **App version string.** Polaris versions are now V MAJOR.MINOR.PATCH (V 4.0.0 for the amendment), used for tags and notes. The desktop/web `package.json` versions are still upstream's, because the auto-updater compares them against upstream's release feed (`pingdotgg/t3code`). Switching them to 4.0.0 belongs with pointing the feed at your own releases.
-
+- **Importing T3 Code threads (you said yes, 2026-10-06).** Next item (V 4.4.0): seed an empty `~/.polaris` from a read-only backup of T3 Code's `~/.t3/userdata/state.sqlite` (0.0.44, V1 format), with in-flight work removed; the V2 server migrates it on first boot. Refuses if Polaris already has data.
 - **Usage meter default.** The composer usage meter ships on by default (quiet until a window is low). Upstream keeps its context indicator off by default; if you want the same, set `composerUsageMeterEnabled` to default `false` in `packages/contracts/src/settings.ts`.
 - **Discord Application ID.** Register an application at the Discord developer portal, paste its ID into `POLARIS_DISCORD_APPLICATION_ID` in `apps/desktop/src/polaris/discord/discordConfig.ts` (or export the env var of the same name for a dev run), and upload an asset named `polaris` for the large image. Until then the switch is disabled with an explanation.
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-06 — Claude (session 8) — V 4.3.0: import sessions any time; app version = V number
+
+- Status: done; gate passed (see MORNING V 4.3.0); merged into `main` and tagged `v4.3.0`
+- What changed: branch `import-sessions`: new `/import` page (`apps/web/src/polaris/import/ImportSessionsPage.tsx`, route `routes/import.tsx`, regenerated `routeTree.gen.ts`) reached from the command palette ("Import Claude Code and Codex sessions") and the dashboard Start tile ("Import past sessions"). It reuses the welcome wizard's picker (`ImportCandidate` and `ImportCandidateList` are now exported from `WelcomeWizard.tsx`) and upstream's `agentSessions.scan`/`import` RPCs (no contract change). Pure run and summary logic in `sessionImport.ts` (+6 tests). `/import` is a sidebar utility page (Back button). Branch `version-4.3.0`: `node scripts/update-release-package-versions.ts 4.3.0` set desktop, web, server and contracts to `4.3.0` (Settings → About, the dmg name `Polaris-4.3.0-arm64.dmg`).
+- How verified: worktree dev stack (`polaris-dev.mjs`, ports 14646/6606; Star's stack untouched): the page found 26 folders from this Mac's Claude Code and Codex history; imported one folder into the temp dev database (2 threads, project created), imported it again (no duplicates; the server counts already-imported sessions as imported, so the result line says "2 threads from 1 folder are in Polaris"); palette entry found; narrow (420 px) and dark checked. Shots in `.playwright-mcp/v4.3.0/`.
+- Risks: imported finished conversations land under Settled in the sidebar, not under the project (upstream's settle rule); the page says so. Only the primary environment is scanned. With the version at 4.3.0 the server applies the V2 provider compatibility policy (`t3CodeRange >=0.0.46`), which matches the V2 orchestrator this fork runs; `t3 update` (upstream's npm package) now counts upstream's 0.0.x as a downgrade and refuses without `--allow-downgrade`.
+- Next action: Star tries `/import` in the dev app and the rebuilt dmg.
+- Open questions: does "import threads" also mean bringing in T3 Code's own threads from `~/.t3`? (Not built: it reads another app's database.)
 
 ### 2026-10-06 — Claude (session 8) — V 4.2.0: Polaris as its own desktop app
 
@@ -353,17 +360,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (023).
 - Open questions: None.
 
-### 2026-10-06 — Claude (session 8) — polish 021: the note says it saved
-
-- Status: done
-- What changed: `polaris/dashboard/NoteWidget.tsx`: after each save (debounced or on blur) a muted `text-2xs` "Saved" mark shows under the text at the end edge and fades out after 1.6 s (`SAVED_MARK_MS`); its timer is cleared on unmount. The mark is `aria-hidden` (saving is automatic; announcing every pause would be noise) and does not animate under reduced motion.
-- How verified: web typecheck and lint clean; `vp test run apps/web/src/polaris/dashboard` 20 passed (no new pure logic). Isolated Playwright contexts, light and dark, with a seeded note: mark opacity 0 at rest, 1 about 1 s after typing, 0 again 2.2 s later; the typed line was in the stored layout. Shots `.playwright-mcp/polish/021-*`.
-- Risks: None known.
-- Next action: next polish cycle (022).
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — polish 021: the note says it saved. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 020: links show where they go. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 019: Threads tile lines up. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 018: chat icons on the dashboard. Rolled up; see `git log`.
