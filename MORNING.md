@@ -1,6 +1,10 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.2.1**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.2.2**. Start with "Look at these first" at the bottom.
+
+## V 5.2.2 (Calm mode hides the activity chart), tag `v5.2.2`
+
+- With Calm on, the dashboard's "Last 30 days" chart is hidden, so the dashboard fits on one screen. It shows again while you Customize.
 
 ## V 5.2.1 (Calm mode trims Usage and Pull requests), tag `v5.2.1`
 
