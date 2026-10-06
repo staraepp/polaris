@@ -26,7 +26,7 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 - Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
 - Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
 - Rebrand (session 6): the user-facing name is **Polaris** and the accent is emerald green (tokens in `apps/web/src/index.css`). Internal identifiers are still upstream's on purpose; see the session 6 entry for the list. The logo is a placeholder (a "P" with a north star in its counter); the same entry lists every file to swap for final art.
-- Test status on this Mac (session 8, v3 gate): contracts 527, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,928, scripts 337 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. (v2 gate: web 5,920, the rest the same.) v1 gate: contracts 520, shared 1,107, desktop 1,413, web 5,890; server 9 failed (the 8 known + 1 flaky watcher test). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
+- Test status on this Mac (session 8, V 4.1.1 gate): contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,968, scripts 341 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. v3 gate: contracts 527, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,928, scripts 337 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. (v2 gate: web 5,920, the rest the same.) v1 gate: contracts 520, shared 1,107, desktop 1,413, web 5,890; server 9 failed (the 8 known + 1 flaky watcher test). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
 
 ### Effective effort: where it is resolved today
 
@@ -316,53 +316,64 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`
+### 2026-10-06 — Claude (session 8) — V 4.1.1 gate: passed, merged, tagged `v4.1.1`
 
 - Status: done
-- What changed: Branch `v4.1` merged into `main` with `--no-ff`; tags `v4.1.0` and `v4.1-done`. MORNING.md reassembled with every required section (V 4.1.0, V 4.0.0, v1–v3, polish cycles, skipped, contract changes, new dependencies, approvals, questions, secrets scan, UX research with sources, the five things to look at first).
-- How verified: `vp fmt --check` exit 0; `vp lint` exit 0 with 0 errors; typecheck contracts/shared/desktop/web 0 errors. Suites: contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,960 passed; scripts 341 + the 1 known failure; server 8 failed / 6,430 passed / 21 skipped, the same 8 known. Contact sheet `.playwright-mcp/v4.1-sheet.png` (background on dashboard, thread and settings, and First steps, light and dark). Smoke: a fresh `polaris-dev.mjs` stack booted (web 200, nothing on 3773), paired once in an isolated context, landed on `/dashboard` with First steps (`v4.1-smoke.png`), then stopped with its temp home removed.
-- Risks: as in the item entries (Battery API and unfocused-window pauses not exercised live; Review next not seen live).
-- Next action: Desktop identity is waiting on Star. Otherwise: resume polish cycles (14 of 25) on a `polish-2` branch, one focused change each, with before/after shots.
-- Open questions: Desktop identity, Slack-like chat reading, planning-suite next step (all under "Needs Star's approval").
+- What changed: polish cycles 014 to 023 (branch `polish-2`) merged into `main` with `--no-ff` and tagged `v4.1.1` (patch: polish only, no contract changes, no new dependencies). MORNING has a V 4.1.1 section; polishing stopped at 23 of 25 because the last scans found nothing clearly better.
+- How verified: `vp fmt --check` clean; `vp lint --report-unused-disable-directives` exit 0, 0 errors, 867 warnings (same as V 4.1.0). Suites: contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,968, scripts 341 + the 1 known failure, server 8 known failures / 6,430 passed / 21 skipped. Screenshots light and dark in `.playwright-mcp/v4.1.1/` (dashboard, skills, appearance) and `v4.1.1-sheet.png`. Smoke: `scripts/polaris-dev.mjs start` (pgid 9018, ports 13774/5734) → paired → landed on `/dashboard`, sidebar utility row present, no page errors (`v4.1.1-smoke.png`); stopped with `polaris-dev.mjs stop 9018`.
+- Risks: Same as the cycle entries; nothing new.
+- Next action: wait for Star. The desktop app still needs the identity decision in MORNING "Needs Star's approval".
+- Open questions: Desktop identity (app id, profile, home dir, URL scheme).
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps
+### 2026-10-06 — Claude (session 8) — polish 023: first steps in any order
 
 - Status: done
-- What changed: A slim "First steps" card under the dashboard greeting continues onboarding after upstream's welcome wizard: add a project, start a thread, open the command palette, make the dashboard yours, pick a look. Every step is detected from real state (projects, threads, the palette opening by any means, a non-default layout, Orbie's accessory / a background / theme fonts); only the next step has a button (Add project, New thread, Open (⌘K), Customize, Appearance). A progress bar with `role="progressbar"`, "Hide" remembers per device (`polaris:first-steps:v1`), and the card leaves on its own when all five are done. Files: `FirstSteps.tsx`, `firstStepsModel.ts` (named to avoid a macOS case clash with the component), wired in `DashboardPage.tsx`.
-- How verified: `vp test run apps/web/src/polaris/dashboard` (order, next step, completion); typecheck and lint clean. Isolated Playwright contexts, light and dark: the card showed 2 of 5 (project and thread done), pressing ⌘K and Esc moved it to 3 of 5. Shots `.playwright-mcp/v4.1/first-steps-*`.
-- Risks: the palette is detected by its portal appearing under `<body>`; if upstream moves the portal, the step would still tick from the button and the palette bus, but not from the keyboard.
-- Next action: V 4.1.0 gate (full fmt, lint, all suites, screenshots, smoke), merge, tag `v4.1.0`.
+- What changed: `polaris/dashboard/FirstSteps.tsx`: each step that is not done shows its action, not only the next one; the next step's button is `default` (filled), the others `outline`. Doc comment updated. Steps are still checked from real state only.
+- How verified: `vp test run apps/web/src/polaris/dashboard` 20 passed; web typecheck and lint clean. Isolated Playwright contexts, 1280 px light and dark and 400 px light: buttons "Open (⌘K) | Customize | Appearance" with only the first filled; Customize entered edit mode and Appearance opened `/settings/appearance`. Shots `.playwright-mcp/polish/023-*`.
+- Risks: None known.
+- Next action: next polish cycle (024).
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next
+### 2026-10-06 — Claude (session 8) — polish 022: skills fit narrow windows
 
 - Status: done
-- What changed: The dashboard greeting shows a "Review next" button whenever a thread waits on you (pending approval, awaiting input, plan ready); it opens the top-ranked one, so the dashboard doubles as the review queue (the habit seen in the Codex app and Cursor's Agents window). `nextForReview` in `DashboardGreeting.tsx`; the button's accessible name includes the thread title.
-- How verified: `vp test run apps/web/src/polaris/dashboard` (new: picks the first waiting thread, none when nothing waits); typecheck and lint clean. Not seen live: no thread in the dev stack was waiting on input, and starting a real turn to make one would spend quota.
-- Risks: the button appears only with a waiting thread, so it has no screenshot.
-- Next action: V 4.1.0 item 3 commit (First steps), then the V 4.1.0 gate.
+- What changed: `polaris/skills/SkillStudioPage.tsx`: below `md`, the list hides once a skill is explicitly picked and the detail hides while none is, each taking full height; an "All skills" ghost button (`md:hidden`) clears the pick. `SkillDetail.tsx` header: the title block has `basis-56` so actions wrap under it, the title wraps instead of truncating, and the path is `line-clamp-2 break-all`.
+- How verified: `vp test run apps/web/src/polaris/skills` 4 passed; web typecheck and lint clean (a native `title` on the path was refused by `no-native-title-tooltip` and dropped). Isolated Playwright contexts at 400 px, light and dark: list only → pick → detail only with the back button → back → list only; at 1280 px both panes show and the back button is hidden. Shots `.playwright-mcp/polish/022-*`.
+- Risks: On narrow windows a provider or project switch returns to the list (it already cleared the pick).
+- Next action: next polish cycle (023).
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons
+### 2026-10-06 — Claude (session 8) — polish 021: the note says it saved
 
 - Status: done
-- What changed: Right-click a thread in the sidebar → "Choose icon…" opens upstream's project icon picker (Lucide icon in a project color, emoji, or monogram), titled for threads; "Remove icon" appears once one is set. The icon shows before the thread's title in the sidebar row. Kept per device in localStorage `polaris:thread-icons:v1`, keyed by `scopedThreadKey` (`apps/web/src/polaris/threadIcons/`). Upstream touches, all small: `ProjectIconPickerDialog` gained optional `title`/`description` props (defaults unchanged); `threadActionMenu.logic.ts` gained `set-icon`/`clear-icon`, shown only when the sidebar passes the new optional `threadIcon` state (upstream's order tests untouched); `contextMenuFallback.ts` gained two Lucide paths (`shapes`, `circle-off`); `Sidebar.tsx` holds the map, the menu cases, the row prop and the dialog.
-- How verified: `vp test run apps/web/src/components apps/web/src/polaris` passed (new: menu order with and without an icon, set/replace/clear and decoding of stored icons); typecheck exit 0; lint on `Sidebar.tsx` has exactly `main`'s warnings (compared rule by rule), the other touched files none. Isolated Playwright contexts, light and dark: right-click → Choose icon… → rocket, teal → Save icon; stored entry present, the row shows the icon, the menu then offers Remove icon. Shots `.playwright-mcp/v4.1/thread-icon-*`.
-- Risks: icons do not follow a thread to another device (by design, like the rest of the per-device UI state). The native Electron context menu shows no icons for these items (it draws icons only for destructive ones, as before).
-- Next action: V 4.1.0 item 3, First steps on the dashboard, and item 4, Review next in the greeting.
+- What changed: `polaris/dashboard/NoteWidget.tsx`: after each save (debounced or on blur) a muted `text-2xs` "Saved" mark shows under the text at the end edge and fades out after 1.6 s (`SAVED_MARK_MS`); its timer is cleared on unmount. The mark is `aria-hidden` (saving is automatic; announcing every pause would be noise) and does not animate under reduced motion.
+- How verified: web typecheck and lint clean; `vp test run apps/web/src/polaris/dashboard` 20 passed (no new pure logic). Isolated Playwright contexts, light and dark, with a seeded note: mark opacity 0 at rest, 1 about 1 s after typing, 0 again 2.2 s later; the typed line was in the stored layout. Shots `.playwright-mcp/polish/021-*`.
+- Risks: None known.
+- Next action: next polish cycle (022).
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds
+### 2026-10-06 — Claude (session 8) — polish 020: links show where they go
 
 - Status: done
-- What changed: Settings → Appearance → Background: pick an image (PNG, JPEG, WebP, AVIF, GIF, up to 25 MB) or a video (MP4, WebM, MOV, up to 200 MB); it is kept in this device's IndexedDB and never sent anywhere. Dim (30–90%) and Blur (0–24 px) sliders, Replace, Remove. A fixed layer behind the app (`apps/web/src/polaris/background/`) with the page color as a scrim; the inset, page wrappers and chat columns turn transparent and the sidebar becomes glass while it shows. A **contrast floor** samples the picture (or a video's first frame) at 32×32 and never lets the scrim drop below what keeps body text at 4.5:1 and muted labels at 3:1 in the current theme; Settings says so when it applies. Video is muted and looped and holds still under Reduce motion, on a hidden page, in an unfocused window and on battery below 20%. `useThemeEpoch` moved to `apps/web/src/polaris/theme/` (shared with Orbie). Contract: `backgroundEnabled`, `backgroundDim`, `backgroundBlur`.
-- How verified: `vp test run apps/web/src/polaris packages/contracts/src/settings.test.ts apps/desktop/src/settings apps/web/src/components/settings` (background rules 4, contrast 6, plus the touched suites) passed; typecheck web/contracts/desktop exit 0; lint clean on the new files. Isolated Playwright contexts with a generated worst-case image (bright sky over a dark textured ground) and an ffmpeg test video: the layer shows on the dashboard, a thread and settings in light and dark; the floor came out at 80% (light) and 85% (dark) for that image; the video advanced 1.2 s in 1.2 s normally and stayed paused with reduced motion. Shots: `.playwright-mcp/v4.1/background-*`.
-- Risks: the Battery API path and the unfocused-window pause were not exercised in the browser (pure logic is tested). The floor samples a video's first frame only. Mermaid diagrams read the body color for their background and get a transparent one while a background shows.
-- Next action: V 4.1.0 item 2, chat icons (per-thread icon from the project icon picker, kept per device).
+- What changed: `polaris/dashboard/dashboardLayout.ts`: new pure `dashboardLinkHint(link)` (host without `www.` for web addresses, the path for in-app links, null when the label already says it or the link is refused). `LinksWidget.tsx` shows it in muted `text-xs` after the label; the label keeps its width and the hint truncates first. Tests added.
+- How verified: `vp test run apps/web/src/polaris/dashboard` 20 passed; web typecheck and lint clean. Isolated Playwright contexts with a seeded Links widget, 1280 px light and dark and 400 px light: hints `github.com`, `/usage`, `notes.example.org`, none on the `docs.example.com` row. Shots `.playwright-mcp/polish/020-*`.
+- Risks: None known; the hint is derived locally, no network.
+- Next action: next polish cycle (021).
 - Open questions: None.
 
 ## History
 
+- 2026-10-06 — Claude (session 8) — polish 019: Threads tile lines up. Rolled up; see `git log`.
+- 2026-10-06 — Claude (session 8) — polish 018: chat icons on the dashboard. Rolled up; see `git log`.
+- 2026-10-06 — Claude (session 8) — polish 017: the dashboard counts as home in the sidebar. Rolled up; see `git log`.
+- 2026-10-06 — Claude (session 8) — polish 016: skills read as documents. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 gate: passed, merged, tagged `v4.0.0`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards. Rolled up; see `git log`.

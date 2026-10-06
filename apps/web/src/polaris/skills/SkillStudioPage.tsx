@@ -4,6 +4,7 @@ import {
   resolveProviderSkillsForCwd,
 } from "@t3tools/client-runtime/providerSkills";
 import type { ServerProvider } from "@t3tools/contracts";
+import { ArrowLeftIcon } from "lucide-react";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -22,6 +23,7 @@ import { sortScopedProjectsForSidebar } from "~/components/Sidebar.logic";
 import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "~/components/WorkspaceBreadcrumb";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
 import { isElectron } from "~/env";
+import { cn } from "~/lib/utils";
 import { useEscapeToGoBack } from "~/hooks/useNavigateBack";
 import { useProjects, useServerConfigs, useThreadShells } from "~/state/entities";
 import { projectEnvironment } from "~/state/projects";
@@ -211,7 +213,15 @@ export function SkillStudioPage() {
           </p>
         ) : (
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 md:grid-cols-[18rem_minmax(0,1fr)]">
-            <aside className="surface-glass min-h-0 border-border/60 md:border-r">
+            {/* Narrow windows show the list or one skill, not both squeezed
+                into half a screen each: picking a skill opens it full height,
+                and "All skills" comes back. */}
+            <aside
+              className={cn(
+                "surface-glass min-h-0 border-border/60 md:border-r",
+                selection !== null && "hidden md:block",
+              )}
+            >
               <ScrollArea className="h-full">
                 <div className="flex flex-col gap-3 p-3">
                   {/* Which project and provider the list describes. */}
@@ -280,8 +290,17 @@ export function SkillStudioPage() {
                 </div>
               </ScrollArea>
             </aside>
-            <ScrollArea className="min-h-0">
+            <ScrollArea className={cn("min-h-0", selection === null && "hidden md:block")}>
               <main className="mx-auto flex min-h-full w-full max-w-4xl flex-col p-6">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="-ms-2 mb-3 self-start md:hidden"
+                  onClick={() => setSelection(null)}
+                >
+                  <ArrowLeftIcon />
+                  All skills
+                </Button>
                 {shownSkill && cwd ? (
                   <SkillDetail
                     key={shownSkill.key}

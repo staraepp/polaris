@@ -131,6 +131,11 @@ export function newSkillRelativePath(location: SkillLocationId, slug: string): s
 
 const yamlString = (value: string) => JSON.stringify(value.replace(/\s+/g, " ").trim());
 
+/** A SKILL.md without its frontmatter: the part a person reads. */
+export function skillBody(document: string): string {
+  return document.replace(/^---\r?\n[\s\S]*?\r?\n---[^\S\r\n]*(?:\r?\n)*/, "").trim();
+}
+
 /**
  * A SKILL.md with the frontmatter both Claude Code and Codex read. A
  * template's own frontmatter is replaced so the chosen name wins.
@@ -140,7 +145,7 @@ export function newSkillDocument(input: {
   readonly description: string;
   readonly body: string;
 }): string {
-  const body = input.body.replace(/^---\n[\s\S]*?\n---\n*/, "").trim();
+  const body = skillBody(input.body);
   return [
     "---",
     `name: ${input.slug}`,

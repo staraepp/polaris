@@ -100,6 +100,27 @@ export function DashboardTile({
   readonly className?: string;
   readonly children: ReactNode;
 }) {
+  // The move arrows sit in the header on narrow windows and beside the size
+  // picker on wide ones (sizes only shape the six-column grid).
+  const moveButtons =
+    editing === null
+      ? null
+      : (["earlier", "later"] as const).map((direction) => {
+          const target = direction === "earlier" ? editing.index - 1 : editing.index + 1;
+          return (
+            <button
+              key={direction}
+              type="button"
+              aria-label={`Move ${title} ${direction}`}
+              disabled={target < 0 || target >= editing.count}
+              onClick={() => editing.onMove(target)}
+              className={iconButtonClassName}
+            >
+              <ChevronGlyph direction={direction} />
+            </button>
+          );
+        });
+
   return (
     <section
       aria-label={title}
@@ -152,6 +173,9 @@ export function DashboardTile({
           </h2>
         )}
         {editing ? (
+          <span className="flex items-center gap-0.5 lg:hidden">{moveButtons}</span>
+        ) : null}
+        {editing ? (
           <button
             type="button"
             aria-label={`Remove ${title}`}
@@ -165,8 +189,8 @@ export function DashboardTile({
         )}
       </header>
       {editing ? (
-        // Its own row, so even a small widget keeps a readable title.
-        <div className="-mt-1 flex shrink-0 items-center gap-0.5 px-4 pb-2">
+        // Its own row on wide windows, so even a small widget keeps a readable title.
+        <div className="-mt-1 hidden shrink-0 items-center gap-0.5 px-4 pb-2 lg:flex">
           <Select
             value={editing.size}
             onValueChange={(value) => {
@@ -174,7 +198,7 @@ export function DashboardTile({
               if (next !== undefined) editing.onResize(next);
             }}
           >
-            <SelectTrigger size="xs" className="me-auto w-28" aria-label={`Size of ${title}`}>
+            <SelectTrigger size="xs" className="w-28" aria-label={`Size of ${title}`}>
               <SelectValue>{sizeLabel(editing.size)}</SelectValue>
             </SelectTrigger>
             <SelectPopup align="start" alignItemWithTrigger={false}>
@@ -185,21 +209,8 @@ export function DashboardTile({
               ))}
             </SelectPopup>
           </Select>
-          {(["earlier", "later"] as const).map((direction) => {
-            const target = direction === "earlier" ? editing.index - 1 : editing.index + 1;
-            return (
-              <button
-                key={direction}
-                type="button"
-                aria-label={`Move ${title} ${direction}`}
-                disabled={target < 0 || target >= editing.count}
-                onClick={() => editing.onMove(target)}
-                className={iconButtonClassName}
-              >
-                <ChevronGlyph direction={direction} />
-              </button>
-            );
-          })}
+          <span className="ms-auto" />
+          {moveButtons}
         </div>
       ) : null}
       <div

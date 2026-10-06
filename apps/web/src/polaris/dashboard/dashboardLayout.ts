@@ -293,3 +293,17 @@ export function resolveDashboardLink(
     return null;
   }
 }
+
+/**
+ * Where a link goes, in a few characters: the host for a web address
+ * (`github.com`), the path for an in-app one. Null when the label already
+ * says it, or the link cannot be opened.
+ */
+export function dashboardLinkHint(link: DashboardLink): string | null {
+  const target = resolveDashboardLink(link.url);
+  if (target === null) return null;
+  const hint =
+    target.kind === "internal" ? target.href : new URL(target.href).hostname.replace(/^www\./, "");
+  const label = link.label.trim().toLowerCase();
+  return label === hint.toLowerCase() || label === link.url.trim().toLowerCase() ? null : hint;
+}

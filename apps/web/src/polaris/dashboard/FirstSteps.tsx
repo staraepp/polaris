@@ -63,8 +63,9 @@ function StepMark({ done, current }: { readonly done: boolean; readonly current:
 
 /**
  * First steps (Polaris, V 4.1.0): a slim card under the greeting until every
- * step is done or you hide it. Only the next step carries a button, so the
- * card always says what to do now.
+ * step is done or you hide it. The steps do not depend on each other, so each
+ * open one has its button; only the next is filled, so the card still says
+ * what to do now.
  */
 export function FirstSteps({
   signals,
@@ -99,35 +100,44 @@ export function FirstSteps({
 
   if (memory.hidden || progress.complete) return null;
 
-  const action = (id: FirstStepId) => {
+  const action = (id: FirstStepId, next: boolean) => {
+    const variant = next ? "default" : "outline";
     switch (id) {
       case "project":
         return (
-          <Button size="xs" onClick={() => openCommandPalette({ open: "add-project" })}>
+          <Button
+            size="xs"
+            variant={variant}
+            onClick={() => openCommandPalette({ open: "add-project" })}
+          >
             Add project
           </Button>
         );
       case "thread":
         return (
-          <Button size="xs" onClick={() => openCommandPalette({ open: "new-thread-in" })}>
+          <Button
+            size="xs"
+            variant={variant}
+            onClick={() => openCommandPalette({ open: "new-thread-in" })}
+          >
             New thread
           </Button>
         );
       case "palette":
         return (
-          <Button size="xs" onClick={() => openCommandPalette()}>
+          <Button size="xs" variant={variant} onClick={() => openCommandPalette()}>
             {paletteShortcut ? `Open (${paletteShortcut})` : "Open"}
           </Button>
         );
       case "customize":
         return (
-          <Button size="xs" onClick={onCustomize}>
+          <Button size="xs" variant={variant} onClick={onCustomize}>
             Customize
           </Button>
         );
       case "look":
         return (
-          <Button size="xs" render={<Link to="/settings/appearance" />}>
+          <Button size="xs" variant={variant} render={<Link to="/settings/appearance" />}>
             Appearance
           </Button>
         );
@@ -191,7 +201,7 @@ export function FirstSteps({
                 {done ? null : (
                   <span className="text-xs text-muted-foreground">{FIRST_STEP_TEXT[id].hint}</span>
                 )}
-                {current ? <span className="pt-0.5">{action(id)}</span> : null}
+                {done ? null : <span className="pt-0.5">{action(id, current)}</span>}
               </div>
             </li>
           );

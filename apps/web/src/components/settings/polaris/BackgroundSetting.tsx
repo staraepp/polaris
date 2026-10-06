@@ -31,6 +31,12 @@ import { searchableSetting } from "../settingsSearch";
 
 const ACCEPT = [...BACKGROUND_IMAGE_TYPES, ...BACKGROUND_VIDEO_TYPES].join(",");
 
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`;
+}
+
 function sliderStyle(value: number, min: number, max: number): CSSProperties {
   const ratio = (value - min) / (max - min);
   return {
@@ -181,18 +187,26 @@ export function BackgroundSetting() {
       }
     >
       <div className="mt-3 flex flex-col gap-3 rounded-lg border border-border/60 bg-background/40 p-2.5">
-        <div className="flex items-center gap-3">
+        {/* Wraps on narrow windows: the buttons drop below and the name keeps its room. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {hasFile ? (
             <Preview stored={stored} />
           ) : (
             <span className="h-10 w-16 shrink-0 rounded-md border border-dashed border-border" />
           )}
-          <span className="min-w-0 flex-1 truncate text-sm">
-            {stored === "loading"
-              ? "Loading…"
-              : stored === null
-                ? "No background chosen"
-                : `${stored.name} · ${stored.kind === "image" ? "Image" : "Video"}`}
+          <span className="flex min-w-0 flex-1 basis-32 flex-col">
+            <span className="line-clamp-2 text-sm break-all">
+              {stored === "loading"
+                ? "Loading…"
+                : stored === null
+                  ? "No background chosen"
+                  : stored.name}
+            </span>
+            {hasFile ? (
+              <span className="text-xs text-muted-foreground">
+                {stored.kind === "image" ? "Image" : "Video"} · {formatBytes(stored.blob.size)}
+              </span>
+            ) : null}
           </span>
           <input
             ref={fileInput}
@@ -207,26 +221,28 @@ export function BackgroundSetting() {
               if (file !== undefined) void pick(file);
             }}
           />
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={saving}
-            aria-describedby={status === null ? undefined : statusId}
-            onClick={() => fileInput.current?.click()}
-          >
-            {saving ? "Saving…" : hasFile ? "Replace…" : "Choose…"}
-          </Button>
-          {hasFile ? (
+          <span className="ms-auto flex gap-1.5">
             <Button
               size="sm"
-              variant="ghost"
-              onClick={() => {
-                void clearBackground().then(() => updateSettings({ backgroundEnabled: false }));
-              }}
+              variant="outline"
+              disabled={saving}
+              aria-describedby={status === null ? undefined : statusId}
+              onClick={() => fileInput.current?.click()}
             >
-              Remove
+              {saving ? "Saving…" : hasFile ? "Replace…" : "Choose…"}
             </Button>
-          ) : null}
+            {hasFile ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  void clearBackground().then(() => updateSettings({ backgroundEnabled: false }));
+                }}
+              >
+                Remove
+              </Button>
+            ) : null}
+          </span>
         </div>
         {status === null ? null : (
           <p

@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 
-import { type DashboardLink, resolveDashboardLink } from "./dashboardLayout";
+import { dashboardLinkHint, type DashboardLink, resolveDashboardLink } from "./dashboardLayout";
 
 function ArrowGlyph({ external }: { readonly external: boolean }) {
   return (
@@ -87,10 +87,17 @@ export function LinksWidgetBody({
       <ul className="flex flex-col">
         {links.map((link, index) => {
           const target = resolveDashboardLink(link.url);
+          const hint = dashboardLinkHint(link);
+          // The label keeps its width; the destination gives way first.
           const content = (
             <>
               <ArrowGlyph external={target?.kind === "external"} />
-              <span className="min-w-0 flex-1 truncate">{link.label}</span>
+              <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                <span className="max-w-full shrink-0 truncate">{link.label}</span>
+                {hint ? (
+                  <span className="min-w-0 truncate text-xs text-muted-foreground">{hint}</span>
+                ) : null}
+              </span>
             </>
           );
           return (
