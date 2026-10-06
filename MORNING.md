@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.5.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.6.0**. Start with "Look at these first" at the bottom.
+
+## V 4.6.0 (one Tools hub, fewer buttons), tag `v4.6.0`
+
+- **Fewer buttons.** The sidebar footer is now just **Settings**, **Home** (the dashboard) and **Tools**.
+- **Tools** holds Skills, Import, Usage and Pull requests. The button opens the one you used last. Each tool's header reads "Tools / Skills ▾": click the name to jump to another tool. The command palette entries and links still work as before.
+- The **Workspace** hub (whiteboards, docs, chat with friends) arrives with V 5.0.0, once there is something to put in it.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged). Contracts 537, shared 1,115, client-runtime 1,998, desktop 1,415 (+44 skipped), web 5,992, scripts 342 + the 1 known failure, server the 8 known failures / 6,432 passed. Screenshots in `../.playwright-mcp/v4.6.0/`, light, dark and narrow, no page errors.
 
 ## V 4.5.0 (bots in every shape, thinking orbs, a visible beam and voice), tag `v4.5.0`
 

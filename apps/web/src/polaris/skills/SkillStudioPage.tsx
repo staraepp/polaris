@@ -20,8 +20,9 @@ import {
 import { SidebarInset } from "~/components/ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { sortScopedProjectsForSidebar } from "~/components/Sidebar.logic";
-import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "~/components/WorkspaceBreadcrumb";
+import { WorkspaceBreadcrumb } from "~/components/WorkspaceBreadcrumb";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
+import { ToolsHubCrumbs } from "~/polaris/hub/ToolsHubCrumbs";
 import { isElectron } from "~/env";
 import { cn } from "~/lib/utils";
 import { useEscapeToGoBack } from "~/hooks/useNavigateBack";
@@ -179,9 +180,7 @@ export function SkillStudioPage() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground">
         <WorkspacePageHeader electron={isElectron}>
           <WorkspaceBreadcrumb ariaLabel="Skills breadcrumb" className="min-w-0 flex-1">
-            <WorkspaceBreadcrumbItem current>
-              <h1>Skills</h1>
-            </WorkspaceBreadcrumbItem>
+            <ToolsHubCrumbs current="skills" />
           </WorkspaceBreadcrumb>
           <Tooltip>
             <TooltipTrigger

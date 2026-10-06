@@ -124,6 +124,7 @@ import {
 } from "../components/WorkspaceBreadcrumb";
 import { WorkspacePageContainer } from "../components/WorkspacePageContainer";
 import { WorkspacePageHeader } from "../components/WorkspacePageHeader";
+import { ToolsHubCrumbs } from "../polaris/hub/ToolsHubCrumbs";
 import { isCommandPaletteOpen } from "../commandPaletteBus";
 import { isElectron } from "../env";
 import { resolveShortcutCommand, shortcutLabelForCommand } from "../keybindings";
@@ -2611,9 +2612,13 @@ function PullRequestsColumn({
           <WorkspaceBreadcrumb ariaLabel="Pull request scope" className="overflow-hidden">
             {/* An expanded search owns the scarce horizontal space. The page title stays
                 available to readers while the live filters remain available in both states. */}
-            <WorkspaceBreadcrumbItem current className={cn(searchExpanded && "sr-only")}>
-              <h1 className="truncate">Pull Requests</h1>
-            </WorkspaceBreadcrumbItem>
+            {searchExpanded ? (
+              <WorkspaceBreadcrumbItem current className="sr-only">
+                <h1 className="truncate">Pull requests</h1>
+              </WorkspaceBreadcrumbItem>
+            ) : (
+              <ToolsHubCrumbs current="pull-requests" />
+            )}
             {searchExpanded ? null : <WorkspaceBreadcrumbSeparator />}
             <WorkspaceBreadcrumbItem className="shrink gap-1.5">
               <CompactFilterMenu
@@ -2641,9 +2646,7 @@ function PullRequestsColumn({
           </WorkspaceBreadcrumb>
         ) : (
           <WorkspaceBreadcrumb ariaLabel="Pull requests breadcrumb">
-            <WorkspaceBreadcrumbItem current>
-              <h1 className="truncate">Pull Requests</h1>
-            </WorkspaceBreadcrumbItem>
+            <ToolsHubCrumbs current="pull-requests" />
           </WorkspaceBreadcrumb>
         )}
         <div className="min-w-0 flex-1" />
