@@ -26,7 +26,7 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 - Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
 - Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
 - Rebrand (session 6): the user-facing name is **Polaris** and the accent is emerald green (tokens in `apps/web/src/index.css`). Internal identifiers are still upstream's on purpose; see the session 6 entry for the list. The logo is a placeholder (a "P" with a north star in its counter); the same entry lists every file to swap for final art.
-- Test status on this Mac (session 7, final tree): contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
+- Test status on this Mac (session 8, v1 gate): contracts 520, shared 1,107, client-runtime 1,998, desktop 1,413 (+44 skipped), web 5,890; server 9 failed (the 8 known + 1 flaky watcher test, see the v1 gate entry). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
 
 ### Effective effort: where it is resolved today
 
@@ -204,6 +204,13 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`
+
+- Gate: `vp fmt --check` clean; lint exit 0 (0 errors, 855 warnings); contracts 520, shared 1,107, client-runtime 1,998, desktop 1,413 (+44 skipped), web 5,890 pass; scripts 337 pass + the 1 known failure; server 6,429 pass, 9 failed = the 8 known (invocation ×2, entrypoint, ServerEnvironment, AntigravityAdapterV2 ×2, externalLauncher, AgentSessionScanner) + `serverSettings.test.ts` "reloads when a dangling settings link gets its destination", a file-watcher timing test that passed 3 of 3 runs on its own (flaky under full-suite load; v1 touched no server file outside `src/usage`).
+- Screenshots (not committed): `../.playwright-mcp/v1-01-models-over-time-{light,dark}.png`, `v1-02-tool-calls-over-time-*`, `v1-03-one-year-period-*`, `v1-04-quota-threshold-setting-*`, `v1-05-thread-usage-*` (the popover mounted with forced data; no agent turn). Smoke via `scripts/polaris-dev.mjs`: home composer and Usage load with no console errors.
+- Found by the smoke and fixed: choosing "1 year" failed to save the Usage preference (its schema only knew 1/7/30/90 days).
+- Note: upstream's context window indicator (where the per-thread block lives) is a "legacy" setting, off by default; v2's composer usage meter also carries the per-thread block so it is visible by default.
+
 ### 2026-10-05 — Claude (session 8) — v1 item 5: per-thread usage
 
 - Done: the composer's context window popover gains a "This thread" block (`apps/web/src/polaris/threadUsage/`): run count, tokens in / out, tool calls, and a strip of the last 24 runs sized by tokens (runs that called tools in the brand green). Client-only from the thread projection: tokens from each provider turn's `turnTokenUsage` (main agent, mapped to runs through `nodes`), tool calls from tool-shaped turn items per run (`command_execution`, `file_change`, `file_search`, `web_search`, `dynamic_tool`, `subagent`). `useThreadUsage` keeps one object while the figures are unchanged, so streaming deltas don't re-render the memoised composer. Plumbing: `ChatView` → `ChatComposer.polarisThreadUsage` → `ComposerFooterPrimaryActions.threadUsage` → `ContextWindowMeter.threadUsage`. Tests: 4 logic, 2 jsdom.
@@ -226,13 +233,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Done: a fifth period, "1 year", on the Usage page (`usageShortcuts.ts`), bound to Mod+Shift+5 while Usage is open. The server already accepts a 365-day daily window (the heatmap uses one). Tests: keybinding order test updated, a new binding test.
 - Left over: the Activity heatmap and the page now issue the same 365-day query when "1 year" is selected; harmless, not de-duplicated.
 
-### 2026-10-05 — Claude (session 8) — v1 item 1: quota-low threshold setting
-
-- Done: `quotaLowThresholdPercent` client setting (contract, default 20, 0 = off) with a Select row in Settings → General → Usage (`apps/web/src/components/settings/polaris/QuotaLowThresholdSetting.tsx`, searchable as "Low quota warning"). `useQuotaLowSignal(provider, threshold)` follows it; a flash in progress stops if the warning is turned off. Tests: 3 contract cases, 1 new hook case.
-- Left over: nothing for this item.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v1 item 1: quota-low threshold setting. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 4: composer FX slot (effort beam, quota flash and accent). Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 3: quota-low signal. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 2: Discord Rich Presence. Rolled up; see `git log`.
