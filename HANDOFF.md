@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`
+
+- Status: done
+- What changed: Branch `v4.1` merged into `main` with `--no-ff`; tags `v4.1.0` and `v4.1-done`. MORNING.md reassembled with every required section (V 4.1.0, V 4.0.0, v1–v3, polish cycles, skipped, contract changes, new dependencies, approvals, questions, secrets scan, UX research with sources, the five things to look at first).
+- How verified: `vp fmt --check` exit 0; `vp lint` exit 0 with 0 errors; typecheck contracts/shared/desktop/web 0 errors. Suites: contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,960 passed; scripts 341 + the 1 known failure; server 8 failed / 6,430 passed / 21 skipped, the same 8 known. Contact sheet `.playwright-mcp/v4.1-sheet.png` (background on dashboard, thread and settings, and First steps, light and dark). Smoke: a fresh `polaris-dev.mjs` stack booted (web 200, nothing on 3773), paired once in an isolated context, landed on `/dashboard` with First steps (`v4.1-smoke.png`), then stopped with its temp home removed.
+- Risks: as in the item entries (Battery API and unfocused-window pauses not exercised live; Review next not seen live).
+- Next action: Desktop identity is waiting on Star. Otherwise: resume polish cycles (14 of 25) on a `polish-2` branch, one focused change each, with before/after shots.
+- Open questions: Desktop identity, Slack-like chat reading, planning-suite next step (all under "Needs Star's approval").
+
 ### 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.1.0 item 2, chat icons (per-thread icon from the project icon picker, kept per device).
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.0.0 gate: passed, merged, tagged `v4.0.0`
-
-- Status: done
-- What changed: Branch `v4` merged into `main` with `--no-ff`; tags `v4.0.0` and `v4-done`, plus `v1.0.0`, `v2.0.0`, `v3.0.0` on the existing `v1-done`, `v2-done`, `v3-done` commits (old tags kept). HANDOFF "Needs Star's approval" gained the desktop-identity item (a packaged Polaris would still be T3 Code to macOS: `com.t3tools.t3code`, profile `t3code-v2`, `~/.t3`).
-- How verified: `vp fmt --check` exit 0; `vp lint` 0 errors in committed files (the only error was in the untracked V 4.1.0 drafts, not part of the merge). Suites: contracts 529, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,943 all passed; scripts 341 passed + the 1 known failure; server 8 failed / 6,430 passed / 21 skipped, the same 8 known names. Screenshots `.playwright-mcp/v4-{dashboard,thread-forced-medium,settings-launch}-{light,dark}.png`; smoke: a fresh `scripts/polaris-dev.mjs` stack booted (web 200, title "Polaris (Alpha)", nothing on 3773), paired once in an isolated context and opened on `/dashboard` (`v4-smoke-first-run.png`), then stopped with its temp home removed.
-- Risks: the fresh stack skipped the welcome wizard because the server bootstraps a project from its working directory (upstream behavior); the wizard path itself was not re-checked.
-- Next action: V 4.1.0 on branch `v4.1` from `main`: backgrounds, chat icons, First steps, Review next (design note in "Version plan: V 4.1.0").
-- Open questions: Desktop identity (see "Needs Star's approval").
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.0.0 gate: passed, merged, tagged `v4.0.0`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 4: the dashboard is home, with your own widgets. Rolled up; see `git log`.
