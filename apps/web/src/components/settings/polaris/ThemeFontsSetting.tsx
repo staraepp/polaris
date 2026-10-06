@@ -54,7 +54,6 @@ export function ThemeFontsSetting() {
           <CommitInput
             aria-label={`Monospace font for ${themeLabel}`}
             placeholder="Monospace font"
-            className="font-mono"
             maxLength={200}
             value={current?.code ?? ""}
             onCommit={(family) => setFamily("code", family)}
