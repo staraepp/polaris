@@ -214,6 +214,12 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — v3 item 1: bento dashboard
+
+- Done: `/dashboard`, opened from a new bento icon in the sidebar footer (beside Settings; the footer shows "Back" there like the other utility pages). Five translucent tiles: **Start** (new thread in the latest project, plus the next three; the new-thread shortcut), **Threads** (threads with a status, the ones that need you first, then the most recent), **Today** (today's spend and tokens, then each provider's limit windows on one aligned grid; amber only at the low-quota threshold), **Pull requests** (newest open ones across connected servers, 3 per repo; a row opens it on the Pull Requests page) and **activity** (14 or 30 days of spend as bars, with an sr-only table). Two shapes so every row is filled in the default order: a long thread list runs two rows beside Start and Today; a short one stays one row, pull requests widen and activity takes the bottom row with a month of data. **Edit layout** makes tiles draggable and adds earlier/later buttons for keyboard users; the order lives in localStorage (`polaris:dashboard-layout:v1`), unknown ids are dropped and new tiles appended; Reset layout and Esc (leaves edit mode first) work. Fixed layout by default, drag only in edit mode, so no setting.
+- Files: `apps/web/src/polaris/dashboard/*`, `apps/web/src/routes/dashboard.tsx` (+ regenerated `routeTree.gen.ts`), `components/sidebar/SidebarChrome.tsx`, `components/sidebar/mainAppLocation.ts`.
+- Tests: 3 layout, 1 thread selection, 1 pull-request rows. Note: PR times are not shown; on this Mac the local clock is behind GitHub's timestamps, so every row read "just now".
+
 ### 2026-10-05 — Claude (session 8) — v2 gate: passed, merged, tagged `v2-done`
 
 - Gate: `vp fmt` clean, `vp lint` 0 errors (855 warnings, upstream's). Suites: see "Test status" in Current state (server: exactly the 8 known failures; scripts: the 1 known). Smoke on `scripts/polaris-dev.mjs`: paired, toggled every v2 setting, opened the meter popover and the liquid menu, recorded with a synthetic microphone stream (no real mic, no network), cancelled with Esc, saw the browser's "Clide works through the Polaris desktop app" error, set and cleared theme fonts.
@@ -239,14 +245,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Tests: 1 contract, 3 jsdom (library mocked).
 - Left over: no effort chip yet (the traits picker is not reachable as a plain action); WebKit SVG-filter performance not measured (Electron is Chromium).
 
-### 2026-10-05 — Claude (session 8) — v2 item 2: bot avatars
-
-- Done: a 24 px bot beside the thread title (`apps/web/src/polaris/bots/ThreadBot.tsx`), from `bot-avatars` (lazy-loaded, so nothing ships to the main bundle while the setting is off). Shape and color per provider driver (`botConfig.ts`: Codex droid, Claude star, Cursor square, Grok mech, OpenCode pill, Antigravity alien, others clover; colors are the providers' Usage colors, Codex and Grok neutral per theme). State (`botState.ts`): working during a run, awake while waiting on an approval or input or busy in the last 30 minutes, sleeping after that. Pauses while the page is hidden; the library pauses offscreen and honors reduced motion. Settings → General → Bots: switch (default off) plus a shape picker with a still preview per provider. New client settings `botAvatarsEnabled` and `botAvatarByDriver`.
-- Tests: 2 contract, 3 state/look, 2 jsdom (library mocked).
-- Left over: bots appear in the thread header only (not the sidebar), to keep canvases to one per window.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v2 item 2: bot avatars. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 1: usage meter in the composer. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 5: per-thread usage. Rolled up; see `git log`.
