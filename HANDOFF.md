@@ -177,6 +177,47 @@ Contract changes are allowed when additive and tested, and are listed under "Con
 5. Planning suite: SKIPPED (depends on the AFFiNE spike, which is Docker work with no code).
 6. Plugin API: SKIPPED by the blueprint's own rule ("only if hard-fork editing stops being enough").
 
+## Amendment from Star (session 8, 2026-10-05; supersedes all earlier amendments)
+
+Recorded in `blueprint.md` "Decisions" (session 8 amendment). Applied at the item boundary after polish cycle 013 (the 13 polish commits were merged into `main` as `9dd159e439`; the amendment is built as **v4** on branch `v4`). In short:
+
+- **New rules.** Every deviation from `blueprint.md` goes under "Deviations" below with its reason; never silently replace a chosen library. A message that is only "continue" means: re-read this file, find the last completed item or polish cycle, resume under the same rules.
+- **Chat outline** = vendored `border-beam` with a `colors` prop and reduced-motion handling for its rotate types; the resolver (voice > quota flash > beam > idle ring) stays, one glowing element per view.
+- **Effort colors (final):** none static; low true blue; medium gold (`#F5C542` + warm white on dark, `#D99A00` on light); high rainbow; xhigh and max cool, distinct, not purple. Frozen per turn.
+- **Quota-low:** no amber, gold or orange. 4 s red flash, then a small red-coral badge with an icon beside the usage meter.
+- **The bot "Orbie"** (`circle`, one constant): the assistant's avatar everywhere, states from config, effort color while working, optional accessory, only visible bots animate.
+- **Guards:** no plugin API; design notes for Slack-like chat and the planning suite; AFFiNE docs-only; voice against the spec with a stub provider; gooey keeps real buttons.
+- **When finished:** a secrets scan over the whole diff since the first commit, result in `MORNING.md`.
+
+### Audit (answers before any change, read from the tree at `9dd159e439`)
+
+| Question                                | Answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Is `border-beam` in `package.json`?     | **No.** Not in any `package.json` or the lockfile.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Is `bot-avatars`?                       | **Yes.** `apps/web/package.json`: `"bot-avatars": "0.2.2"` (MIT), loaded lazily. Also present: `voice-glow` 0.3.0 and `liquid-gooey` 0.2.2.                                                                                                                                                                                                                                                                                                                                                |
+| What does the effort beam use today?    | **A homemade CSS beam**, as you thought: `apps/web/src/polaris/fx/composerFx.css` (session 7). A 2 px masked ring with a `conic-gradient` spun through an `@property` angle; tiers: low mono breathing, medium blue→violet, high orange→red, xhigh orange→rose, max a rainbow conic; reduced motion holds a static gradient. Priority logic in `composerFxState.ts`, tier logic in `effortTier.ts` (derived on read from the run's `modelSelection` plus the keyword in its user message). |
+| Did any version already build the bots? | **Yes, partly: v2 item 2** (`0469a36b8b`). One bot in the **thread header only**, a different shape per provider (`botConfig.ts`), states from `botState.ts`, behind `botAvatarsEnabled` (default **off**). Not in messages, thinking state or empty state; no accessories; no effort color.                                                                                                                                                                                               |
+| Planned version in `blueprint.md`       | `border-beam`: "Chatbox outline (v2)", marked **Chosen**; the outline was then built early in v1 (session 7, on your defaults) with our own CSS instead. `bot-avatars`: "Bots (v2)". `voice-glow`: "Voice input + Clide API (v2)". `liquid-gooey`: "Gooey (v2)". All four were built or wired in v2 except `border-beam`.                                                                                                                                                                  |
+
+## Deviations
+
+Every deviation from `blueprint.md`, with its reason. Newest last.
+
+| When           | Deviation                                                                                                                        | Reason                                                                                                                                          | Status                                                                         |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Session 7 (v1) | The chosen `border-beam` was replaced by a homemade CSS beam without being logged as a deviation.                                | `border-beam` had only fixed palettes and no custom colors, and the red flash / amber accent needed exact colors; vendoring was not considered. | **Fixed in v4**: `border-beam` vendored with a `colors` prop (this amendment). |
+| Session 8 (v2) | `liquid-gooey` (filed "later version" in the amendment) was already built in v2 behind `gooeyComposerMenuEnabled` (default off). | It was in the v2 plan; the chips are real `<button>` elements in a `role="menu"`.                                                               | Kept as is; nothing to undo.                                                   |
+
+## Version plan: v4 (the amendment)
+
+On branch `v4` from `main`, same gate as v1–v3, merged `--no-ff` and tagged `v4-done`.
+
+1. Vendor `border-beam` with a `colors` prop and reduced-motion handling; replace the homemade beam; final effort colors and `--polaris-beam-*` tokens; forced-state screenshots for every tier.
+2. Quota-low: drop amber; red-coral badge with an icon beside the usage meter.
+3. Orbie: the assistant's avatar everywhere (message avatars, thinking, empty state), effort color while working, optional accessory, perf guards.
+4. Guards: design notes for Slack-like chat and the planning suite, AFFiNE docs-only findings and LICENSE check, a Clide stub provider for voice.
+5. Secrets scan over the whole diff since the first commit; result in `MORNING.md`.
+
 ## Contract changes
 
 Additive only (new optional fields, new RPCs or commands), each covered by tests.
