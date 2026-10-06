@@ -13,6 +13,8 @@ import { projectIconColorClassName } from "~/projectIconColors";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 import { useScratchProject } from "~/hooks/useScratchProject";
 import { useClientSettings } from "~/hooks/useSettings";
+import { CALM_COPY } from "~/polaris/calm/calmCopy";
+import { useCalmMode } from "~/polaris/calm/useCalmMode";
 import { hasExplicitComposerModelSelection } from "~/lib/chatThreadActions";
 import {
   deriveLogicalProjectKeyFromSettings,
@@ -70,6 +72,8 @@ export function DraftHeroHeadline({
   const openAddProject = useCallback(() => openCommandPalette({ open: "add-project" }), []);
   const { scratchEnvironmentId, scratchWorkspaceRootFor, openScratchProject } = useScratchProject();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
+  // Polaris: Calm mode asks a shorter question.
+  const polarisCalm = useCalmMode();
 
   const environmentLabelById = useMemo(
     () =>
@@ -325,7 +329,9 @@ export function DraftHeroHeadline({
   const headingLabel = isScratchDraft
     ? "What should we work on?"
     : hasResolvedProject
-      ? `What should we build in ${activeProjectDisplayName}?`
+      ? polarisCalm
+        ? `What's next in ${activeProjectDisplayName}?`
+        : `What should we build in ${activeProjectDisplayName}?`
       : canChooseProject
         ? `${activeProjectDisplayName ?? "Choose a project"} to start`
         : "Add a project to start";
@@ -351,7 +357,7 @@ export function DraftHeroHeadline({
             />
           }
         >
-          or start without a project
+          {polarisCalm ? CALM_COPY.withoutProject : "or start without a project"}
         </TooltipTrigger>
         {noProjectShortcut ? <TooltipPopup side="bottom">{noProjectShortcut}</TooltipPopup> : null}
       </Tooltip>
@@ -366,7 +372,11 @@ export function DraftHeroHeadline({
         {isScratchDraft ? (
           <>What should we work on?</>
         ) : hasResolvedProject ? (
-          <>What should we build in {projectSelector}?</>
+          polarisCalm ? (
+            <>What&apos;s next in {projectSelector}?</>
+          ) : (
+            <>What should we build in {projectSelector}?</>
+          )
         ) : canChooseProject ? (
           <>{projectSelector} to start</>
         ) : (

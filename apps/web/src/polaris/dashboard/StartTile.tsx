@@ -10,6 +10,8 @@ import { useScratchProject } from "~/hooks/useScratchProject";
 import { shortcutLabelForCommand } from "~/keybindings";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 
+import { useCalmMode } from "../calm/useCalmMode";
+
 function PlusGlyph() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4">
@@ -66,6 +68,8 @@ export function StartTileBody({ projects }: { readonly projects: readonly Enviro
   const [failed, setFailed] = useState(false);
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const newThreadShortcut = shortcutLabelForCommand(keybindings, "chat.new");
+  // Calm mode leaves out the shortcut tip.
+  const calm = useCalmMode();
   const { scratchEnvironmentId, startScratchThread } = useScratchProject();
   const start = (project: EnvironmentProject) => {
     setFailed(false);
@@ -115,7 +119,7 @@ export function StartTileBody({ projects }: { readonly projects: readonly Enviro
         </button>
       ) : null}
       <ImportSessionsLink />
-      {newThreadShortcut ? (
+      {newThreadShortcut && !calm ? (
         <p className="mt-auto text-xs text-muted-foreground">
           <kbd className="rounded border border-border/80 bg-muted/60 px-1 py-px font-sans text-2xs text-foreground">
             {newThreadShortcut}

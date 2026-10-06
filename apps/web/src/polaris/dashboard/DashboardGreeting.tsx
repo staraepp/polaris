@@ -2,9 +2,11 @@ import { Link } from "@tanstack/react-router";
 
 import { PolarisStar } from "~/components/T3Wordmark";
 import { Button } from "~/components/ui/button";
+import { useClientSettings } from "~/hooks/useSettings";
 
 import { ORBIE_NAME } from "../bots/orbie";
 import { OrbieAvatar } from "../bots/OrbieAvatar";
+import { CALM_COPY, calmGreeting } from "../calm/calmCopy";
 import { useCalmMode } from "../calm/useCalmMode";
 import type { DashboardThread } from "./dashboardThreads";
 
@@ -65,8 +67,12 @@ export function DashboardGreeting({
 }) {
   const pulse = dashboardPulse(active);
   const next = nextForReview(active);
-  // Calm mode: the still Polaris star instead of Orbie.
+  // Calm mode: the still Polaris star instead of Orbie, the user's name and a
+  // friendlier line when nothing is going on.
   const calm = useCalmMode();
+  const name = useClientSettings((settings) => settings.collabUsername);
+  const greeting = greetingFor((now ?? new Date()).getHours());
+  const quiet = pulse.working === 0 && pulse.needsYou === 0;
   return (
     <div className="flex items-center gap-3.5 pb-1">
       {calm ? (
@@ -81,10 +87,10 @@ export function DashboardGreeting({
       )}
       <div className="min-w-0">
         <p className="text-lg font-semibold tracking-tight text-foreground">
-          {greetingFor((now ?? new Date()).getHours())}
+          {calm ? calmGreeting(greeting, name) : greeting}
         </p>
         <p className="text-sm text-muted-foreground" aria-live="polite">
-          {pulseSentence(pulse)}
+          {calm && quiet ? CALM_COPY.quietPulse : pulseSentence(pulse)}
         </p>
       </div>
       {next === null ? null : (

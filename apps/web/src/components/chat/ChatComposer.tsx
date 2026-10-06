@@ -154,6 +154,7 @@ import {
 import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
 import { ComposerUsageMeter } from "~/polaris/quota/ComposerUsageMeter";
 import { composerPlusActions, LazyGooeyPlusMenu } from "~/polaris/gooey/gooeyPlusActions";
+import { calmPlaceholder } from "~/polaris/calm/calmCopy";
 import { useCalmMode } from "~/polaris/calm/useCalmMode";
 import { useVoiceInput } from "~/polaris/voice/useVoiceInput";
 import { VoiceButton } from "~/polaris/voice/VoiceButton";
@@ -7463,9 +7464,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                               ? "Choose a project above to start a thread"
                               : showProviderUnavailable
                                 ? "Enable a provider in Settings to send a message"
-                                : phase === "disconnected"
-                                  ? DISCONNECTED_COMPOSER_PLACEHOLDER
-                                  : "Ask anything, @tag files/folders, $use skills, or / for commands"
+                                : polarisCalm
+                                  ? calmPlaceholder(routeKind)
+                                  : phase === "disconnected"
+                                    ? DISCONNECTED_COMPOSER_PLACEHOLDER
+                                    : "Ask anything, @tag files/folders, $use skills, or / for commands"
                     }
                     disabled={
                       isConnecting ||

@@ -14,7 +14,7 @@ export function CalmModeSetting() {
   return (
     <SettingsRow
       {...searchableSetting("calm-mode")}
-      description="A quieter, flatter look in warm neutral colors. Pauses Orbie, thinking orbs, composer beams, the liquid menu, the sidebar artwork and your background. Your theme and effect settings come back when you turn it off."
+      description="Softer colors, less text and nothing moving. Your theme and effects come back when you turn it off."
       control={
         <Switch
           checked={enabled}
@@ -32,7 +32,7 @@ export function CalmPausedNote() {
   if (!calm) return null;
   return (
     <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">
-      Calm mode is on, so these are paused. Your choices below are kept.
+      Paused while Calm mode is on. Your choices are kept.
     </p>
   );
 }
