@@ -56,12 +56,12 @@ export function BotAvatarsSetting() {
           >
             <span className="flex flex-col items-center gap-1">
               <OrbieAvatar size={32} live label={ORBIE_NAME} />
-              <span className="text-[11px] text-muted-foreground">{ORBIE_NAME}</span>
+              <span className="text-2xs text-muted-foreground">{ORBIE_NAME}</span>
             </span>
             {SAMPLE_PROJECTS.map((project) => (
               <span key={project} className="flex flex-col items-center gap-1">
                 <OrbieAvatar size={32} project={project} label={`${project}'s bot`} />
-                <span className="text-[11px] text-muted-foreground">{project}</span>
+                <span className="text-2xs text-muted-foreground">{project}</span>
               </span>
             ))}
           </div>
