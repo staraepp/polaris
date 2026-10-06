@@ -77,7 +77,7 @@ export function DashboardTile({
           : undefined
       }
       className={cn(
-        "surface-glass flex min-h-44 min-w-0 flex-col rounded-2xl border border-border/70 shadow-xs transition-[opacity,box-shadow,border-color] duration-150 motion-reduce:transition-none",
+        "surface-glass flex min-w-0 lg:min-h-44 flex-col rounded-2xl border border-border/70 shadow-xs transition-[opacity,box-shadow,border-color] duration-150 motion-reduce:transition-none",
         editing && "cursor-grab border-dashed active:cursor-grabbing",
         editing?.dragging && "opacity-45",
         editing?.dropTarget && !editing.dragging && "border-primary/60 ring-2 ring-primary/25",

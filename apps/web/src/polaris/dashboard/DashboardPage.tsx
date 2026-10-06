@@ -187,7 +187,7 @@ export function DashboardPage() {
                 device.
               </p>
             ) : null}
-            <div className="grid grid-flow-dense auto-rows-[minmax(11rem,auto)] grid-cols-1 gap-4 lg:grid-cols-6">
+            <div className="grid grid-flow-dense grid-cols-1 lg:auto-rows-[minmax(11rem,auto)] gap-4 lg:grid-cols-6">
               {order.map((id, index) => (
                 <DashboardTile
                   key={id}
