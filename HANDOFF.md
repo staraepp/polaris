@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps
+
+- Status: done
+- What changed: A slim "First steps" card under the dashboard greeting continues onboarding after upstream's welcome wizard: add a project, start a thread, open the command palette, make the dashboard yours, pick a look. Every step is detected from real state (projects, threads, the palette opening by any means, a non-default layout, Orbie's accessory / a background / theme fonts); only the next step has a button (Add project, New thread, Open (⌘K), Customize, Appearance). A progress bar with `role="progressbar"`, "Hide" remembers per device (`polaris:first-steps:v1`), and the card leaves on its own when all five are done. Files: `FirstSteps.tsx`, `firstStepsModel.ts` (named to avoid a macOS case clash with the component), wired in `DashboardPage.tsx`.
+- How verified: `vp test run apps/web/src/polaris/dashboard` (order, next step, completion); typecheck and lint clean. Isolated Playwright contexts, light and dark: the card showed 2 of 5 (project and thread done), pressing ⌘K and Esc moved it to 3 of 5. Shots `.playwright-mcp/v4.1/first-steps-*`.
+- Risks: the palette is detected by its portal appearing under `<body>`; if upstream moves the portal, the step would still tick from the button and the palette bus, but not from the keyboard.
+- Next action: V 4.1.0 gate (full fmt, lint, all suites, screenshots, smoke), merge, tag `v4.1.0`.
+- Open questions: None.
+
 ### 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.1.0 on branch `v4.1` from `main`: backgrounds, chat icons, First steps, Review next (design note in "Version plan: V 4.1.0").
 - Open questions: Desktop identity (see "Needs Star's approval").
 
-### 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan
-
-- Status: done
-- What changed: `MORNING.md` "Secrets scan" section with the result. No code changed.
-- How verified: `git diff 3e6b450..HEAD -U0` added lines (19,603) scanned with regexes for provider keys, GitHub/AWS/Slack/Google tokens, PEM keys, `clide_` tokens, bearer literals, 64-hex strings, JWTs and a Discord ID: 0 hits. Emails: only the confirmed relay identity, a test fixture and `git@github.com`. Commit authors/committers: the relay identity only. `git check-ignore` confirms `.polaris/dev-auth-token` is ignored. Added PNGs have no text/EXIF chunks.
-- Risks: regex scans miss secrets of unknown shapes; binary files were checked for metadata only.
-- Next action: V 4.0.0 gate (full fmt + lint, every suite at baseline, light + dark screenshots under `.playwright-mcp/v4-*`, a `polaris-dev.mjs` smoke), then merge `v4` into `main` with `--no-ff` and tag `v4.0.0` plus `v1.0.0`/`v2.0.0`/`v3.0.0` on the done commits.
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 4: the dashboard is home, with your own widgets. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 3: Orbie everywhere. Rolled up; see `git log`.
