@@ -26,7 +26,7 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 - Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
 - Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
 - Rebrand (session 6): the user-facing name is **Polaris** and the accent is emerald green (tokens in `apps/web/src/index.css`). Internal identifiers are still upstream's on purpose; see the session 6 entry for the list. The logo is a placeholder (a "P" with a north star in its counter); the same entry lists every file to swap for final art.
-- Test status on this Mac (session 8, v1 gate): contracts 520, shared 1,107, client-runtime 1,998, desktop 1,413 (+44 skipped), web 5,890; server 9 failed (the 8 known + 1 flaky watcher test, see the v1 gate entry). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
+- Test status on this Mac (session 8, v2 gate): contracts 527, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,920, scripts 337 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. v1 gate: contracts 520, shared 1,107, desktop 1,413, web 5,890; server 9 failed (the 8 known + 1 flaky watcher test). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
 
 ### Effective effort: where it is resolved today
 
@@ -214,6 +214,13 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — v2 gate: passed, merged, tagged `v2-done`
+
+- Gate: `vp fmt` clean, `vp lint` 0 errors (855 warnings, upstream's). Suites: see "Test status" in Current state (server: exactly the 8 known failures; scripts: the 1 known). Smoke on `scripts/polaris-dev.mjs`: paired, toggled every v2 setting, opened the meter popover and the liquid menu, recorded with a synthetic microphone stream (no real mic, no network), cancelled with Esc, saw the browser's "Clide works through the Polaris desktop app" error, set and cleared theme fonts.
+- Fixed during the gate (one commit): the liquid "+" floated above the action row and its chips were clipped (the goo filter's region is sized from the Liquid root, which had collapsed to 0×32; the root now spans the chips' travel and ignores the pointer except on open chips and the trigger); closed chips showed as a dark pill left of the "+" (they now collapse to the trigger's size); Esc never reached the mic while listening (a pointer press does not focus it; now a window listener); a failed transcription changed nothing visible (now a small dot on the mic until the next start; the tooltip has the message); `MicCapture.start` built a graph on a closed context when cancelled mid-await (now bails out). Also documented the v2 effect packages in AGENTS.md.
+- Screenshots: `.playwright-mcp/v2-01-usage-meter-{setting,popover}-*`, `v2-02-bot-avatar-header-*`, `v2-02-composer-meter-voice-*`, `v2-03-effects-settings-*`, `v2-03-liquid-menu-open-*`, `v2-04-voice-{settings,listening,error}-*`, `v2-05-theme-fonts-*` (light and dark each).
+- Not exercised: a real Clide, a real microphone, the packaged app's mic prompt, a bot in the working state (no real agent turn).
+
 ### 2026-10-05 — Claude (session 8) — v2 item 5: per-theme fonts
 
 - Done: Settings → Appearance → Typography has a "Fonts for <theme>" row. It edits the interface and monospace families for the theme painting the window right now (the light/dark half in automatic mode; the bare modes count as "the default theme"). `FontAppearanceSync` lays that theme's pair over the global fonts; empty fields fall through to the global choice, and a family the machine lacks falls back through the normal stack. Reset clears the theme's pair; Restore defaults clears all of them. `CommitInput` (save on blur/Enter) moved out of `VoiceSettings.tsx` so both rows share it. Also committed pnpm's `minimumReleaseAgeExclude` line for `voice-glow@0.3.0`, missed by the voice commit.
@@ -238,14 +245,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Tests: 2 contract, 3 state/look, 2 jsdom (library mocked).
 - Left over: bots appear in the thread header only (not the sidebar), to keep canvases to one per window.
 
-### 2026-10-05 — Claude (session 8) — v2 item 1: usage meter in the composer
-
-- Done: a quota gauge beside the send button (`apps/web/src/polaris/quota/ComposerUsageMeter.tsx`, model in `usageMeterModel.ts`): one thin bar per window (first two), filled by what is left, neutral until a window reaches the quota-low threshold, then that bar turns amber (`--warning`, the outline's signal). Hover or focus opens the windows with reset times (upstream's `LimitWindows`), an amber note when low, an "Open Usage" link, and the "This thread" block (so per-thread usage is visible without the legacy context indicator; the context popover drops its copy while the meter shows). Hidden when the account reports no windows or the probe failed. New client setting `composerUsageMeterEnabled` (default on) in Settings → General → Usage. Both Polaris settings now count in upstream's "restore defaults" lists.
-- Tests: 1 contract, 3 model, 2 jsdom.
-- Left over: on by default (it is the requested feature and quiet until low); flip the default in `settings.ts` if you'd rather opt in (logged under Questions).
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v2 item 1: usage meter in the composer. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 5: per-thread usage. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 4: tool calls over time. Rolled up; see `git log`.
