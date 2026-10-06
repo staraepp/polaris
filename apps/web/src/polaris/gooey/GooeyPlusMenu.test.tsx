@@ -74,6 +74,20 @@ describe("GooeyPlusMenu", () => {
     expect(document.activeElement).toBe(trigger());
   });
 
+  it("leaves focus alone when opened by pointer, and still closes on Escape", async () => {
+    await act(() => {
+      trigger().dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    });
+    expect(trigger().getAttribute("aria-expanded")).toBe("true");
+    expect(items()).not.toContain(document.activeElement);
+    await act(() => {
+      document.body.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+      );
+    });
+    expect(trigger().getAttribute("aria-expanded")).toBe("false");
+  });
+
   it("runs the chosen action and closes", async () => {
     await act(() => trigger().click());
     await act(() => items()[2]!.click());
