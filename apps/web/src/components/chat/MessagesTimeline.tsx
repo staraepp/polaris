@@ -1,4 +1,7 @@
 import { ComputerUseAppIcon } from "~/components/Icons";
+import { ORBIE_NAME } from "~/polaris/bots/orbie";
+import { OrbieAvatar } from "~/polaris/bots/OrbieAvatar";
+import { useOrbieEnabled, useOrbieRun } from "~/polaris/bots/OrbieRunContext";
 import { useChatCanvas } from "./ChatCanvasContext";
 import { WorkLogBlock, WorkLogButton, WorkLogDetails, WorkLogList, WorkLogRow } from "./WorkLog";
 import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
@@ -1313,13 +1316,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       // punch a hole through to the window chrome (white in light mode).
       return <div className="h-full min-h-0 bg-background" data-timeline-loading="true" />;
     }
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground/30">
-          Send a message to start the conversation.
-        </p>
-      </div>
-    );
+    return <EmptyTimelinePlaceholder />;
   }
 
   return (
@@ -1946,6 +1943,37 @@ function MessageAuthorHeading({ children }: { children: string }) {
   return <h3 className="sr-only select-none">{children}</h3>;
 }
 
+/**
+ * Polaris: each turn's answer is signed by Orbie, a still bot beside its name
+ * (history does not animate; the live Orbie is the working row's).
+ */
+function OrbieAuthorHeading() {
+  return (
+    <h3 className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground select-none">
+      <OrbieAvatar size={18} />
+      {ORBIE_NAME}
+    </h3>
+  );
+}
+
+/** The empty thread: upstream's hint, with Orbie waiting above it when enabled. */
+function EmptyTimelinePlaceholder() {
+  const orbieEnabled = useOrbieEnabled();
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3">
+      {orbieEnabled ? <OrbieAvatar size={56} live label={ORBIE_NAME} /> : null}
+      <p
+        className={cn(
+          "text-sm",
+          orbieEnabled ? "text-muted-foreground/70" : "text-muted-foreground/30",
+        )}
+      >
+        Send a message to start the conversation.
+      </p>
+    </div>
+  );
+}
+
 function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" }> }) {
   const ctx = use(TimelineRowCtx);
   const { onImageExpand, onFileOpen } = ctx;
@@ -2493,12 +2521,17 @@ function AttemptFoldTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "at
 
 function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" }> }) {
   const ctx = use(TimelineRowCtx);
+  const orbieEnabled = useOrbieEnabled();
   const messageText = row.message.text || (row.message.streaming ? "" : "(empty response)");
 
   return (
     <>
       <div className="relative min-w-0 px-1 py-0.5">
-        <MessageAuthorHeading>Polaris</MessageAuthorHeading>
+        {orbieEnabled && row.showAssistantMeta ? (
+          <OrbieAuthorHeading />
+        ) : (
+          <MessageAuthorHeading>Polaris</MessageAuthorHeading>
+        )}
         <AssistantCitationSource
           messageId={row.message.id}
           {...(ctx.threadRef ? { threadRef: ctx.threadRef } : {})}
@@ -3401,6 +3434,9 @@ function toolIconAcceptsTint(
 function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "working" }> }) {
   const { isCompacting, isPreparingWorktree, backgroundWorktreeSetup } =
     use(TimelineRowActivityCtx);
+  // Polaris: Orbie is the working animation, in the turn's effort color.
+  const orbieEnabled = useOrbieEnabled();
+  const orbieRun = useOrbieRun();
   // One span for every label so the setup-to-working handoff swaps text in
   // place instead of remounting the row.
   const shimmer = isPreparingWorktree || isCompacting;
@@ -3417,7 +3453,19 @@ function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "workin
   );
   return (
     <div className="border-b border-border/60 pb-2 pt-1">
-      <div className="flex h-6 min-w-0 items-baseline gap-2 px-1 text-sm leading-relaxed text-muted-foreground tabular-nums">
+      <div
+        className={cn(
+          "flex h-6 min-w-0 text-sm leading-relaxed text-muted-foreground tabular-nums",
+          // With Orbie, the same 24 px icon slot and gap as the work-log rows
+          // below it, so "Working" and "Thinking" start in one column.
+          orbieEnabled ? "items-center gap-1.5 px-0.5" : "items-baseline gap-2 px-1",
+        )}
+      >
+        {orbieEnabled ? (
+          <span className="flex size-6 shrink-0 items-center justify-center">
+            <OrbieAvatar size={20} state="working" live tier={orbieRun.tier} />
+          </span>
+        ) : null}
         <span
           ref={shimmer ? observeVisibleAnimation : undefined}
           className="relative shrink-0 overflow-hidden whitespace-nowrap"
@@ -3486,10 +3534,20 @@ function CompactingLabel() {
 
 function ThinkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "thinking" }> }) {
   const ctx = use(TimelineRowCtx);
+  // Polaris: a still Orbie stands in for the brain icon (the live one is the working row's).
+  const orbieEnabled = useOrbieEnabled();
   const { isCompacting, isPreparingWorktree } = use(TimelineRowActivityCtx);
   // Reserve the activity row during setup so the handoff keeps the same height.
   if (isPreparingWorktree || isCompacting) return <WorkLogRow label="" />;
-  const activity = <LiveActivityRow label="Thinking" iconName="brain" active shimmer />;
+  const activity = (
+    <LiveActivityRow
+      label="Thinking"
+      iconName="brain"
+      active
+      shimmer
+      {...(orbieEnabled ? { iconNode: <OrbieAvatar size={18} /> } : {})}
+    />
+  );
   const { groupId } = row;
   if (groupId === undefined) return activity;
   return (
@@ -3508,6 +3566,7 @@ function LiveActivityRow({
   label,
   iconName,
   toolIcon,
+  iconNode,
   failed = false,
   active = false,
   shimmer = false,
@@ -3515,6 +3574,8 @@ function LiveActivityRow({
   label: ReactNode;
   iconName?: WorkEntryIconName;
   toolIcon?: ToolActivityIcon | undefined;
+  /** Polaris: an icon element in place of the named one (Orbie on the thinking row). */
+  iconNode?: ReactNode;
   failed?: boolean;
   active?: boolean;
   shimmer?: boolean;
@@ -3530,13 +3591,21 @@ function LiveActivityRow({
         label={label}
         iconName={iconName}
         toolIcon={toolIcon}
+        iconNode={iconNode}
         failed={failed}
         announceFailure={failed}
         active={animated && !shimmer}
       />
       {showShimmer ? (
         <ActivityShimmerOverlay>
-          <LiveActivityContent label={label} iconName={iconName} toolIcon={toolIcon} highlighted />
+          <LiveActivityContent
+            label={label}
+            iconName={iconName}
+            toolIcon={toolIcon}
+            // The shimmer copy keeps the slot but never paints a second icon over a custom one.
+            iconNode={iconNode === undefined ? undefined : <span aria-hidden className="size-4" />}
+            highlighted
+          />
         </ActivityShimmerOverlay>
       ) : null}
     </div>
@@ -3547,6 +3616,7 @@ function LiveActivityContent({
   label,
   iconName,
   toolIcon,
+  iconNode,
   failed = false,
   announceFailure = false,
   active = false,
@@ -3555,6 +3625,7 @@ function LiveActivityContent({
   label: ReactNode;
   iconName: WorkEntryIconName | undefined;
   toolIcon?: ToolActivityIcon | undefined;
+  iconNode?: ReactNode;
   failed?: boolean;
   announceFailure?: boolean;
   active?: boolean;
@@ -3566,7 +3637,9 @@ function LiveActivityContent({
   return (
     <WorkLogRow
       icon={
-        iconName ? (
+        iconNode && !failed ? (
+          iconNode
+        ) : iconName ? (
           <span
             className={cn(
               "flex size-4 items-center justify-center",

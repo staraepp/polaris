@@ -1148,10 +1148,18 @@ describe("ClientSettings gooey composer menu (Polaris)", () => {
 });
 
 describe("ClientSettings bot avatars (Polaris)", () => {
-  it("is off by default with no per-provider picks", () => {
+  it("is on by default (Orbie, V 4.0.0) with no accessory and no per-provider picks", () => {
     const settings = decodeClientSettings({});
-    expect(settings.botAvatarsEnabled).toBe(false);
+    expect(settings.botAvatarsEnabled).toBe(true);
+    expect(settings.botAccessory).toBe("none");
     expect(settings.botAvatarByDriver).toEqual({});
+  });
+
+  it("keeps an explicit off and accepts only known accessories", () => {
+    expect(decodeClientSettings({ botAvatarsEnabled: false }).botAvatarsEnabled).toBe(false);
+    expect(decodeClientSettings({ botAccessory: "bowTie" }).botAccessory).toBe("bowTie");
+    expect(() => decodeClientSettings({ botAccessory: "cape" })).toThrow();
+    expect(decodeClientSettingsPatch({ botAccessory: "hat" })).toEqual({ botAccessory: "hat" });
   });
 
   it("accepts known shapes per driver and rejects unknown ones", () => {

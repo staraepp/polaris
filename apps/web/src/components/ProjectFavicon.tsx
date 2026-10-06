@@ -1,4 +1,5 @@
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
+import type { ProjectIconColor } from "@t3tools/contracts";
 import {
   getProjectFaviconResourceKey,
   isProjectFaviconFallbackUrl,
@@ -12,6 +13,8 @@ import { projectFaviconUrlAtom } from "../state/assets";
 import { deriveProjectIdentity } from "../projectIdentity";
 import { projectIconColorClassName } from "../projectIconColors";
 import { ProjectMonogram } from "./ProjectMonogram";
+import { OrbieAvatar } from "../polaris/bots/OrbieAvatar";
+import { useOrbieEnabled } from "../polaris/bots/OrbieRunContext";
 import { cn } from "~/lib/utils";
 
 const DynamicIcon = lazy(() =>
@@ -109,6 +112,32 @@ export function ProjectFavicon(input: {
   );
 }
 
+/**
+ * A project with no icon of its own: Polaris shows Orbie in the project's color
+ * (a still pose; dozens can be on screen) instead of upstream's initials, unless
+ * Orbie is switched off. Icons the user picked are never replaced.
+ */
+function AutomaticProjectAvatar({
+  monogram,
+  color,
+  className,
+}: {
+  readonly monogram: string;
+  readonly color: ProjectIconColor;
+  readonly className?: string | undefined;
+}) {
+  const orbieEnabled = useOrbieEnabled();
+  if (!orbieEnabled) {
+    return <ProjectMonogram text={monogram} color={color} className={className} />;
+  }
+  return (
+    <OrbieAvatar
+      size="fill"
+      className={cn("size-4", projectIconColorClassName(color), className)}
+    />
+  );
+}
+
 function ProjectFaviconFallback({
   className,
   icon: Icon,
@@ -123,7 +152,11 @@ function ProjectFaviconFallback({
   if (projectName && projectName.trim().length > 0) {
     const identity = deriveProjectIdentity(projectName);
     return (
-      <ProjectMonogram text={identity.monogram} color={identity.color} className={className} />
+      <AutomaticProjectAvatar
+        monogram={identity.monogram}
+        color={identity.color}
+        className={className}
+      />
     );
   }
 

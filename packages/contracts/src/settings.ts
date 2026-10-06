@@ -125,6 +125,10 @@ export const BOT_AVATAR_TYPES = [
 ] as const;
 export const BotAvatarType = Schema.Literals(BOT_AVATAR_TYPES);
 export type BotAvatarType = typeof BotAvatarType.Type;
+/** Polaris: what Orbie, the assistant's bot, may wear. */
+export const BOT_ACCESSORIES = ["none", "hat", "glasses", "headphones", "bowTie"] as const;
+export const BotAccessory = Schema.Literals(BOT_ACCESSORIES);
+export type BotAccessory = typeof BotAccessory.Type;
 
 /** Polaris: where voice clips are transcribed (`clide-api-spec.md`, or an OpenAI-compatible server). */
 export const VoiceBackendSetting = Schema.Literals(["clide", "openaiCompatible"]);
@@ -443,8 +447,14 @@ export const ClientSettingsSchema = Schema.Struct({
   themeFonts: Schema.Record(Schema.String, ThemeFontOverrides).pipe(
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
-  /** Polaris: a small animated bot in the thread header that mirrors the run. */
-  botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  /**
+   * Polaris: Orbie, the assistant's bot, wherever the assistant appears (the
+   * thread header, the working row, the empty state, each turn's answer and
+   * projects without an icon of their own). On by default since V 4.0.0.
+   */
+  botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /** Polaris: what Orbie wears; none by default. */
+  botAccessory: BotAccessory.pipe(Schema.withDecodingDefault(Effect.succeed("none" as const))),
   /** Polaris: bot shape per provider driver; missing drivers use the built-in pick. */
   botAvatarByDriver: Schema.Record(Schema.String, BotAvatarType).pipe(
     Schema.withDecodingDefault(Effect.succeed({})),
@@ -1834,6 +1844,7 @@ export const ClientSettingsPatch = Schema.Struct({
   quotaLowThresholdPercent: Schema.optionalKey(QuotaLowThresholdPercent),
   composerUsageMeterEnabled: Schema.optionalKey(Schema.Boolean),
   botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
+  botAccessory: Schema.optionalKey(BotAccessory),
   gooeyComposerMenuEnabled: Schema.optionalKey(Schema.Boolean),
   voiceInputEnabled: Schema.optionalKey(Schema.Boolean),
   themeFonts: Schema.optionalKey(Schema.Record(Schema.String, ThemeFontOverrides)),

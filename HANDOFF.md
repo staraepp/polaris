@@ -212,14 +212,19 @@ Moderate, about half a day of agent time, most of it on looks rather than code.
 
 Every deviation from `blueprint.md`, with its reason. Newest last.
 
-| When           | Deviation                                                                                                                        | Reason                                                                                                                                          | Status                                                                         |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Session 7 (v1) | The chosen `border-beam` was replaced by a homemade CSS beam without being logged as a deviation.                                | `border-beam` had only fixed palettes and no custom colors, and the red flash / amber accent needed exact colors; vendoring was not considered. | **Fixed in v4**: `border-beam` vendored with a `colors` prop (this amendment). |
-| Session 8 (v2) | `liquid-gooey` (filed "later version" in the amendment) was already built in v2 behind `gooeyComposerMenuEnabled` (default off). | It was in the v2 plan; the chips are real `<button>` elements in a `role="menu"`.                                                               | Kept as is; nothing to undo.                                                   |
+| When                | Deviation                                                                                                                               | Reason                                                                                                                                                                              | Status                                                                         |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Session 7 (v1)      | The chosen `border-beam` was replaced by a homemade CSS beam without being logged as a deviation.                                       | `border-beam` had only fixed palettes and no custom colors, and the red flash / amber accent needed exact colors; vendoring was not considered.                                     | **Fixed in v4**: `border-beam` vendored with a `colors` prop (this amendment). |
+| Session 8 (v2)      | `liquid-gooey` (filed "later version" in the amendment) was already built in v2 behind `gooeyComposerMenuEnabled` (default off).        | It was in the v2 plan; the chips are real `<button>` elements in a `role="menu"`.                                                                                                   | Kept as is; nothing to undo.                                                   |
+| Session 8 (V 4.0.0) | Per-provider bot shapes (v2, blueprint "Bots": "one bot type per agent or provider") are retired in favor of one bot, Orbie (`circle`). | Star's amendment: the bot is "the ball", one named assistant. `botAvatarByDriver` stays in the contract (ignored) so nothing breaks; Settings now offers Orbie's accessory instead. | Done                                                                           |
 
 ## Version numbers (Star, 2026-10-05)
 
 Polaris versions are **V MAJOR.MINOR.PATCH**. An enormous change bumps MAJOR; features bump MINOR; fixes and polish bump PATCH. The amendment is **V 4.0.0** (v1–v3 are V 1.0.0, V 2.0.0 and V 3.0.0). Git tags from now on are `vMAJOR.MINOR.PATCH`; the older `vN-done` tags stay as they are (nothing is renamed or deleted) and get `v1.0.0`, `v2.0.0`, `v3.0.0` tags on the same commits. The app's own version string (Settings, the updater) is **not** changed: the update feed still points at upstream, so that waits for you (see "Questions for Star").
+
+## Version plan: V 4.1.0 (Star, during the run: "customizable everything")
+
+After V 4.0.0 ships: customizable chat icons, customizable backgrounds (image) and video backgrounds, and more surface customization in the same spirit. Behind settings, honoring reduced motion (video pauses), low power and contrast (text stays on readable surfaces). Design note before code.
 
 ## Version plan: V 4.0.0 (the amendment)
 
@@ -246,6 +251,7 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 | `packages/contracts/src/settings.ts`    | `ClientSettings.gooeyComposerMenuEnabled` (Boolean, default false; optional in the patch)                                                                                                                                                                                                                                                                        | v2: liquid "+" composer menu                                           |
 | `packages/contracts/src/settings.ts`    | `ClientSettings.voiceInputEnabled` (default false), `voiceBackend` (`"clide" \| "openaiCompatible"`, default `"clide"`), `voiceClidePort` (Int 0..65535, 0 = unset), `voiceOpenAiBaseUrl`, `voiceOpenAiModel`, `voiceLanguage` (strings, default `""`); all optional in the patch. Secrets are not settings: they live in the desktop shell's `safeStorage` file | v2: voice input                                                        |
 | `packages/contracts/src/settings.ts`    | `ClientSettings.themeFonts`: record of theme id → `{ sans?, code? }` (default `{}`), optional in the patch                                                                                                                                                                                                                                                       | v2: per-theme fonts                                                    |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.botAccessory` (`"none" \| "hat" \| "glasses" \| "headphones" \| "bowTie"`, default `"none"`; optional in the patch) and **`botAvatarsEnabled` default changed from `false` to `true`** (an explicit saved `false` is kept)                                                                                                                       | V 4.0.0: Orbie everywhere, with an optional accessory                  |
 
 ## New dependencies
 
@@ -270,6 +276,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — V 4.0.0 item 3: Orbie everywhere
+
+- Status: done
+- What changed: Orbie, the assistant's bot (`bot-avatars` `circle`, name in one constant `ORBIE_NAME` in `apps/web/src/polaris/bots/orbie.ts`, state mapping `ORBIE_STATE_BY_STATUS`: running → working, idle → default, waiting or stale → sleeping). `OrbieAvatar.tsx` colors the bot from the CSS `color` of its box (brand via `--polaris-orbie-body`, a project's color, or the run's effort tier while working; high cycles its hue), animates only `live` bots and pauses on a hidden page or reduced motion; `fabric` shading, `smooth` under 22 px. Placed in the thread header (`ThreadBot`, live), the timeline's working row (live, tier color) and thinking row (still, replaces the brain icon; both rows share one icon column), the empty thread (live, 56 px), each turn's answer (a still "Orbie" author line), and as the avatar of projects without their own icon (replaces upstream's initials such as "SR"; user-picked icons stay). Settings → General → Orbie: switch plus accessory (hat, glasses, headphones, bow tie). Contract: `botAccessory`, `botAvatarsEnabled` now defaults on. Per-provider shapes retired (`botConfig.ts`, `botState.ts` removed). Run tier reaches the timeline through `OrbieRunContext`; dev-forced FX states also force the working row.
+- How verified: `vp test run apps/web/src/polaris apps/web/src/components packages/contracts/src/settings.test.ts apps/desktop/src/settings` (276 files, 3,528 tests passed); web, contracts and desktop typechecks clean; lint 0 errors. Screens: `../.playwright-mcp/v4/full-orbie-thread-{light,dark}.png`, `zoom-orbie.png`, `zoom-working.png`.
+- Risks: many project avatars are small canvases (still frames; the library pauses offscreen too). Orbie's color comes from a 1×1 canvas readback of the CSS color, re-read on theme changes.
+- Next action: V 4.0.0 item 4, the dashboard as the landing page with custom widgets.
+- Open questions: none new.
 
 ### 2026-10-05 — Claude (session 8) — V 4.0.0 item 2: quota-low without amber
 
@@ -304,14 +319,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Files: `apps/web/src/polaris/skills/*`, `apps/web/src/routes/skills.tsx` (+ `routeTree.gen.ts`), sidebar footer and `mainAppLocation.ts`.
 - Tests: 3 studio logic (paths, grouping, documents).
 
-### 2026-10-05 — Claude (session 8) — v3 item 1: bento dashboard
-
-- Done: `/dashboard`, opened from a new bento icon in the sidebar footer (beside Settings; the footer shows "Back" there like the other utility pages). Five translucent tiles: **Start** (new thread in the latest project, plus the next three; the new-thread shortcut), **Threads** (threads with a status, the ones that need you first, then the most recent), **Today** (today's spend and tokens, then each provider's limit windows on one aligned grid; amber only at the low-quota threshold), **Pull requests** (newest open ones across connected servers, 3 per repo; a row opens it on the Pull Requests page) and **activity** (14 or 30 days of spend as bars, with an sr-only table). Two shapes so every row is filled in the default order: a long thread list runs two rows beside Start and Today; a short one stays one row, pull requests widen and activity takes the bottom row with a month of data. **Edit layout** makes tiles draggable and adds earlier/later buttons for keyboard users; the order lives in localStorage (`polaris:dashboard-layout:v1`), unknown ids are dropped and new tiles appended; Reset layout and Esc (leaves edit mode first) work. Fixed layout by default, drag only in edit mode, so no setting.
-- Files: `apps/web/src/polaris/dashboard/*`, `apps/web/src/routes/dashboard.tsx` (+ regenerated `routeTree.gen.ts`), `components/sidebar/SidebarChrome.tsx`, `components/sidebar/mainAppLocation.ts`.
-- Tests: 3 layout, 1 thread selection, 1 pull-request rows. Note: PR times are not shown; on this Mac the local clock is behind GitHub's timestamps, so every row read "just now".
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v3 item 1: bento dashboard. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 gate: passed, merged, tagged `v2-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 5: per-theme fonts. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 4: voice input. Rolled up; see `git log`.

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./polaris/fx/composerFx.css";
+@import "./polaris/bots/orbie.css";
 
 @custom-variant dark (&:is(.dark, .dark *));
 @custom-variant light (&:not(.dark, .dark *));

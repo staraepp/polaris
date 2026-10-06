@@ -1,0 +1,35 @@
+/* Orbie at the rainbow (high) effort tier: the body cycles its hue while it
+   works, like the beam. Only live bots get the class; reduced motion never does. */
+.polaris-orbie-rainbow canvas {
+  animation: polaris-orbie-hue 6s linear infinite;
+  animation-play-state: var(--visible-animation-state, running);
+}
+
+@keyframes polaris-orbie-hue {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .polaris-orbie-rainbow canvas {
+    animation: none;
+  }
+}
+
+/* Orbie's default body: the brand, lifted on light surfaces so the plush body and
+   its eyes stay readable (the light brand token is a deep emerald). In the
+   components layer so a caller's text color class (a project's color) wins. */
+:root {
+  --polaris-orbie-body: color-mix(in oklab, var(--primary) 72%, white);
+}
+
+.dark {
+  --polaris-orbie-body: var(--primary);
+}
+
+@layer components {
+  .polaris-orbie-body {
+    color: var(--polaris-orbie-body);
+  }
+}

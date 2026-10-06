@@ -5,6 +5,7 @@ import type { EnvironmentId } from "@t3tools/contracts";
 import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
 import { DEFAULT_KEYBINDINGS } from "@t3tools/shared/keybindings";
 import { commandLabel } from "./KeybindingsSettings.logic";
+import { ORBIE_NAME } from "../../polaris/bots/orbie";
 import {
   validateSettingsScopeSearch,
   type ResolvedSettingsScope,
@@ -639,9 +640,11 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "bot-avatars",
-    title: "Bot avatars",
+    title: ORBIE_NAME,
     to: "/settings/general",
-    searchTerms: ["bot avatar mascot animation status working sleeping provider"],
+    searchTerms: [
+      "bot avatar mascot assistant animation status working sleeping accessory hat spectacles headphones",
+    ],
   },
   {
     id: "discord-presence",

@@ -42,7 +42,8 @@ import { resolveRunEffort } from "../polaris/fx/effortTier";
 import { useQuotaLowSignal } from "../polaris/quota/useQuotaLowSignal";
 import { usageMeterModelOf } from "../polaris/quota/usageMeterModel";
 import { ThreadBot } from "../polaris/bots/ThreadBot";
-import { getDriverOption } from "./settings/providerDriverMeta";
+import { OrbieRunContext } from "../polaris/bots/OrbieRunContext";
+import { readDevFxOverride } from "../polaris/fx/devFxOverride";
 import { useThreadUsage } from "../polaris/threadUsage/useThreadUsage";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
 import * as Schema from "effect/Schema";
@@ -3257,6 +3258,12 @@ export default function ChatView(props: ChatViewProps) {
     }),
     [polarisQuota.flashing, phase, polarisRunEffort.tier],
   );
+  // Dev builds only: forced FX states (devFxOverride.ts) also show the working
+  // row and color Orbie, for screenshots without a real turn.
+  const polarisDevFx = readDevFxOverride();
+  const polarisDevForcedRunning = polarisDevFx?.running === true;
+  const polarisOrbieTier = polarisDevFx?.tier ?? polarisRunEffort.tier;
+  const polarisOrbieRun = useMemo(() => ({ tier: polarisOrbieTier }), [polarisOrbieTier]);
   const polarisLastActivityAt = useMemo(() => {
     const stamp =
       activeLatestRun?.completedAt ?? activeLatestRun?.startedAt ?? activeLatestRun?.requestedAt;
@@ -10926,14 +10933,12 @@ export default function ChatView(props: ChatViewProps) {
           {inlineRightPanelOwnsTitleBar ? threadPanelHeaderControl : null}
           {polarisBotsEnabled ? (
             <ThreadBot
-              driver={selectedProvider ?? null}
-              providerLabel={getDriverOption(selectedProvider)?.label ?? "Agent"}
-              running={phase === "running"}
+              running={phase === "running" || polarisDevForcedRunning}
               waitingOnUser={
                 pendingRequests.approvals.length > 0 || pendingRequests.userInputs.length > 0
               }
               lastActivityAt={polarisLastActivityAt}
-              theme={resolvedTheme}
+              tier={polarisOrbieTier}
             />
           ) : null}
           <ChatHeader
@@ -10999,103 +11004,105 @@ export default function ChatView(props: ChatViewProps) {
             {/* Messages Wrapper */}
             <div className="relative flex min-h-0 flex-1 flex-col bg-background">
               {/* Messages — LegendList handles virtualization and scrolling internally */}
-              <MessagesTimeline
-                citationRequest={paintOnlyDisplayedTimeline ? null : citationRequest}
-                citationHistoryLoading={threadDetailLoading}
-                {...(!paintOnlyDisplayedTimeline
-                  ? {
-                      onCiteAssistantText: citeAssistantText,
-                      ...(activeProject ? { onRunShellCommand: runShellCommand } : {}),
-                    }
-                  : {})}
-                isWorking={!paintOnlyDisplayedTimeline && isWorking}
-                runlessWorkActive={runlessWorkStartedAt !== null}
-                activeTurnInProgress={
-                  !paintOnlyDisplayedTimeline && (isWorking || !latestRunSettled)
-                }
-                isCompacting={!paintOnlyDisplayedTimeline && isCompacting}
-                activeTurnStartedAt={paintOnlyDisplayedTimeline ? null : activeWorkStartedAt}
-                worktreeSetup={paintOnlyDisplayedTimeline ? null : worktreeSetup}
-                onCancelWorktreeSetup={onCancelWorktreeSetup}
-                {...(paintOnlyDisplayedTimeline
-                  ? {}
-                  : { retryableWorkspacePreparationRunIds, onRetryWorkspacePreparation })}
-                {...(draftId ? { onWorktreeSetupWorkLocally } : {})}
-                {...(onOpenWorktreeSetupTerminal ? { onOpenWorktreeSetupTerminal } : {})}
-                isPreparingWorktree={!paintOnlyDisplayedTimeline && isPreparingWorktree}
-                listRef={legendListRef}
-                timelineEntries={displayedTimeline.entries}
-                providerStatuses={
-                  environmentById.get(
-                    displayedThreadRef?.environmentId ?? activeThread.environmentId,
-                  )?.serverConfig?.providers ?? EMPTY_PROVIDERS
-                }
-                runs={paintOnlyDisplayedTimeline ? [] : (serverProjection?.runs ?? [])}
-                latestRun={paintOnlyDisplayedTimeline ? null : activeActivityRun}
-                runningRunId={paintOnlyDisplayedTimeline ? null : activeRunningTurnId}
-                turnDiffSummaries={
-                  paintOnlyDisplayedTimeline ? EMPTY_HELD_TURN_DIFF_SUMMARIES : turnDiffSummaries
-                }
-                activeThreadEnvironmentId={
-                  displayedThreadRef?.environmentId ?? activeThread.environmentId
-                }
-                routeThreadKey={displayedTimelineKey}
-                displayThreadKey={displayedTimelineKey}
-                onOpenTurnDiff={paintOnlyDisplayedTimeline ? noopHeldTurnDiff : onOpenTurnDiff}
-                onOpenThread={onOpenRelatedThread}
-                parentThreadLink={paintOnlyDisplayedTimeline ? null : parentThreadLink}
-                onForkFromRun={paintOnlyDisplayedTimeline ? async () => {} : onForkFromRun}
-                onRollbackCheckpoint={(input) => {
-                  if (!paintOnlyDisplayedTimeline) void onRollbackCheckpoint(input);
-                }}
-                supportsConversationRollback={
-                  !paintOnlyDisplayedTimeline && supportsConversationRollback
-                }
-                onRevertToTurnCount={
-                  paintOnlyDisplayedTimeline ? noopHeldRevert : onRevertTimelineTurn
-                }
-                {...(!paintOnlyDisplayedTimeline
-                  ? { onUseArtifactTemplate: useArtifactTemplate }
-                  : {})}
-                isRevertingCheckpoint={isRevertingCheckpoint}
-                onImageExpand={onExpandTimelineImage}
-                onFileOpen={paintOnlyDisplayedTimeline ? noopHeldAttachment : openFileAttachment}
-                onFileDownload={
-                  paintOnlyDisplayedTimeline ? noopHeldAttachment : downloadFileAttachment
-                }
-                markdownCwd={
-                  paintOnlyDisplayedTimeline
-                    ? (heldPaintContext?.markdownCwd ?? undefined)
-                    : (gitCwd ?? undefined)
-                }
-                resolvedTheme={resolvedTheme}
-                timestampFormat={timestampFormat}
-                workspaceRoot={
-                  paintOnlyDisplayedTimeline
-                    ? (heldPaintContext?.workspaceRoot ?? undefined)
-                    : activeWorkspaceRoot
-                }
-                skills={
-                  activeProviderStatus
-                    ? resolveProviderSkillsForCwd(activeProviderStatus, gitCwd)
-                    : EMPTY_PROVIDER_SKILLS
-                }
-                anchorMessageId={paintOnlyDisplayedTimeline ? null : timelineAnchorMessageId}
-                onAnchorReady={onTimelineAnchorReady}
-                onAnchorSizeChanged={onTimelineAnchorSizeChanged}
-                contentInsetEndAdjustment={composerTimelineInset}
-                liveFollowEnabled={!paintOnlyDisplayedTimeline && timelineLiveFollowEnabled}
-                onIsAtEndChange={onIsAtEndChange}
-                onContentOverflowChange={setTimelineOverflows}
-                onToolOutputCollapsedAtEnd={onToolOutputCollapsedAtEnd}
-                onManualNavigation={cancelTimelineLiveFollowForUserNavigation}
-                cancelPositionRestoreRef={cancelPositionRestoreRef}
-                hideEmptyPlaceholder={isDraftHeroState || threadDetailLoading}
-                topFadeEnabled={!hasTimelineTopBanner}
-                {...(paintOnlyDisplayedTimeline || threadHistoryControls === undefined
-                  ? {}
-                  : { historyControls: threadHistoryControls })}
-              />
+              <OrbieRunContext value={polarisOrbieRun}>
+                <MessagesTimeline
+                  citationRequest={paintOnlyDisplayedTimeline ? null : citationRequest}
+                  citationHistoryLoading={threadDetailLoading}
+                  {...(!paintOnlyDisplayedTimeline
+                    ? {
+                        onCiteAssistantText: citeAssistantText,
+                        ...(activeProject ? { onRunShellCommand: runShellCommand } : {}),
+                      }
+                    : {})}
+                  isWorking={!paintOnlyDisplayedTimeline && (isWorking || polarisDevForcedRunning)}
+                  runlessWorkActive={runlessWorkStartedAt !== null}
+                  activeTurnInProgress={
+                    !paintOnlyDisplayedTimeline && (isWorking || !latestRunSettled)
+                  }
+                  isCompacting={!paintOnlyDisplayedTimeline && isCompacting}
+                  activeTurnStartedAt={paintOnlyDisplayedTimeline ? null : activeWorkStartedAt}
+                  worktreeSetup={paintOnlyDisplayedTimeline ? null : worktreeSetup}
+                  onCancelWorktreeSetup={onCancelWorktreeSetup}
+                  {...(paintOnlyDisplayedTimeline
+                    ? {}
+                    : { retryableWorkspacePreparationRunIds, onRetryWorkspacePreparation })}
+                  {...(draftId ? { onWorktreeSetupWorkLocally } : {})}
+                  {...(onOpenWorktreeSetupTerminal ? { onOpenWorktreeSetupTerminal } : {})}
+                  isPreparingWorktree={!paintOnlyDisplayedTimeline && isPreparingWorktree}
+                  listRef={legendListRef}
+                  timelineEntries={displayedTimeline.entries}
+                  providerStatuses={
+                    environmentById.get(
+                      displayedThreadRef?.environmentId ?? activeThread.environmentId,
+                    )?.serverConfig?.providers ?? EMPTY_PROVIDERS
+                  }
+                  runs={paintOnlyDisplayedTimeline ? [] : (serverProjection?.runs ?? [])}
+                  latestRun={paintOnlyDisplayedTimeline ? null : activeActivityRun}
+                  runningRunId={paintOnlyDisplayedTimeline ? null : activeRunningTurnId}
+                  turnDiffSummaries={
+                    paintOnlyDisplayedTimeline ? EMPTY_HELD_TURN_DIFF_SUMMARIES : turnDiffSummaries
+                  }
+                  activeThreadEnvironmentId={
+                    displayedThreadRef?.environmentId ?? activeThread.environmentId
+                  }
+                  routeThreadKey={displayedTimelineKey}
+                  displayThreadKey={displayedTimelineKey}
+                  onOpenTurnDiff={paintOnlyDisplayedTimeline ? noopHeldTurnDiff : onOpenTurnDiff}
+                  onOpenThread={onOpenRelatedThread}
+                  parentThreadLink={paintOnlyDisplayedTimeline ? null : parentThreadLink}
+                  onForkFromRun={paintOnlyDisplayedTimeline ? async () => {} : onForkFromRun}
+                  onRollbackCheckpoint={(input) => {
+                    if (!paintOnlyDisplayedTimeline) void onRollbackCheckpoint(input);
+                  }}
+                  supportsConversationRollback={
+                    !paintOnlyDisplayedTimeline && supportsConversationRollback
+                  }
+                  onRevertToTurnCount={
+                    paintOnlyDisplayedTimeline ? noopHeldRevert : onRevertTimelineTurn
+                  }
+                  {...(!paintOnlyDisplayedTimeline
+                    ? { onUseArtifactTemplate: useArtifactTemplate }
+                    : {})}
+                  isRevertingCheckpoint={isRevertingCheckpoint}
+                  onImageExpand={onExpandTimelineImage}
+                  onFileOpen={paintOnlyDisplayedTimeline ? noopHeldAttachment : openFileAttachment}
+                  onFileDownload={
+                    paintOnlyDisplayedTimeline ? noopHeldAttachment : downloadFileAttachment
+                  }
+                  markdownCwd={
+                    paintOnlyDisplayedTimeline
+                      ? (heldPaintContext?.markdownCwd ?? undefined)
+                      : (gitCwd ?? undefined)
+                  }
+                  resolvedTheme={resolvedTheme}
+                  timestampFormat={timestampFormat}
+                  workspaceRoot={
+                    paintOnlyDisplayedTimeline
+                      ? (heldPaintContext?.workspaceRoot ?? undefined)
+                      : activeWorkspaceRoot
+                  }
+                  skills={
+                    activeProviderStatus
+                      ? resolveProviderSkillsForCwd(activeProviderStatus, gitCwd)
+                      : EMPTY_PROVIDER_SKILLS
+                  }
+                  anchorMessageId={paintOnlyDisplayedTimeline ? null : timelineAnchorMessageId}
+                  onAnchorReady={onTimelineAnchorReady}
+                  onAnchorSizeChanged={onTimelineAnchorSizeChanged}
+                  contentInsetEndAdjustment={composerTimelineInset}
+                  liveFollowEnabled={!paintOnlyDisplayedTimeline && timelineLiveFollowEnabled}
+                  onIsAtEndChange={onIsAtEndChange}
+                  onContentOverflowChange={setTimelineOverflows}
+                  onToolOutputCollapsedAtEnd={onToolOutputCollapsedAtEnd}
+                  onManualNavigation={cancelTimelineLiveFollowForUserNavigation}
+                  cancelPositionRestoreRef={cancelPositionRestoreRef}
+                  hideEmptyPlaceholder={isDraftHeroState || threadDetailLoading}
+                  topFadeEnabled={!hasTimelineTopBanner}
+                  {...(paintOnlyDisplayedTimeline || threadHistoryControls === undefined
+                    ? {}
+                    : { historyControls: threadHistoryControls })}
+                />
+              </OrbieRunContext>
 
               {/* scroll to end pill — shown when user has scrolled away from the live edge */}
               {showScrollToBottom && (

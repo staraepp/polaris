@@ -1,27 +1,8 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { useClientSettings } from "~/hooks/useSettings";
-
-import { botLookFor } from "./botConfig";
-import { botStateFor } from "./botState";
-
-// Loaded only once the setting is on, so the canvas renderer stays out of the
-// main bundle for everyone else.
-const BotAvatar = lazy(() =>
-  import("bot-avatars").then((module) => ({ default: module.BotAvatar })),
-);
-
-const STATE_TEXT = { working: "is working", default: "is ready", sleeping: "is resting" } as const;
-
-function usePageVisible(): boolean {
-  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
-  useEffect(() => {
-    const update = () => setVisible(document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", update);
-    return () => document.removeEventListener("visibilitychange", update);
-  }, []);
-  return visible;
-}
+import type { EffortTier } from "../fx/effortTier";
+import { ORBIE_NAME, ORBIE_STATE_BY_STATUS, orbieStatusFor } from "./orbie";
+import { OrbieAvatar } from "./OrbieAvatar";
 
 /** Re-reads the clock once a minute: enough to notice a thread going stale. */
 function useMinuteClock(): number {
@@ -34,45 +15,25 @@ function useMinuteClock(): number {
 }
 
 /**
- * The thread's bot in the header (Polaris): its shape and color come from the
- * provider, its state from the run. Pauses while the page is hidden; the
- * library itself pauses offscreen and honors reduced motion.
+ * Orbie in the thread header (Polaris): its state follows the thread (see
+ * `ORBIE_STATE_BY_STATUS`) and, while a run works, it takes that run's frozen
+ * effort tier color.
  */
 export function ThreadBot({
-  driver,
-  providerLabel,
   running,
   waitingOnUser,
   lastActivityAt,
-  theme,
+  tier,
 }: {
-  readonly driver: string | null;
-  readonly providerLabel: string;
   readonly running: boolean;
   readonly waitingOnUser: boolean;
   readonly lastActivityAt: number | null;
-  readonly theme: "light" | "dark";
+  readonly tier: EffortTier;
 }) {
-  const overrides = useClientSettings((settings) => settings.botAvatarByDriver);
-  const visible = usePageVisible();
   const now = useMinuteClock();
-  const look = botLookFor(driver, overrides, theme);
-  const state = botStateFor({ running, waitingOnUser, lastActivityAt, now });
+  const state =
+    ORBIE_STATE_BY_STATUS[orbieStatusFor({ running, waitingOnUser, lastActivityAt, now })];
   return (
-    <span
-      className="me-2 inline-flex size-7 shrink-0 items-center justify-center"
-      data-bot-state={state}
-    >
-      <Suspense fallback={null}>
-        <BotAvatar
-          type={look.type}
-          color={look.color}
-          state={state}
-          size={28}
-          paused={!visible}
-          aria-label={`${providerLabel} ${STATE_TEXT[state]}`}
-        />
-      </Suspense>
-    </span>
+    <OrbieAvatar size={28} state={state} live tier={tier} label={ORBIE_NAME} className="me-2" />
   );
 }
