@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, SettingsIcon, WrenchIcon } from "lucide-react";
+import { ArrowLeftIcon, NotebookTabsIcon, SettingsIcon, WrenchIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { memo, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
@@ -201,6 +201,12 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
     void navigate({ to: "/dashboard" });
   }, [closeMobileSidebar, navigate]);
 
+  // Polaris (V 5.0.0): the Workspace hub, your docs and boards.
+  const handleWorkspaceClick = useCallback(() => {
+    closeMobileSidebar();
+    void navigate({ to: "/workspace" });
+  }, [closeMobileSidebar, navigate]);
+
   const handleBackClick = useCallback(() => {
     closeMobileSidebar();
     void navigateToMainApp();
@@ -226,6 +232,11 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
             icon={<DashboardGlyph />}
             label="Home"
             onClick={handleDashboardClick}
+          />
+          <SidebarUtilityItem
+            icon={<NotebookTabsIcon />}
+            label="Workspace: docs and boards"
+            onClick={handleWorkspaceClick}
           />
           <SidebarUtilityItem
             icon={<WrenchIcon />}

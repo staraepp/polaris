@@ -59,9 +59,12 @@ import {
   MessageSquareIcon,
   MonitorIcon,
   MoonIcon,
+  NotebookTabsIcon,
   PaletteIcon,
+  PenLineIcon,
   RotateCcwIcon,
   SettingsIcon,
+  ShapesIcon,
   SquarePenIcon,
   SunIcon,
   TextSearchIcon,
@@ -193,6 +196,7 @@ import { toggleThemeEditorForTheme } from "./settings/themeEditorStore";
 import { searchSettings, SETTINGS_SECTION_LABELS } from "./settings/settingsSearch";
 import { DashboardGlyph } from "../polaris/dashboard/DashboardGlyph";
 import { SkillsGlyph } from "../polaris/skills/SkillsGlyph";
+import { createWorkspaceItem } from "../polaris/workspace/workspaceStore";
 import {
   COMMAND_PALETTE_META_ICON_CLASS,
   CommandPaletteMetaDot,
@@ -2255,6 +2259,41 @@ function OpenCommandPaletteDialog(props: {
     icon: <DashboardGlyph className={ITEM_ICON_CLASS} />,
     run: async () => {
       await navigate({ to: "/dashboard" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:workspace",
+    searchTerms: ["workspace", "docs", "boards", "notes", "whiteboard", "notion", "excalidraw"],
+    title: "Open workspace",
+    icon: <NotebookTabsIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/workspace" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:workspace-new-doc",
+    searchTerms: ["new doc", "document", "note", "page", "write", "plan", "notion"],
+    title: "New doc",
+    icon: <PenLineIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      const item = await createWorkspaceItem("doc");
+      await navigate({ to: "/workspace/doc/$docId", params: { docId: item.id } });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:workspace-new-board",
+    searchTerms: ["new board", "whiteboard", "excalidraw", "sketch", "draw", "diagram", "canvas"],
+    title: "New board",
+    icon: <ShapesIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      const item = await createWorkspaceItem("board");
+      await navigate({ to: "/workspace/board/$boardId", params: { boardId: item.id } });
     },
   });
 

@@ -109,6 +109,13 @@
       "sourceUrl": "https://github.com/ryanoasis/nerd-fonts"
     },
     {
+      "bundles": ["assets", "web"],
+      "license": "OFL-1.1 AND MIT",
+      "name": "Excalidraw board fonts",
+      "noticeFile": "apps/web/vite/excalidraw-fonts/LICENSE",
+      "sourceUrl": "https://github.com/excalidraw/excalidraw/tree/master/packages/excalidraw/fonts"
+    },
+    {
       "bundles": ["ios", "mobile"],
       "license": "MIT",
       "name": "GhosttyKit",
@@ -625,6 +632,20 @@
       "generatedNotice": {
         "licenseId": "MIT",
         "copyrights": ["Copyright (c) 2019-present Fabio Spampinato, Andrew Maney"]
+      }
+    },
+    {
+      "repositoryUrl": "https://github.com/excalidraw/excalidraw",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2020 Excalidraw"]
+      }
+    },
+    {
+      "repositoryUrl": "https://github.com/radix-ui/primitives",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) 2022 WorkOS"]
       }
     }
   ]

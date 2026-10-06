@@ -1,6 +1,14 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.7.1**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.0.0**. Start with "Look at these first" at the bottom.
+
+## V 5.0.0 (the Workspace: whiteboards and docs), tag `v5.0.0`
+
+- **A Workspace in the sidebar** (the notebook icon, between Home and Tools), also in the command palette ("Open workspace", "New doc", "New board").
+- **Docs, Notion style:** a big title and a page that saves as you type. Type "/" for headings, lists, to-dos, quotes, code and dividers; Markdown shortcuts work too (`#`, `-`, `[]`, `**bold**`). "Copy as Markdown" puts a plan on the clipboard ready to paste into a chat.
+- **Boards, with Excalidraw:** a full whiteboard that follows light and dark mode and uses Polaris green instead of Excalidraw's purple. It opens fast because Excalidraw only loads when you open a board. "Download .excalidraw" gives you a file excalidraw.com can open.
+- **Everything stays on this Mac** (in the app's own storage) for now; syncing through your VPS is the next step for the Workspace. Deleting asks first, because there is no trash.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,011 (5,996 + 15 new), contracts 538, web production build passes with the board fonts bundled (416 KB; each font's license checked, one GPL font left out). The other suites were not rerun: nothing in them changed except the version number.
 
 ## V 4.7.1 (your T3 Code threads), tag `v4.7.1`
 
