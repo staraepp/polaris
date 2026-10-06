@@ -1,7 +1,7 @@
 import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/models";
 import { describe, expect, it } from "vite-plus/test";
 
-import { selectDashboardThreads } from "./dashboardThreads";
+import { needsLeadSlot, selectDashboardThreads } from "./dashboardThreads";
 
 const thread = (id: string, updatedAt: string, extra: Partial<EnvironmentThreadShell> = {}) =>
   ({
@@ -35,5 +35,22 @@ describe("selectDashboardThreads", () => {
     expect(active.map((entry) => entry.thread.id)).toEqual(["approval", "working"]);
     expect(active[0]?.status?.label).toBe("Pending Approval");
     expect(recent.map((entry) => entry.thread.id)).toEqual(["new"]);
+  });
+});
+
+describe("needsLeadSlot", () => {
+  const threads = [
+    thread("a", "2026-10-05T00:00:00.000Z"),
+    thread("b", "2026-10-04T00:00:00.000Z", { hasPendingApprovals: true }),
+  ];
+  const { active, recent } = selectDashboardThreads(threads, { active: 5, recent: 5 });
+
+  it("drops the slot when no row has a status or an icon", () => {
+    expect(needsLeadSlot(recent, () => false)).toBe(false);
+  });
+
+  it("keeps it for a status or a chat icon", () => {
+    expect(needsLeadSlot([...active, ...recent], () => false)).toBe(true);
+    expect(needsLeadSlot(recent, (entry) => entry.thread.id === "a")).toBe(true);
   });
 });

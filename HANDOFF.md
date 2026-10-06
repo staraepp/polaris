@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 019: Threads tile lines up
+
+- Status: done
+- What changed: `polaris/dashboard/ThreadsTile.tsx` and `dashboardThreads.ts`: new pure `needsLeadSlot(entries, hasIcon)`; the rows' leading slot (status dot or chat icon, from cycle 018) renders only when some row in the tile uses it, so plain lists align with their headings. Tests added for `needsLeadSlot`.
+- How verified: `vp test run apps/web/src/polaris/dashboard` 18 passed; web typecheck and lint clean. Isolated Playwright contexts at 400 px: with no icons, the heading text and titles both start at x 45 (light and dark); with one icon, titles move to x 73 for every row. Shots `.playwright-mcp/polish/019-*`.
+- Risks: None known.
+- Next action: next polish cycle (020).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — polish 018: chat icons on the dashboard
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (016).
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows
-
-- Status: done
-- What changed: `DashboardTile.tsx`: below `lg` the size picker is hidden (sizes only shape the six-column grid) and the move arrows sit in the header beside ×; from `lg` up the second row (size picker, arrows) is unchanged. The Customize hint now says "pick a size on wide windows". Branch `polish-2` (patch level, V 4.1.x).
-- How verified: `vp test run apps/web/src/polaris/dashboard` 16 passed; typecheck and lint clean. Isolated Playwright contexts at 400 px and 1280 px, light and dark: 0 visible size pickers narrow, 5 wide; exactly 2 visible move buttons per widget at both widths; "Move Threads earlier" moved it first at both widths. Shots `.playwright-mcp/polish/014-*`.
-- Risks: None known; the hidden copy of the arrows is `display: none`, so assistive tech sees one set.
-- Next action: next polish cycle (015).
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next. Rolled up; see `git log`.

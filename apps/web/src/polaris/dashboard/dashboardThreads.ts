@@ -49,3 +49,14 @@ export function selectDashboardThreads(
     .slice(0, limits.recent);
   return { active, recent };
 }
+
+/**
+ * Whether thread rows get a leading slot: only when some row has a status dot
+ * or a chat icon to put there, so plain lists line up with their headings.
+ */
+export function needsLeadSlot(
+  entries: readonly DashboardThread[],
+  hasIcon: (entry: DashboardThread) => boolean,
+): boolean {
+  return entries.some((entry) => entry.status !== null || hasIcon(entry));
+}
