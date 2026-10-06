@@ -237,6 +237,34 @@ On branch `v4` from `main`, same gate as v1–v3, merged `--no-ff` and tagged `v
 5. Guards: design notes for Slack-like chat and the planning suite, AFFiNE docs-only findings and LICENSE check, a Clide stub provider for voice.
 6. Secrets scan over the whole diff since the first commit; result in `MORNING.md`.
 
+## Guards (V 4.0.0, item 5)
+
+### Plugin API
+
+Not built (amendment rule 6). Friends change Polaris by editing the fork; `AGENTS.md` is written for their agents.
+
+### Gooey "+" menu
+
+Checked `apps/web/src/polaris/gooey/GooeyPlusMenu.tsx`: the trigger and every chip are real `<button type="button">` elements (chips carry `role="menuitem"` inside a `role="menu"`), with arrow-key handling and Esc; `GooeyPlusMenu.test.tsx` queries them as buttons. Nothing to change.
+
+### Voice: a stub Clide, and voice without Clide
+
+Voice is built against `clide-api-spec.md` and was **tested against a stub, not real Clide**. The stub is `scripts/polaris-clide-stub.ts` (no dependencies; `node scripts/polaris-clide-stub.ts [--port N] [--token clide_…] [--demo]`). It prints `{ port, token }` once; put both into Settings → Voice → Clide. It keeps the spec's rules: loopback only, a `clide_` token kept only as a SHA-256 hash and compared in constant time, `Host` checked against `127.0.0.1`/`localhost` (DNS rebinding), any `Origin` refused, no CORS, 25 MB cap (413), webm refused (415 with the `accepted` list), a rate limit (429), `X-Clide-Version` on every answer, `/v1/events` with the state on connect, `: ping` every 15 s, at most 4 subscribers, `level` at about 30 Hz only while recording. Every transcription returns one fixed sentence; no audio is decoded. `--demo` loops a fake dictation so the voice glow can be seen; otherwise the optional v1.1 `POST /v1/dictation/start|stop|toggle` drives one. `scripts/polaris-clide-stub.test.ts` (4 tests) drives it with Polaris's own client code (`transcribeWithClide`, `takeSseEvents`, `toClideLiveEvent` from `packages/shared/src/polarisVoiceHttp.ts`). Voice still works with no Clide at all through the OpenAI-compatible backend (opt-in, off by default).
+
+### AFFiNE (docs-only spike, 2026-10-05; nothing installed or run)
+
+- **License (read from the repo, `toeverything/AFFiNE`, branch `canary`):** mixed. Everything outside `packages/backend` and `packages/common/native` is **MIT** (`LICENSE-MIT`). Those two folders are under the **AFFiNE Enterprise Edition license** (`packages/backend/server/LICENSE`): production use needs an EE subscription, copying and modifying "for development and testing purposes" is allowed without one, and modifications belong to AFFiNE. Parts shipped as AFFiNE Community Edition or served client-side (JS, CSS, fonts, images) are **MPL-2.0** under that same file. The BlockSuite editor framework (`toeverything/blocksuite`) is **MPL-2.0** (file-level copyleft: changes to its files must stay open; using it unmodified as a dependency is fine).
+- **What that means for Polaris:** we can link to or embed a self-hosted AFFiNE in the built-in browser panel without license trouble for personal use, but we must not copy server code into Polaris, and a team self-host of the server is "production" under the EE text; read the EE terms first. Embedding BlockSuite in Polaris would be allowed (MPL-2.0 is compatible with our MIT fork if its files stay MPL and unmodified, or our changes to them are published), but it is a large dependency and not on the blueprint's list.
+- **Fit for the blueprint's test (from AFFiNE's public docs, not run):** a kanban view exists (database block, table and kanban views), text can sit beside a board on the edgeless canvas, and database rows open as pages, so all three judging points look covered on paper.
+- **Recommendation:** no planning-suite code in Polaris yet. Next step, if you want it: self-host AFFiNE with Docker for yourself (not a team), open it in Polaris's browser panel, and build the Prism Shade board by hand, as the blueprint says. Only then decide between "link out" and "embed BlockSuite".
+
+### Slack-like chat (design note; nothing built)
+
+Two readings, very different in cost:
+
+1. **Several people in one Polaris server** (real multi-user chat). The server is built around one owner: pairing tokens identify devices, not people; threads, approvals and provider credentials have no per-user ownership. It needs identities, per-user permissions (who may approve a tool call or spend quota), presence and message attribution in the contracts and the projections. That is a product and security design, not an additive change. **Needs your approval and a design session.**
+2. **A Slack-like layout for your own agent threads.** Projects as channels, threads as threads, unread markers, a mention of a provider ("@claude", "@codex") to start a turn there, and emoji-free reactions as quick replies ("approve", "retry"). Mostly web-only on today's contracts. Smallest safe slice, if you approve this reading: an unread dot plus a "Jump to unread" key in the sidebar, behind a setting, default off.
+
 ## Contract changes
 
 Additive only (new optional fields, new RPCs or commands), each covered by tests.
@@ -264,9 +292,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Needs Star's approval
 
-- **Slack-like multi-user chat (v3).** Skipped: the server's auth and data model assume one owner; multi-user is a product and security design, not an additive change.
-- **Planning suite (v3).** Skipped until the AFFiNE spike is done (self-hosting with Docker, no code).
-- **Plugin API (v3).** Skipped by the blueprint's rule; hard-fork editing still works.
+- **Slack-like chat.** Not built. Design note in "Guards (V 4.0.0)" below: pick between the two readings (several people in one server, or a Slack-like layout for your own agent threads); the second has a safe first slice.
+- **Planning suite.** Not built. The AFFiNE docs spike is done (see "Guards (V 4.0.0)"); the recommendation there needs your yes before anything is installed or embedded.
+- **Plugin API.** Not built, by the blueprint's rule and the amendment; hard-fork editing still works.
 
 ## Questions for Star
 
@@ -277,6 +305,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards
+
+- Status: done
+- What changed: New `scripts/polaris-clide-stub.ts` (stub Clide Local API from `clide-api-spec.md`, no dependencies, keeps every security rule; `--demo` loops a fake dictation) and its test `scripts/polaris-clide-stub.test.ts`, which drives it with Polaris's own voice client. HANDOFF "Guards (V 4.0.0)" holds the AFFiNE docs-only spike (license is mixed: MIT outside `packages/backend` and `packages/common/native`, Enterprise Edition license inside them, MPL-2.0 for CE and client-side parts; BlockSuite MPL-2.0), the Slack-like chat design note (two readings; neither built), the gooey check (real buttons, nothing to change) and the plugin-API refusal. "Needs Star's approval" updated. `AGENTS.md` voice line points to the stub.
+- How verified: `vp test run --config ../vite.config.ts polaris-clide-stub` in `scripts/` (4 passed: auth, Host/Origin blocks, transcription through `transcribeWithClide` plus 415 on webm, the SSE state/level/transcript sequence); `vp run --filter @t3tools/scripts typecheck` exit 0; lint clean on both files; `node scripts/polaris-clide-stub.ts --demo` answered `/v1/health` with `state: "recording"` and stopped on SIGTERM. License texts read with curl from `raw.githubusercontent.com` and the GitHub API (the only network calls; none from the app).
+- Risks: voice was checked against the stub, not real Clide. The AFFiNE feature fit comes from public docs; nothing was self-hosted (docs-only by the amendment).
+- Next action: V 4.0.0 item 6, the secrets scan over the whole diff since the fork's first commit, with the result written for MORNING.md.
+- Open questions: Slack-like chat reading (1 or 2) and the planning-suite next step, both under "Needs Star's approval".
 
 ### 2026-10-05 — Claude (session 8) — V 4.0.0 item 4: the dashboard is home, with your own widgets
 
@@ -314,15 +351,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.0.0 item 2, quota-low without amber (red-coral badge beside the usage meter).
 - Open questions: none new.
 
-### 2026-10-05 — Claude (session 8) — v3 gate: passed, merged, tagged `v3-done`
-
-- Gate: `vp fmt` clean, `vp lint` 0 errors (855 warnings, upstream's). Suites in "Test status" (server: exactly the 8 known; scripts: the 1 known). Smoke on `scripts/polaris-dev.mjs`: dashboard loaded with real local data, tiles reordered by buttons and by drag, order survived a reload, Reset and Esc worked; skill studio listed 342 skills, a skill was created from a template, edited, saved (checked on disk), deleted and rescanned away.
-- Screenshots: `.playwright-mcp/v3-01-dashboard-*`, `v3-01-dashboard-editing-*`, `v3-01-sidebar-footer-*`, `v3-02-skill-studio-*`, `v3-02-skill-studio-new-skill-*`, `v3-02-skill-studio-editing-*`, `v3-03-frontend-skill-template-*` (light and dark).
-- Skipped, as planned: v3 items 4–6 (multi-user chat, planning suite, plugin API), see "Needs Star's approval".
-- Next: polish mode on branch `polish`, log in `MORNING.md`.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v3 gate: passed, merged, tagged `v3-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v3 items 2–3: skill studio and frontend skills. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v3 item 1: bento dashboard. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 gate: passed, merged, tagged `v2-done`. Rolled up; see `git log`.
