@@ -151,6 +151,13 @@ export function SkillList({
         placeholder="Filter skills"
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
+        onKeyDown={(event) => {
+          // Esc clears the filter (then leaves the field) instead of leaving the page.
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          if (query) onQueryChange("");
+          else event.currentTarget.blur();
+        }}
       />
       <div className="flex min-h-0 flex-col">
         {groups.length === 0 ? (

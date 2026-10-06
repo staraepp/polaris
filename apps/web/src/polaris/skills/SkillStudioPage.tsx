@@ -41,8 +41,9 @@ const trimSlash = (path: string) => path.replaceAll("\\", "/").replace(/\/+$/, "
  * project, grouped by where they live, beside an editor for the project's
  * own SKILL.md files and Polaris's frontend templates.
  */
+const stayOnPage = () => {};
+
 export function SkillStudioPage() {
-  useEscapeToGoBack();
   const projects = useProjects();
   const threads = useThreadShells();
   const sortedProjects = useMemo(
@@ -111,6 +112,8 @@ export function SkillStudioPage() {
   const [selection, setSelection] = useState<StudioSelection | null>(null);
   // Unsaved SKILL.md edits by skill key, so moving between skills keeps them.
   const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
+  // Esc goes back, except while there are unsaved edits it would throw away.
+  useEscapeToGoBack(Object.keys(drafts).length > 0 ? stayOnPage : undefined);
   const setDraft = (key: string, draft: string | null) =>
     setDrafts((current) => {
       const { [key]: _dropped, ...rest } = current;

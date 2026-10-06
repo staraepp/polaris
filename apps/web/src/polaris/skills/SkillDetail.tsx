@@ -157,6 +157,13 @@ export function SkillDetail({
             if (status?.kind !== "saving") setStatus(null);
           }}
           onKeyDown={(event) => {
+            // Esc only leaves the editor; the page's Esc-to-go-back must not
+            // fire from here and walk away from the edit.
+            if (event.key === "Escape") {
+              event.preventDefault();
+              event.currentTarget.blur();
+              return;
+            }
             if ((event.metaKey || event.ctrlKey) && event.key === "s") {
               event.preventDefault();
               void save();
