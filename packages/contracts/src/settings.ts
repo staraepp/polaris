@@ -129,6 +129,10 @@ export type BotAvatarType = typeof BotAvatarType.Type;
 export const BOT_ACCESSORIES = ["none", "hat", "glasses", "headphones", "bowTie"] as const;
 export const BotAccessory = Schema.Literals(BOT_ACCESSORIES);
 export type BotAccessory = typeof BotAccessory.Type;
+/** Polaris: where the app opens, the dashboard or a fresh draft thread. */
+export const LAUNCH_PAGES = ["dashboard", "newThread"] as const;
+export const LaunchPage = Schema.Literals(LAUNCH_PAGES);
+export type LaunchPage = typeof LaunchPage.Type;
 
 /** Polaris: where voice clips are transcribed (`clide-api-spec.md`, or an OpenAI-compatible server). */
 export const VoiceBackendSetting = Schema.Literals(["clide", "openaiCompatible"]);
@@ -453,6 +457,8 @@ export const ClientSettingsSchema = Schema.Struct({
    * projects without an icon of their own). On by default since V 4.0.0.
    */
   botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /** Polaris: where the app opens; the dashboard since V 4.0.0. */
+  launchPage: LaunchPage.pipe(Schema.withDecodingDefault(Effect.succeed("dashboard" as const))),
   /** Polaris: what Orbie wears; none by default. */
   botAccessory: BotAccessory.pipe(Schema.withDecodingDefault(Effect.succeed("none" as const))),
   /** Polaris: bot shape per provider driver; missing drivers use the built-in pick. */
@@ -1845,6 +1851,7 @@ export const ClientSettingsPatch = Schema.Struct({
   composerUsageMeterEnabled: Schema.optionalKey(Schema.Boolean),
   botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
   botAccessory: Schema.optionalKey(BotAccessory),
+  launchPage: Schema.optionalKey(LaunchPage),
   gooeyComposerMenuEnabled: Schema.optionalKey(Schema.Boolean),
   voiceInputEnabled: Schema.optionalKey(Schema.Boolean),
   themeFonts: Schema.optionalKey(Schema.Record(Schema.String, ThemeFontOverrides)),

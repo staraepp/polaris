@@ -1147,6 +1147,17 @@ describe("ClientSettings gooey composer menu (Polaris)", () => {
   });
 });
 
+describe("ClientSettings launch page (Polaris)", () => {
+  it("opens on the dashboard by default and accepts only known pages", () => {
+    expect(decodeClientSettings({}).launchPage).toBe("dashboard");
+    expect(decodeClientSettings({ launchPage: "newThread" }).launchPage).toBe("newThread");
+    expect(() => decodeClientSettings({ launchPage: "settings" })).toThrow();
+    expect(decodeClientSettingsPatch({ launchPage: "newThread" })).toEqual({
+      launchPage: "newThread",
+    });
+  });
+});
+
 describe("ClientSettings bot avatars (Polaris)", () => {
   it("is on by default (Orbie, V 4.0.0) with no accessory and no per-provider picks", () => {
     const settings = decodeClientSettings({});

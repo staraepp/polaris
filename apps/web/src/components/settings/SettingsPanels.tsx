@@ -168,6 +168,7 @@ import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
+import { LaunchPageSetting } from "./polaris/LaunchPageSetting";
 import { ORBIE_NAME } from "../../polaris/bots/orbie";
 import { GooeyComposerMenuSetting } from "./polaris/GooeyComposerMenuSetting";
 import { ThemeFontsSetting } from "./polaris/ThemeFontsSetting";
@@ -2515,6 +2516,7 @@ export function GeneralSettingsPanel() {
       </SettingsSection>
 
       <SettingsSection id="behavior" title="Behavior">
+        <LaunchPageSetting />
         <NotificationSettings />
         <SettingsRow
           {...searchableSetting("in-app-notifications")}

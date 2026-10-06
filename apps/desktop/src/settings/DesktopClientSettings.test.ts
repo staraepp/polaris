@@ -55,6 +55,7 @@ const clientSettings: ClientSettings = {
   composerUsageMeterEnabled: true,
   botAvatarsEnabled: true,
   botAccessory: "none",
+  launchPage: "dashboard",
   gooeyComposerMenuEnabled: false,
   voiceInputEnabled: false,
   themeFonts: {},

@@ -639,6 +639,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["gooey liquid plus menu attach composer chips effects"],
   },
   {
+    id: "launch-page",
+    title: "Open Polaris on",
+    to: "/settings/general",
+    searchTerms: ["launch start startup open home landing dashboard new thread"],
+  },
+  {
     id: "bot-avatars",
     title: ORBIE_NAME,
     to: "/settings/general",
