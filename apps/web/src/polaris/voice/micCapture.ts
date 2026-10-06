@@ -12,6 +12,8 @@ export class MicCapture {
   #nodes: AudioNode[] = [];
   #chunks: Float32Array[] = [];
   #level = 0;
+  /** Bumped by every release, so a `start` still awaiting can tell it was cut short. */
+  #generation = 0;
 
   /** Smoothed 0–1 input level, for the glow. */
   get level(): number {
@@ -19,9 +21,14 @@ export class MicCapture {
   }
 
   async start(): Promise<void> {
+    const generation = this.#generation;
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
     });
+    if (generation !== this.#generation) {
+      for (const track of stream.getTracks()) track.stop();
+      return;
+    }
     this.#stream = stream;
     const context = new AudioContext({ sampleRate: VOICE_SAMPLE_RATE });
     this.#context = context;
@@ -44,12 +51,15 @@ export class MicCapture {
       node.port.start();
       capture = node;
     } catch {
+      if (generation !== this.#generation) return;
       const node = context.createScriptProcessor(4096, 1, 1);
       node.addEventListener("audioprocess", (event) =>
         onChunk(new Float32Array(event.inputBuffer.getChannelData(0))),
       );
       capture = node;
     }
+    // Released while the worklet loaded: the context is already closed.
+    if (generation !== this.#generation) return;
     source.connect(capture);
     capture.connect(sink);
     this.#nodes = [source, capture, sink];
@@ -67,6 +77,7 @@ export class MicCapture {
   }
 
   async #release(): Promise<void> {
+    this.#generation += 1;
     for (const node of this.#nodes) node.disconnect();
     this.#nodes = [];
     for (const track of this.#stream?.getTracks() ?? []) track.stop();

@@ -1,4 +1,4 @@
-import { type PointerEvent, useRef } from "react";
+import { type PointerEvent, useEffect, useRef } from "react";
 
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
@@ -67,6 +67,22 @@ export function VoiceButton({ voice }: { readonly voice: VoiceInput }) {
       ? "Stop and transcribe"
       : "Voice input: hold to talk";
 
+  // Esc cancels from anywhere while listening: a pointer press never focuses
+  // the button (it would pull focus out of the prompt), so a key handler on
+  // the button would not hear it.
+  const { cancel } = voice;
+  useEffect(() => {
+    if (!listening) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      cancel();
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [cancel, listening]);
+
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0 || transcribing) return;
     event.preventDefault();
@@ -109,14 +125,8 @@ export function VoiceButton({ voice }: { readonly voice: VoiceInput }) {
                 if (listening) void voice.stop();
                 else void voice.start();
               }}
-              onKeyDown={(event) => {
-                if (event.key === "Escape" && listening) {
-                  event.preventDefault();
-                  voice.cancel();
-                }
-              }}
               className={cn(
-                "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-progress motion-reduce:transition-none",
+                "relative inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-progress motion-reduce:transition-none",
                 listening &&
                   "bg-primary/14 text-primary-text hover:bg-primary/20 hover:text-primary-text",
                 transcribing && "text-primary-text",
@@ -125,6 +135,13 @@ export function VoiceButton({ voice }: { readonly voice: VoiceInput }) {
           }
         >
           {transcribing ? <PulseGlyph /> : <MicGlyph />}
+          {/* The last failure stays marked until the next start; the tooltip says what it was. */}
+          {voice.error !== null && voice.phase === "idle" ? (
+            <span
+              aria-hidden="true"
+              className="absolute top-1 right-1 size-1.5 rounded-full bg-destructive ring-2 ring-background"
+            />
+          ) : null}
         </TooltipTrigger>
         <TooltipPopup>
           {voice.error ??

@@ -76,66 +76,73 @@ export default function GooeyPlusMenu({
 
   return (
     <div ref={rootRef} className="relative size-8 shrink-0" onKeyDown={onMenuKeyDown}>
-      <Liquid
-        blur={5}
-        contrast={20}
-        fill="var(--popover)"
-        shadow="0 1px 2px rgb(0 0 0 / 0.08), 0 6px 18px rgb(0 0 0 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.12)"
-        className="absolute inset-0"
+      {/* The goo filter's region is sized from the Liquid root, so the root
+          spans the chips' whole travel; it ignores the pointer except on the
+          chips themselves, leaving the composer under it clickable. */}
+      <div
+        className="pointer-events-none absolute right-0 bottom-0 w-48 *:size-full"
+        style={{ height: 32 + CHIP_STEP * actions.length }}
       >
-        <div id={menuId} role="menu" aria-label="Composer actions" aria-hidden={!open}>
-          {actions.map((action, index) => (
-            <Liquid.Item
-              key={action.id}
-              y={open ? -CHIP_STEP * (index + 1) : 0}
-              scale={open ? 1 : 0.35}
-              transition={transition}
-              delay={open ? index * 35 : 0}
-              radius={16}
-              className="absolute right-0 bottom-0"
-            >
-              <button
-                ref={(element) => {
-                  itemRefs.current[index] = element;
-                }}
-                type="button"
-                role="menuitem"
-                tabIndex={open ? 0 : -1}
-                onPointerDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  close(false);
-                  action.onSelect();
-                }}
-                className="flex h-8 items-center gap-1.5 rounded-full ps-2.5 pe-3 text-xs font-medium whitespace-nowrap text-popover-foreground opacity-0 transition-opacity duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none data-[open=true]:opacity-100 [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
-                data-open={open}
+        <Liquid
+          blur={5}
+          contrast={20}
+          fill="var(--popover)"
+          shadow="0 1px 2px rgb(0 0 0 / 0.08), 0 6px 18px rgb(0 0 0 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.12)"
+        >
+          <div id={menuId} role="menu" aria-label="Composer actions" aria-hidden={!open}>
+            {actions.map((action, index) => (
+              <Liquid.Item
+                key={action.id}
+                y={open ? -CHIP_STEP * (index + 1) : 0}
+                scale={open ? 1 : 0.35}
+                transition={transition}
+                delay={open ? index * 35 : 0}
+                radius={16}
+                className="absolute right-0 bottom-0"
               >
-                {action.icon}
-                {action.label}
-              </button>
-            </Liquid.Item>
-          ))}
-        </div>
-        <Liquid.Item radius={16} className="absolute right-0 bottom-0">
-          <button
-            ref={triggerRef}
-            type="button"
-            disabled={disabled}
-            aria-label={open ? "Close composer actions" : "Composer actions"}
-            aria-haspopup="menu"
-            aria-expanded={open}
-            aria-controls={menuId}
-            onPointerDown={(event) => event.preventDefault()}
-            onClick={() => {
-              const next = !open;
-              setOpen(next);
-              if (next) requestAnimationFrame(() => itemRefs.current[0]?.focus());
-            }}
-            className="flex size-8 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-          >
-            <PlusGlyph open={open} />
-          </button>
-        </Liquid.Item>
-      </Liquid>
+                <button
+                  ref={(element) => {
+                    itemRefs.current[index] = element;
+                  }}
+                  type="button"
+                  role="menuitem"
+                  tabIndex={open ? 0 : -1}
+                  onPointerDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    close(false);
+                    action.onSelect();
+                  }}
+                  className="flex h-8 max-w-8 items-center gap-1.5 overflow-hidden rounded-full ps-2.5 pe-3 text-xs data-[open=true]:max-w-56 font-medium whitespace-nowrap text-popover-foreground opacity-0 transition-[opacity,max-width] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none data-[open=true]:pointer-events-auto data-[open=true]:opacity-100 [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
+                  data-open={open}
+                >
+                  {action.icon}
+                  {action.label}
+                </button>
+              </Liquid.Item>
+            ))}
+          </div>
+          <Liquid.Item radius={16} className="absolute right-0 bottom-0">
+            <button
+              ref={triggerRef}
+              type="button"
+              disabled={disabled}
+              aria-label={open ? "Close composer actions" : "Composer actions"}
+              aria-haspopup="menu"
+              aria-expanded={open}
+              aria-controls={menuId}
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={() => {
+                const next = !open;
+                setOpen(next);
+                if (next) requestAnimationFrame(() => itemRefs.current[0]?.focus());
+              }}
+              className="pointer-events-auto flex size-8 items-center justify-center rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            >
+              <PlusGlyph open={open} />
+            </button>
+          </Liquid.Item>
+        </Liquid>
+      </div>
     </div>
   );
 }

@@ -53,6 +53,19 @@ describe("VoiceButton", () => {
     vi.unstubAllGlobals();
   });
 
+  it("marks the last failure until the next start and cancels on Escape from anywhere", async () => {
+    await render({ ...voice("idle"), error: "Clide is not running." });
+    expect(container.querySelector(".bg-destructive")).not.toBeNull();
+    expect(container.textContent).toContain("Clide is not running.");
+    const listening = voice("listening");
+    await render(listening);
+    expect(container.querySelector(".bg-destructive")).toBeNull();
+    await act(() => {
+      document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+    expect(listening.cancel).toHaveBeenCalledOnce();
+  });
+
   it("transcribes on release after a hold", async () => {
     const idle = voice("idle");
     await render(idle);
