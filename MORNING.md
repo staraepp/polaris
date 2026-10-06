@@ -2,6 +2,15 @@
 
 Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed. Start with "Look at these first" at the bottom.
 
+## V 4.0.0 (the amendment), tag `v4.0.0`
+
+- **Effort beam, vendored.** `border-beam` 1.4.1 copied into `apps/web/src/polaris/vendor/border-beam/` (MIT, changes listed in its NOTICE.md: a `colors` prop, reduced motion for every size, strict types, blob scaling). Final tier colors: none static, low true blue, medium gold, high rainbow, xhigh teal, max ice. Frozen per turn. Forced screenshots for every tier in `../.playwright-mcp/v4/`.
+- **Quota-low without amber.** The 4 s red flash stays; then a red-coral badge with a dial icon and the percent beside the usage meter.
+- **Orbie**, the assistant's bot (one name constant): thread header, working and thinking rows, the empty thread, each answer, and projects without an icon (instead of "SR"-style initials). Working / default / sleeping, effort color while working, optional hat, glasses, headphones or bow tie. Only visible bots animate.
+- **Home is the dashboard.** Polaris opens on it (Settings → General → "Open Polaris on" switches back). Greeting with Orbie and a live line, widgets you can move, resize, remove, add back, plus your own Note and Links widgets.
+- **Guards.** No plugin API. A stub Clide server for voice work (`scripts/polaris-clide-stub.ts`); AFFiNE docs spike with its license (mixed: MIT, an Enterprise license for the server folders, MPL-2.0 parts); Slack-like chat design note; the liquid "+" menu uses real buttons.
+- **Secrets scan:** clean (section below).
+
 ## Polish cycles
 
 One focused change per cycle, on branch `polish`, each its own commit. Before/after screenshots are in `../.playwright-mcp/polish/` (light and dark).
@@ -21,3 +30,13 @@ One focused change per cycle, on branch `polish`, each its own commit. Before/af
 | 011 | Dashboard Start tile: "Start without a project" (the same scratch flow as the draft page's "or start without a project"), filling the empty middle of the tile; the scratch folder is kept out of the tile's project list. Not clicked during the check (it would create a scratch thread) | `011-start-without-project-{before,after}-{light,dark}.png`                                                        | kept   |
 | 012 | Dashboard activity chart became readable: the header shows the day under the pointer ("$73.84 spent on Sep 28") with that bar highlighted; with focus, arrow keys / Home / End step through days and the reading is announced                                                              | `012-activity-readout-{before,after}-{light,dark}.png`                                                             | kept   |
 | 013 | Per-theme fonts: a family that is not installed (e.g. a typo like "Gergia") is now flagged on the field (aria-invalid red border) with a status line saying the global font is used instead; before, it fell back silently                                                                 | `013-theme-font-missing-{before,after}-{light,dark}.png`                                                           | kept   |
+
+## Secrets scan (V 4.0.0, item 6)
+
+Run on 2026-10-05 over everything the fork added since the upstream snapshot `3e6b450` (79 commits at the time, 411 files, 19,603 added lines; no unmerged local branches), plus commit metadata and the 21 added PNGs.
+
+- **Token patterns: 0 hits.** Checked: OpenAI/Anthropic `sk-…`, GitHub `ghp_/gho_/ghu_/ghs_/ghr_/github_pat_`, AWS `AKIA…`, Slack `xox…`, Google `AIza…`, PEM private keys, `clide_…` tokens, `Bearer <literal>`, 64-hex strings (the shape of the dev pairing token), JWTs, a filled-in Discord Application ID.
+- **Emails: none real.** The only addresses are the commit identity you confirmed (`5rnkq9b5yf@privaterelay.appleid.com`, also named in HANDOFF and blueprint), a test fixture `user:pw@example.com` and an SSH remote `git@github.com`. Your account email appears nowhere, in files or in commit messages. All 79 commits are authored and committed by the relay identity; trailers name only Claude models at `noreply@anthropic.com`.
+- **Dev token:** `.polaris/dev-auth-token` is gitignored (`.gitignore:50`) and not tracked.
+- **Images:** the 21 added PNGs (rebrand icons) carry no text or EXIF chunks.
+- **One thing to know (not a secret):** `HANDOFF.md` "Before you push" has a `cd` line with this Mac's absolute repo path, which shows your macOS username. It is there for you to copy; drop it before publishing the repo if you mind.

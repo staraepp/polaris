@@ -5,6 +5,7 @@ import type { EnvironmentId } from "@t3tools/contracts";
 import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
 import { DEFAULT_KEYBINDINGS } from "@t3tools/shared/keybindings";
 import { commandLabel } from "./KeybindingsSettings.logic";
+import { ORBIE_NAME } from "../../polaris/bots/orbie";
 import {
   validateSettingsScopeSearch,
   type ResolvedSettingsScope,
@@ -638,10 +639,18 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["gooey liquid plus menu attach composer chips effects"],
   },
   {
-    id: "bot-avatars",
-    title: "Bot avatars",
+    id: "launch-page",
+    title: "Open Polaris on",
     to: "/settings/general",
-    searchTerms: ["bot avatar mascot animation status working sleeping provider"],
+    searchTerms: ["launch start startup open home landing dashboard new thread"],
+  },
+  {
+    id: "bot-avatars",
+    title: ORBIE_NAME,
+    to: "/settings/general",
+    searchTerms: [
+      "bot avatar mascot assistant animation status working sleeping accessory hat spectacles headphones",
+    ],
   },
   {
     id: "discord-presence",

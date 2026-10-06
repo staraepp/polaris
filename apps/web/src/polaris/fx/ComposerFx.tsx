@@ -1,38 +1,45 @@
 import { lazy, Suspense, useMemo } from "react";
 
 import { resolveComposerFx, type ComposerFxInput, type ComposerFxState } from "./composerFxState";
+import { readDevFxOverride } from "./devFxOverride";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
 /** What ChatView knows about the turn and the quota; the composer adds the idle ring. */
 export type ComposerFxSignals = Pick<
   ComposerFxInput,
-  "voiceListening" | "quotaFlashing" | "quotaLow" | "running" | "tier"
+  "voiceListening" | "quotaFlashing" | "running" | "tier"
 >;
 
 export const IDLE_COMPOSER_FX_SIGNALS: ComposerFxSignals = {
   voiceListening: false,
   quotaFlashing: false,
-  quotaLow: false,
   running: false,
   tier: "neutral",
 };
 
 export function useComposerFx(signals: ComposerFxSignals, keywordIdle: boolean): ComposerFxState {
   const reducedMotion = usePrefersReducedMotion();
-  return useMemo(
-    () => resolveComposerFx({ ...signals, keywordIdle, reducedMotion }),
-    [signals, keywordIdle, reducedMotion],
-  );
+  // Dev builds only: forced states for screenshots (see devFxOverride.ts).
+  const forced = readDevFxOverride();
+  const forcedKey = forced === null ? "" : JSON.stringify(forced);
+  return useMemo(() => {
+    const override = forcedKey === "" ? {} : (readDevFxOverride() ?? {});
+    return resolveComposerFx({ ...signals, ...override, keywordIdle, reducedMotion });
+  }, [signals, keywordIdle, reducedMotion, forcedKey]);
 }
 
 /**
- * The composer's one animated outline. Two layers: a 2 px masked ring for the
- * beam or the flash, and an unmasked amber halo for the persistent quota
- * accent, so the accent stays visible under a running beam. Styles live in
- * `composerFx.css`, keyed on the data attributes, so a theme can retune them.
+ * The composer's one animated outline. The effort beam is the vendored
+ * `border-beam` (`EffortBeam`); the quota flash and the voice ring are a 2 px
+ * masked ring. Ring styles and the beam palettes live in `composerFx.css`, so a
+ * theme can retune them.
  */
 // `voice-glow` loads the first time voice takes the outline.
 const VoiceGlow = lazy(() => import("../voice/VoiceGlow"));
+// The beam's style generator stays out of the main bundle.
+const EffortBeam = lazy(() =>
+  import("./EffortBeam").then((module) => ({ default: module.EffortBeam })),
+);
 
 export interface ComposerVoiceGlow {
   readonly level: () => number;
@@ -42,15 +49,20 @@ export interface ComposerVoiceGlow {
 
 export function ComposerFx({
   state,
+  theme,
   voice = null,
 }: {
   readonly state: ComposerFxState;
+  readonly theme: "light" | "dark";
   /** Voice owns the outline: the reactive glow joins the ring while motion is on. */
   readonly voice?: ComposerVoiceGlow | null;
 }) {
-  const ring = state.layer === "beam" || state.layer === "flash" || state.layer === "voice";
+  const ring = state.layer === "flash" || state.layer === "voice";
   return (
     <>
+      <Suspense fallback={null}>
+        <EffortBeam tier={state.tier} active={state.layer === "beam"} theme={theme} />
+      </Suspense>
       {voice !== null && state.layer === "voice" && state.animated ? (
         <Suspense fallback={null}>
           <VoiceGlow level={voice.level} processing={voice.processing} theme={voice.theme} />
@@ -63,12 +75,6 @@ export function ComposerFx({
         data-tier={state.tier}
         data-animated={state.animated ? "true" : "false"}
         className="polaris-composer-fx-ring"
-      />
-      <div
-        aria-hidden
-        data-polaris-fx-accent
-        data-active={state.accent ? "true" : "false"}
-        className="polaris-composer-fx-accent"
       />
     </>
   );

@@ -1,42 +1,54 @@
-/* Polaris composer FX: the effort beam, the quota-low flash and the quota accent.
-   One animated layer at a time (see composerFxState.ts). Colors are per tier and
-   overridable from a theme; the beam colors deliberately avoid the brand green. */
-
-@property --polaris-beam-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
+/* Polaris composer FX: the effort beam's palettes, the quota-low flash and badge
+   colors, and the voice ring. One animated layer at a time (see composerFxState.ts).
+   The beam itself is the vendored border-beam (EffortBeam.tsx, beamLooks.ts); its
+   per-tier colors are these tokens, comma-separated hex, light on :root and dark
+   on .dark, so a theme can retune them. high is the library's own rainbow.
+   Beam colors deliberately avoid the brand green and purple. */
 
 :root {
+  /* low: a true blue, breathing */
+  --polaris-beam-low: #1d4ed8, #2563eb, #1e40af, #3b82f6;
+  /* medium: a deeper gold that stays visible on light surfaces */
+  --polaris-beam-medium: #d99a00, #c28a00, #e6a700, #b07d00;
+  /* xhigh: aurora, teal into cyan */
+  --polaris-beam-xhigh: #0d9488, #0891b2, #0f766e, #06b6d4;
+  /* max: icy blue, a steel-ice on light */
+  --polaris-beam-max: #4a90c8, #8fc4ea, #2f6fa3, #b8dcf5;
   --polaris-beam-width: 2px;
-  --polaris-beam-low-a: color-mix(in oklab, var(--foreground) 55%, transparent);
-  --polaris-beam-low-b: color-mix(in oklab, var(--foreground) 20%, transparent);
-  --polaris-beam-medium-a: #3b82f6;
-  --polaris-beam-medium-b: #8b5cf6;
-  --polaris-beam-high-a: #f97316;
-  --polaris-beam-high-b: #ef4444;
-  --polaris-beam-xhigh-a: #fb923c;
-  --polaris-beam-xhigh-b: #e11d48;
-  --polaris-beam-neutral-a: color-mix(in oklab, var(--foreground) 45%, transparent);
-  --polaris-beam-neutral-b: color-mix(in oklab, var(--foreground) 15%, transparent);
-  --polaris-beam-max: conic-gradient(
-    from var(--polaris-beam-angle),
-    #ff6b6b,
-    #f59e0b,
-    #22c55e,
-    #14b8a6,
-    #3b82f6,
-    #ec4899,
-    #ff6b6b
-  );
   --polaris-flash-color: var(--destructive);
-  --polaris-accent-color: var(--warning);
+  /* Quota low, after the flash: a red-coral badge beside the usage meter (never
+     amber, gold or orange: gold is the medium beam). AA on its own 12% surface. */
+  --polaris-quota-low: #b8352b;
+  --polaris-quota-low-surface: color-mix(in srgb, var(--polaris-quota-low) 12%, transparent);
+}
+
+.dark {
+  --polaris-beam-low: #3b82f6, #2563eb, #60a5fa, #1d6bff;
+  /* gold with a warm-white highlight */
+  --polaris-beam-medium: #f5c542, #ffe9a8, #f2b824, #fff3d1;
+  --polaris-beam-xhigh: #2dd4bf, #22d3ee, #5eead4, #67e8f9;
+  /* icy white-blue shimmer */
+  --polaris-beam-max: #f0f9ff, #bae6fd, #e0f2fe, #7dd3fc;
+  --polaris-quota-low: #ff7a6b;
+}
+
+/* border-beam's own opacity hooks: its stock look is tuned for subtle cards (a
+   0.12 stroke on light), too faint for a composer status signal. Light needs the
+   bigger lift, and its dark bloom is kept low so it does not smudge. */
+[data-polaris-effort-beam] {
+  --beam-stroke-opacity: 7;
+  --beam-inner-opacity: 2.6;
+  --beam-bloom-opacity: 0.5;
+}
+
+.dark [data-polaris-effort-beam] {
+  --beam-stroke-opacity: 3;
+  --beam-inner-opacity: 1.6;
+  --beam-bloom-opacity: 2;
 }
 
 /* Doubled selectors outrank upstream's `.ultrathink-frame > *` position rule. */
-.polaris-composer-fx-ring[data-polaris-fx-ring],
-.polaris-composer-fx-accent[data-polaris-fx-accent] {
+.polaris-composer-fx-ring[data-polaris-fx-ring] {
   position: absolute;
   inset: 0;
   z-index: 25;
@@ -59,70 +71,6 @@
   mask-composite: exclude;
 }
 
-.polaris-composer-fx-ring[data-layer="beam"] {
-  opacity: 1;
-  background: conic-gradient(
-    from var(--polaris-beam-angle),
-    transparent 0turn,
-    transparent 0.55turn,
-    var(--polaris-beam-a) 0.72turn,
-    var(--polaris-beam-b) 0.88turn,
-    transparent 1turn
-  );
-  animation: polaris-beam-spin var(--polaris-beam-duration, 2s) linear infinite;
-  animation-play-state: var(--visible-animation-state, running);
-}
-
-.polaris-composer-fx-ring[data-layer="beam"][data-tier="low"] {
-  --polaris-beam-a: var(--polaris-beam-low-a);
-  --polaris-beam-b: var(--polaris-beam-low-b);
-  --polaris-beam-duration: 2.3s;
-  background: linear-gradient(var(--polaris-beam-a), var(--polaris-beam-a));
-  animation-name: polaris-beam-breathe;
-  animation-timing-function: ease-in-out;
-}
-
-.polaris-composer-fx-ring[data-layer="beam"][data-tier="medium"] {
-  --polaris-beam-a: var(--polaris-beam-medium-a);
-  --polaris-beam-b: var(--polaris-beam-medium-b);
-  --polaris-beam-duration: 1.96s;
-}
-
-.polaris-composer-fx-ring[data-layer="beam"][data-tier="high"] {
-  --polaris-beam-a: var(--polaris-beam-high-a);
-  --polaris-beam-b: var(--polaris-beam-high-b);
-  --polaris-beam-duration: 1.5s;
-}
-
-.polaris-composer-fx-ring[data-layer="beam"][data-tier="xhigh"] {
-  --polaris-beam-a: var(--polaris-beam-xhigh-a);
-  --polaris-beam-b: var(--polaris-beam-xhigh-b);
-  --polaris-beam-duration: 1.3s;
-  filter: saturate(1.15);
-}
-
-.polaris-composer-fx-ring[data-layer="beam"][data-tier="max"] {
-  --polaris-beam-duration: 1.1s;
-  background: var(--polaris-beam-max);
-  filter: saturate(1.2);
-}
-
-.polaris-composer-fx-ring[data-layer="beam"][data-tier="neutral"] {
-  --polaris-beam-a: var(--polaris-beam-neutral-a);
-  --polaris-beam-b: var(--polaris-beam-neutral-b);
-  --polaris-beam-duration: 2s;
-}
-
-/* Reduced motion: the same colors, held still. */
-.polaris-composer-fx-ring[data-layer="beam"][data-animated="false"] {
-  animation: none;
-  background: linear-gradient(135deg, var(--polaris-beam-a), var(--polaris-beam-b));
-}
-
-.polaris-composer-fx-ring[data-layer="beam"][data-animated="false"][data-tier="max"] {
-  background: linear-gradient(135deg, #f59e0b, #ec4899, #3b82f6);
-}
-
 .polaris-composer-fx-ring[data-layer="flash"] {
   opacity: 1;
   background: linear-gradient(var(--polaris-flash-color), var(--polaris-flash-color));
@@ -134,19 +82,6 @@
   opacity: 1;
   background: linear-gradient(var(--primary), var(--primary));
   animation: polaris-beam-breathe 1.6s ease-in-out infinite;
-}
-
-.polaris-composer-fx-accent[data-active="true"] {
-  opacity: 1;
-  box-shadow:
-    0 0 0 1.5px var(--polaris-accent-color),
-    0 0 14px -2px var(--polaris-accent-color);
-}
-
-@keyframes polaris-beam-spin {
-  to {
-    --polaris-beam-angle: 360deg;
-  }
 }
 
 @keyframes polaris-beam-breathe {

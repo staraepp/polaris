@@ -22,17 +22,41 @@ import { useUsage } from "~/state/usage";
 
 import { type ActivityDay, ActivityTileBody } from "./ActivityTile";
 import {
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuItem,
+  MenuPopup,
+  MenuTrigger,
+} from "~/components/ui/menu";
+
+import { DashboardGreeting } from "./DashboardGreeting";
+import {
+  addWidget,
+  CUSTOM_WIDGET_KINDS,
   DASHBOARD_LAYOUT_STORAGE_KEY,
-  DASHBOARD_TILE_IDS,
-  DashboardTileOrder,
+  type DashboardLayout,
   type DashboardTileId,
-  isDefaultTileOrder,
-  moveTile,
-  dashboardTileSpan,
-  normalizeTileOrder,
+  type DashboardWidget,
+  type DashboardWidgetKind,
+  dashboardWidgetSpan,
+  defaultDashboardLayout,
+  isBuiltInWidget,
+  isDefaultLayout,
+  LEGACY_DASHBOARD_LAYOUT_STORAGE_KEY,
+  layoutFromLegacyOrder,
+  missingBuiltIns,
+  moveWidget,
+  normalizeLayout,
+  removeWidget,
+  StoredDashboardLayout,
   threadsTileIsTall,
+  toStoredLayout,
+  updateWidget,
 } from "./dashboardLayout";
 import { DashboardTile, type DashboardTileEditing, tileActionClassName } from "./DashboardTile";
+import { LinksWidgetBody } from "./LinksWidget";
+import { NoteWidgetBody } from "./NoteWidget";
 import { selectDashboardThreads } from "./dashboardThreads";
 import { PullRequestsTileBody } from "./PullRequestsTile";
 import { StartTileBody } from "./StartTile";
@@ -43,24 +67,53 @@ import { UsageTileBody } from "./UsageTile";
 const ACTIVITY_DAYS = 30;
 const ACTIVITY_DAYS_NARROW = 14;
 
+const BUILT_IN_LABELS: Record<DashboardTileId, string> = {
+  start: "Start",
+  threads: "Threads",
+  usage: "Today",
+  pullRequests: "Pull requests",
+  activity: "Activity",
+};
+
+const CUSTOM_LABELS = { note: "Note", links: "Links" } as const;
+
+/** The first release kept only an order; a device that has one starts from it. */
+function readLegacyLayout(): DashboardLayout {
+  try {
+    const raw = localStorage.getItem(LEGACY_DASHBOARD_LAYOUT_STORAGE_KEY);
+    const parsed: unknown = raw === null ? null : JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every((item) => typeof item === "string")) {
+      return layoutFromLegacyOrder(parsed);
+    }
+  } catch {
+    // A broken old value just means the default layout.
+  }
+  return defaultDashboardLayout();
+}
+
+const freshWidgetId = (kind: string) =>
+  `${kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
 /**
- * The Polaris dashboard: a fixed bento of what is going on across projects.
- * "Edit layout" lets tiles be dragged (or moved with their arrow buttons)
- * into another order, kept on this device.
+ * The Polaris dashboard, where the app opens: a greeting with Orbie and a
+ * bento of widgets. "Customize" lets widgets be dragged (or moved with their
+ * arrows), resized, removed and added back, plus your own notes and link
+ * lists; all of it is kept on this device.
  */
 export function DashboardPage() {
-  const [storedOrder, setStoredOrder] = useLocalStorage(
+  const [initialLayout] = useState(() => toStoredLayout(readLegacyLayout()));
+  const [storedLayout, setStoredLayout] = useLocalStorage(
     DASHBOARD_LAYOUT_STORAGE_KEY,
-    [...DASHBOARD_TILE_IDS],
-    DashboardTileOrder,
+    initialLayout,
+    StoredDashboardLayout,
   );
-  const order = useMemo(() => normalizeTileOrder(storedOrder), [storedOrder]);
+  const layout = useMemo(() => normalizeLayout(storedLayout), [storedLayout]);
   const [editing, setEditing] = useState(false);
   // Esc leaves edit mode first, then the page.
   useEscapeToGoBack(editing ? () => setEditing(false) : undefined);
   const [drag, setDrag] = useState<{
-    readonly id: DashboardTileId;
-    readonly over: DashboardTileId | null;
+    readonly id: string;
+    readonly over: string | null;
   } | null>(null);
 
   const projects = useProjects();
@@ -102,30 +155,49 @@ export function DashboardPage() {
   const activityWide = !threadsTileIsTall(threadRows);
   const shownActivityDays = activityWide ? activityDays : activityDays.slice(-ACTIVITY_DAYS_NARROW);
 
-  const commit = (next: readonly DashboardTileId[]) => setStoredOrder([...next]);
-  const editingFor = (id: DashboardTileId, index: number): DashboardTileEditing | null =>
+  const commit = (next: DashboardLayout) => setStoredLayout(toStoredLayout(next));
+  const editingFor = (widget: DashboardWidget, index: number): DashboardTileEditing | null =>
     editing
       ? {
           index,
-          count: order.length,
-          dragging: drag?.id === id,
-          dropTarget: drag?.over === id,
-          onMove: (toIndex) => commit(moveTile(order, id, toIndex)),
+          count: layout.widgets.length,
+          dragging: drag?.id === widget.id,
+          dropTarget: drag?.over === widget.id,
+          onMove: (toIndex) => commit(moveWidget(layout, widget.id, toIndex)),
           onDragStart: (event) => {
             event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", id);
-            setDrag({ id, over: null });
+            event.dataTransfer.setData("text/plain", widget.id);
+            setDrag({ id: widget.id, over: null });
           },
-          onDragEnter: () => setDrag((current) => (current ? { ...current, over: id } : current)),
+          onDragEnter: () =>
+            setDrag((current) => (current ? { ...current, over: widget.id } : current)),
           onDragEnd: () => setDrag(null),
           onDrop: () => {
-            if (drag && drag.id !== id) commit(moveTile(order, drag.id, index));
+            if (drag && drag.id !== widget.id) commit(moveWidget(layout, drag.id, index));
             setDrag(null);
           },
+          size: widget.size ?? "auto",
+          onResize: (size) => {
+            const { size: _previous, ...rest } = widget;
+            commit({
+              ...layout,
+              widgets: layout.widgets.map((candidate) =>
+                candidate.id === widget.id
+                  ? size === "auto"
+                    ? rest
+                    : { ...rest, size }
+                  : candidate,
+              ),
+            });
+          },
+          onRemove: () => commit(removeWidget(layout, widget.id)),
+          ...(isBuiltInWidget(widget.kind)
+            ? {}
+            : { onRename: (title: string) => commit(updateWidget(layout, widget.id, { title })) }),
         }
       : null;
 
-  const tiles: Record<
+  const builtIns: Record<
     DashboardTileId,
     { readonly title: string; readonly action?: ReactNode; readonly body: ReactNode }
   > = {
@@ -162,6 +234,38 @@ export function DashboardPage() {
     },
   };
 
+  const widgetContent = (
+    widget: DashboardWidget,
+  ): { readonly title: string; readonly action?: ReactNode; readonly body: ReactNode } => {
+    if (isBuiltInWidget(widget.kind)) return builtIns[widget.kind];
+    const title = widget.title ?? CUSTOM_LABELS[widget.kind];
+    if (widget.kind === "note") {
+      return {
+        title,
+        body: (
+          <NoteWidgetBody
+            title={title}
+            text={widget.text ?? ""}
+            onChange={(text) => commit(updateWidget(layout, widget.id, { text }))}
+          />
+        ),
+      };
+    }
+    return {
+      title,
+      body: (
+        <LinksWidgetBody
+          title={title}
+          links={widget.links ?? []}
+          onChange={(links) => commit(updateWidget(layout, widget.id, { links }))}
+        />
+      ),
+    };
+  };
+
+  const missing = missingBuiltIns(layout);
+  const add = (kind: DashboardWidgetKind) => commit(addWidget(layout, kind, freshWidgetId(kind)));
+
   return (
     <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none isolate">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground">
@@ -171,10 +275,35 @@ export function DashboardPage() {
               <h1>Dashboard</h1>
             </WorkspaceBreadcrumbItem>
           </WorkspaceBreadcrumb>
-          {editing && !isDefaultTileOrder(order) ? (
-            <Button size="sm" variant="ghost" onClick={() => commit(DASHBOARD_TILE_IDS)}>
+          {editing && !isDefaultLayout(layout) ? (
+            <Button size="sm" variant="ghost" onClick={() => commit(defaultDashboardLayout())}>
               Reset layout
             </Button>
+          ) : null}
+          {editing ? (
+            <Menu>
+              <MenuTrigger render={<Button size="sm" variant="outline" />}>Add widget</MenuTrigger>
+              <MenuPopup align="end">
+                {missing.length > 0 ? (
+                  <MenuGroup>
+                    <MenuGroupLabel>Put back</MenuGroupLabel>
+                    {missing.map((kind) => (
+                      <MenuItem key={kind} onClick={() => add(kind)}>
+                        {BUILT_IN_LABELS[kind]}
+                      </MenuItem>
+                    ))}
+                  </MenuGroup>
+                ) : null}
+                <MenuGroup>
+                  <MenuGroupLabel>Your own</MenuGroupLabel>
+                  {CUSTOM_WIDGET_KINDS.map((kind) => (
+                    <MenuItem key={kind} onClick={() => add(kind)}>
+                      {CUSTOM_LABELS[kind]}
+                    </MenuItem>
+                  ))}
+                </MenuGroup>
+              </MenuPopup>
+            </Menu>
           ) : null}
           <Button
             size="sm"
@@ -185,29 +314,39 @@ export function DashboardPage() {
               setDrag(null);
             }}
           >
-            {editing ? "Done" : "Edit layout"}
+            {editing ? "Done" : "Customize"}
           </Button>
         </WorkspacePageHeader>
         <ScrollArea className="min-h-0 flex-1">
           <WorkspacePageContainer width="wide">
             {editing ? (
               <p className="text-xs text-muted-foreground" aria-live="polite">
-                Drag tiles to reorder them, or use each tile's arrows. The order is kept on this
-                device.
+                Drag widgets to reorder them (or use their arrows), pick a size, remove what you do
+                not need and add notes or links of your own. Kept on this device.
+              </p>
+            ) : (
+              <DashboardGreeting active={active} />
+            )}
+            {layout.widgets.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
+                No widgets left. Choose Customize, then Add widget.
               </p>
             ) : null}
             <div className="grid grid-flow-dense grid-cols-1 lg:auto-rows-[minmax(11rem,auto)] gap-4 lg:grid-cols-6">
-              {order.map((id, index) => (
-                <DashboardTile
-                  key={id}
-                  title={tiles[id].title}
-                  action={tiles[id].action}
-                  editing={editingFor(id, index)}
-                  className={dashboardTileSpan(id, threadRows)}
-                >
-                  {tiles[id].body}
-                </DashboardTile>
-              ))}
+              {layout.widgets.map((widget, index) => {
+                const content = widgetContent(widget);
+                return (
+                  <DashboardTile
+                    key={widget.id}
+                    title={content.title}
+                    action={content.action}
+                    editing={editingFor(widget, index)}
+                    className={dashboardWidgetSpan(widget, threadRows)}
+                  >
+                    {content.body}
+                  </DashboardTile>
+                );
+              })}
             </div>
           </WorkspacePageContainer>
         </ScrollArea>

@@ -510,6 +510,8 @@ function EventRouter({
   const serverConfigEvent = useAtomValue(primaryServerConfigEventAtom);
   const serverWelcome = useAtomValue(primaryServerWelcomeAtom);
   const readPathname = useEffectEvent(() => pathname);
+  const opensDashboard = useClientSettings((settings) => settings.launchPage === "dashboard");
+  const readOpensDashboard = useEffectEvent(() => opensDashboard);
   const handledBootstrapThreadIdRef = useRef<string | null>(null);
   const skipInitialBootstrapNavigationRef = useRef(skipInitialBootstrapNavigation);
   const handledConfigEventRef = useRef(serverConfigEvent);
@@ -541,6 +543,11 @@ function EventRouter({
       useUiStateStore.getState().setProjectExpanded(bootstrapProjectKey, true);
 
       if (readPathname() !== "/") {
+        return;
+      }
+      // Polaris: the dashboard launch page wins over the bootstrap thread.
+      if (readOpensDashboard()) {
+        handledBootstrapThreadIdRef.current = payload.bootstrapThreadId;
         return;
       }
       if (skipInitialBootstrapNavigationRef.current) {

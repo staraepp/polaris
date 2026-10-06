@@ -168,6 +168,8 @@ import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
+import { LaunchPageSetting } from "./polaris/LaunchPageSetting";
+import { ORBIE_NAME } from "../../polaris/bots/orbie";
 import { GooeyComposerMenuSetting } from "./polaris/GooeyComposerMenuSetting";
 import { ThemeFontsSetting } from "./polaris/ThemeFontsSetting";
 import { VoiceSettings } from "./polaris/VoiceSettings";
@@ -552,8 +554,9 @@ export function useSettingsRestore(onRestored?: () => void) {
         ? ["Usage meter in the composer"]
         : []),
       ...(settings.botAvatarsEnabled !== DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled ||
+      settings.botAccessory !== DEFAULT_UNIFIED_SETTINGS.botAccessory ||
       Object.keys(settings.botAvatarByDriver).length > 0
-        ? ["Bot avatars"]
+        ? [ORBIE_NAME]
         : []),
       ...(settings.gooeyComposerMenuEnabled !== DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled
         ? ["Liquid composer menu"]
@@ -723,6 +726,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.quotaLowThresholdPercent,
       settings.composerUsageMeterEnabled,
       settings.botAvatarsEnabled,
+      settings.botAccessory,
       settings.botAvatarByDriver,
       settings.gooeyComposerMenuEnabled,
       settings.voiceInputEnabled,
@@ -837,6 +841,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       quotaLowThresholdPercent: DEFAULT_UNIFIED_SETTINGS.quotaLowThresholdPercent,
       composerUsageMeterEnabled: DEFAULT_UNIFIED_SETTINGS.composerUsageMeterEnabled,
       botAvatarsEnabled: DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled,
+      botAccessory: DEFAULT_UNIFIED_SETTINGS.botAccessory,
       botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
       gooeyComposerMenuEnabled: DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled,
       voiceInputEnabled: DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled,
@@ -2511,6 +2516,7 @@ export function GeneralSettingsPanel() {
       </SettingsSection>
 
       <SettingsSection id="behavior" title="Behavior">
+        <LaunchPageSetting />
         <NotificationSettings />
         <SettingsRow
           {...searchableSetting("in-app-notifications")}

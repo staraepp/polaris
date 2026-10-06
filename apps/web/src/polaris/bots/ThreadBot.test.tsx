@@ -4,17 +4,23 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("~/hooks/useSettings", () => ({
-  useClientSettings: (
-    select: (settings: { botAvatarByDriver: Record<string, string> }) => unknown,
-  ) => select({ botAvatarByDriver: { codex: "cat" } }),
+  useClientSettings: (select: (settings: { botAccessory: string }) => unknown) =>
+    select({ botAccessory: "bowTie" }),
 }));
 
 vi.mock("bot-avatars", () => ({
-  BotAvatar: (props: { type: string; state: string; paused: boolean; "aria-label": string }) => (
+  BotAvatar: (props: {
+    type: string;
+    state: string;
+    paused: boolean;
+    bowTie?: boolean;
+    "aria-label"?: string;
+  }) => (
     <canvas
       data-type={props.type}
       data-state={props.state}
       data-paused={props.paused}
+      data-bow-tie={props.bowTie === true}
       aria-label={props["aria-label"]}
     />
   ),
@@ -22,12 +28,17 @@ vi.mock("bot-avatars", () => ({
 
 const { ThreadBot } = await import("./ThreadBot");
 
-describe("ThreadBot", () => {
+describe("ThreadBot (Orbie)", () => {
   let renderer: Root;
   let container: HTMLDivElement;
 
   beforeEach(() => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.stubGlobal("matchMedia", () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
     container = document.createElement("div");
     document.body.append(container);
     renderer = createRoot(container);
@@ -39,16 +50,18 @@ describe("ThreadBot", () => {
     vi.unstubAllGlobals();
   });
 
-  const render = async (running: boolean, lastActivityAt: number | null) => {
+  const render = async (props: {
+    running: boolean;
+    waitingOnUser?: boolean;
+    lastActivityAt?: number | null;
+  }) => {
     await act(async () => {
       renderer.render(
         <ThreadBot
-          driver="codex"
-          providerLabel="Codex"
-          running={running}
-          waitingOnUser={false}
-          lastActivityAt={lastActivityAt}
-          theme="dark"
+          running={props.running}
+          waitingOnUser={props.waitingOnUser ?? false}
+          lastActivityAt={props.lastActivityAt ?? null}
+          tier="medium"
         />,
       );
     });
@@ -59,17 +72,25 @@ describe("ThreadBot", () => {
     return container.querySelector("canvas");
   };
 
-  it("uses the user's pick and works during a run", async () => {
-    const canvas = await render(true, null);
-    expect(canvas?.dataset.type).toBe("cat");
+  it("is the round Orbie, working and animated during a run, wearing the chosen accessory", async () => {
+    const canvas = await render({ running: true });
+    expect(canvas?.dataset.type).toBe("circle");
     expect(canvas?.dataset.state).toBe("working");
-    expect(canvas?.getAttribute("aria-label")).toBe("Codex is working");
+    expect(canvas?.getAttribute("aria-label")).toBe("Orbie is working");
     expect(canvas?.dataset.paused).toBe("false");
+    expect(canvas?.dataset.bowTie).toBe("true");
   });
 
-  it("dozes on a thread that has been quiet for a while", async () => {
-    const canvas = await render(false, Date.now() - 2 * 60 * 60 * 1000);
-    expect(canvas?.dataset.state).toBe("sleeping");
-    expect(canvas?.getAttribute("aria-label")).toBe("Codex is resting");
+  it("sleeps while the thread waits on you or has gone quiet", async () => {
+    expect((await render({ running: false, waitingOnUser: true }))?.dataset.state).toBe("sleeping");
+    const stale = await render({ running: false, lastActivityAt: Date.now() - 2 * 60 * 60 * 1000 });
+    expect(stale?.dataset.state).toBe("sleeping");
+    expect(stale?.getAttribute("aria-label")).toBe("Orbie is resting");
+  });
+
+  it("is awake while idle", async () => {
+    expect((await render({ running: false, lastActivityAt: Date.now() }))?.dataset.state).toBe(
+      "default",
+    );
   });
 });
