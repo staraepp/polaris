@@ -41,6 +41,8 @@ import type { ComposerFxSignals } from "../polaris/fx/ComposerFx";
 import { resolveRunEffort } from "../polaris/fx/effortTier";
 import { useQuotaLowSignal } from "../polaris/quota/useQuotaLowSignal";
 import { usageMeterModelOf } from "../polaris/quota/usageMeterModel";
+import { ThreadBot } from "../polaris/bots/ThreadBot";
+import { getDriverOption } from "./settings/providerDriverMeta";
 import { useThreadUsage } from "../polaris/threadUsage/useThreadUsage";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
 import * as Schema from "effect/Schema";
@@ -3216,6 +3218,7 @@ export default function ChatView(props: ChatViewProps) {
   // Polaris: signals for the composer FX slot (quota-low flash and accent, effort beam).
   const polarisQuotaThreshold = useClientSettings((settings) => settings.quotaLowThresholdPercent);
   const polarisQuota = useQuotaLowSignal(activeProviderStatus, polarisQuotaThreshold);
+  const polarisBotsEnabled = useClientSettings((settings) => settings.botAvatarsEnabled);
   const polarisUsageMeterEnabled = useClientSettings(
     (settings) => settings.composerUsageMeterEnabled,
   );
@@ -3255,6 +3258,12 @@ export default function ChatView(props: ChatViewProps) {
     }),
     [polarisQuota.flashing, polarisQuota.low, phase, polarisRunEffort.tier],
   );
+  const polarisLastActivityAt = useMemo(() => {
+    const stamp =
+      activeLatestRun?.completedAt ?? activeLatestRun?.startedAt ?? activeLatestRun?.requestedAt;
+    const parsed = stamp ? Date.parse(stamp) : Number.NaN;
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [activeLatestRun]);
   const pendingRequests = useMemo(
     () =>
       serverProjection === null
@@ -10916,6 +10925,18 @@ export default function ChatView(props: ChatViewProps) {
           ) : null}
           {!rightPanelControlsAtRoot && !rightPanelControlsInPanel ? panelLayoutControls : null}
           {inlineRightPanelOwnsTitleBar ? threadPanelHeaderControl : null}
+          {polarisBotsEnabled ? (
+            <ThreadBot
+              driver={selectedProvider ?? null}
+              providerLabel={getDriverOption(selectedProvider)?.label ?? "Agent"}
+              running={phase === "running"}
+              waitingOnUser={
+                pendingRequests.approvals.length > 0 || pendingRequests.userInputs.length > 0
+              }
+              lastActivityAt={polarisLastActivityAt}
+              theme={resolvedTheme}
+            />
+          ) : null}
           <ChatHeader
             activeThreadEnvironmentId={activeThread.environmentId}
             activeThreadId={activeThread.id}

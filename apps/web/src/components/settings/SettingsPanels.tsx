@@ -167,6 +167,7 @@ import {
 import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
+import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
 import { ComposerUsageMeterSetting } from "./polaris/ComposerUsageMeterSetting";
 import { QuotaLowThresholdSetting } from "./polaris/QuotaLowThresholdSetting";
 
@@ -547,6 +548,10 @@ export function useSettingsRestore(onRestored?: () => void) {
       ...(settings.composerUsageMeterEnabled !== DEFAULT_UNIFIED_SETTINGS.composerUsageMeterEnabled
         ? ["Usage meter in the composer"]
         : []),
+      ...(settings.botAvatarsEnabled !== DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled ||
+      Object.keys(settings.botAvatarByDriver).length > 0
+        ? ["Bot avatars"]
+        : []),
       ...(settings.diffColorScheme !== DEFAULT_UNIFIED_SETTINGS.diffColorScheme
         ? ["Diff colors"]
         : []),
@@ -707,6 +712,8 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.glassOpacity,
       settings.quotaLowThresholdPercent,
       settings.composerUsageMeterEnabled,
+      settings.botAvatarsEnabled,
+      settings.botAvatarByDriver,
       settings.panelAnimationDurationMs,
       settings.responseStreamingMode,
       settings.persistComposerContextStrip,
@@ -816,6 +823,8 @@ export function useSettingsRestore(onRestored?: () => void) {
       glassOpacity: DEFAULT_UNIFIED_SETTINGS.glassOpacity,
       quotaLowThresholdPercent: DEFAULT_UNIFIED_SETTINGS.quotaLowThresholdPercent,
       composerUsageMeterEnabled: DEFAULT_UNIFIED_SETTINGS.composerUsageMeterEnabled,
+      botAvatarsEnabled: DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled,
+      botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
       panelAnimationDurationMs: DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs,
       sidebarThreadPreviewCount: DEFAULT_UNIFIED_SETTINGS.sidebarThreadPreviewCount,
       sidebarProjectGroupingMode: DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
@@ -3345,6 +3354,9 @@ export function GeneralSettingsPanel() {
       <SettingsSection id="usage" title="Usage">
         <ComposerUsageMeterSetting />
         <QuotaLowThresholdSetting />
+      </SettingsSection>
+      <SettingsSection id="bots" title="Bots">
+        <BotAvatarsSetting />
       </SettingsSection>
       <SettingsSection id="about" title="About">
         {isElectron || HOSTED_APP_CHANNEL ? (

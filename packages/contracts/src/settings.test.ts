@@ -1106,6 +1106,24 @@ describe("branch naming settings", () => {
   );
 });
 
+describe("ClientSettings bot avatars (Polaris)", () => {
+  it("is off by default with no per-provider picks", () => {
+    const settings = decodeClientSettings({});
+    expect(settings.botAvatarsEnabled).toBe(false);
+    expect(settings.botAvatarByDriver).toEqual({});
+  });
+
+  it("accepts known shapes per driver and rejects unknown ones", () => {
+    expect(
+      decodeClientSettings({ botAvatarByDriver: { codex: "droid" } }).botAvatarByDriver,
+    ).toEqual({ codex: "droid" });
+    expect(() => decodeClientSettings({ botAvatarByDriver: { codex: "dragon" } })).toThrow();
+    expect(decodeClientSettingsPatch({ botAvatarsEnabled: true })).toEqual({
+      botAvatarsEnabled: true,
+    });
+  });
+});
+
 describe("ClientSettings composer usage meter (Polaris)", () => {
   it("is on by default and can be turned off", () => {
     expect(decodeClientSettings({}).composerUsageMeterEnabled).toBe(true);

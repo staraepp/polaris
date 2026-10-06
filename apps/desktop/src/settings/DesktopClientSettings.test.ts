@@ -53,6 +53,8 @@ const clientSettings: ClientSettings = {
   glassOpacity: 80,
   quotaLowThresholdPercent: 20,
   composerUsageMeterEnabled: true,
+  botAvatarsEnabled: false,
+  botAvatarByDriver: {},
   onboardingCompletedAt: null,
   panelAnimationDurationMs: 0,
   planModeEnabled: false,

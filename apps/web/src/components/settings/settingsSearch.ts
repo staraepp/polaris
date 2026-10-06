@@ -620,6 +620,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["quota limit usage meter gauge composer five hour weekly remaining"],
   },
   {
+    id: "bot-avatars",
+    title: "Bot avatars",
+    to: "/settings/general",
+    searchTerms: ["bot avatar mascot animation status working sleeping provider"],
+  },
+  {
     id: "discord-presence",
     title: "Discord Rich Presence",
     to: "/settings/integrations",

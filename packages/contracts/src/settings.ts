@@ -102,6 +102,30 @@ export const QuotaLowThresholdPercent = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 50 }),
 );
 export type QuotaLowThresholdPercent = typeof QuotaLowThresholdPercent.Type;
+/** Polaris: body shapes of the `bot-avatars` package, for the per-provider bot. */
+export const BOT_AVATAR_TYPES = [
+  "clover",
+  "flower",
+  "triangle",
+  "square",
+  "blob",
+  "ghost",
+  "circle",
+  "drop",
+  "star",
+  "droid",
+  "mech",
+  "alien",
+  "hexagon",
+  "cat",
+  "cloud",
+  "pill",
+  "pebble",
+  "puddle",
+] as const;
+export const BotAvatarType = Schema.Literals(BOT_AVATAR_TYPES);
+export type BotAvatarType = typeof BotAvatarType.Type;
+
 export const DEFAULT_QUOTA_LOW_THRESHOLD_PERCENT: QuotaLowThresholdPercent = 20;
 
 export const MIN_APPEARANCE_CONTRAST = 50;
@@ -389,6 +413,12 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   /** Polaris: quota gauge next to the send button (amber only when low). */
   composerUsageMeterEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /** Polaris: a small animated bot in the thread header that mirrors the run. */
+  botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  /** Polaris: bot shape per provider driver; missing drivers use the built-in pick. */
+  botAvatarByDriver: Schema.Record(Schema.String, BotAvatarType).pipe(
+    Schema.withDecodingDefault(Effect.succeed({})),
+  ),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
   ),
@@ -1773,6 +1803,8 @@ export const ClientSettingsPatch = Schema.Struct({
   glassOpacity: Schema.optionalKey(GlassOpacity),
   quotaLowThresholdPercent: Schema.optionalKey(QuotaLowThresholdPercent),
   composerUsageMeterEnabled: Schema.optionalKey(Schema.Boolean),
+  botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
+  botAvatarByDriver: Schema.optionalKey(Schema.Record(Schema.String, BotAvatarType)),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),
