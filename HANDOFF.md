@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 017: the dashboard counts as home in the sidebar
+
+- Status: done
+- What changed: `components/sidebar/mainAppLocation.ts`: `/dashboard` is no longer a sidebar utility page. On the dashboard the sidebar's bottom row shows the utility icons instead of Back, and the dashboard is remembered as the main-app location, so Back from Settings, Usage, Skills or Pull Requests returns to it. Before, a fresh launch's Back went to `/`, which redirects to the dashboard: a button that did nothing. New `mainAppLocation.test.ts`.
+- How verified: `vp test run apps/web/src/components/sidebar/mainAppLocation.test.ts` 2 passed; web typecheck and lint clean. Isolated Playwright contexts, light and dark: on the dashboard 0 Back buttons and 1 Settings; Settings → Back landed on `/dashboard`. Shots `.playwright-mcp/polish/017-*`.
+- Risks: Esc on the dashboard still steps back in browser history (unchanged).
+- Next action: next polish cycle (018).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — polish 016: skills read as documents
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: Desktop identity is waiting on Star. Otherwise: resume polish cycles (14 of 25) on a `polish-2` branch, one focused change each, with before/after shots.
 - Open questions: Desktop identity, Slack-like chat reading, planning-suite next step (all under "Needs Star's approval").
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps
-
-- Status: done
-- What changed: A slim "First steps" card under the dashboard greeting continues onboarding after upstream's welcome wizard: add a project, start a thread, open the command palette, make the dashboard yours, pick a look. Every step is detected from real state (projects, threads, the palette opening by any means, a non-default layout, Orbie's accessory / a background / theme fonts); only the next step has a button (Add project, New thread, Open (⌘K), Customize, Appearance). A progress bar with `role="progressbar"`, "Hide" remembers per device (`polaris:first-steps:v1`), and the card leaves on its own when all five are done. Files: `FirstSteps.tsx`, `firstStepsModel.ts` (named to avoid a macOS case clash with the component), wired in `DashboardPage.tsx`.
-- How verified: `vp test run apps/web/src/polaris/dashboard` (order, next step, completion); typecheck and lint clean. Isolated Playwright contexts, light and dark: the card showed 2 of 5 (project and thread done), pressing ⌘K and Esc moved it to 3 of 5. Shots `.playwright-mcp/v4.1/first-steps-*`.
-- Risks: the palette is detected by its portal appearing under `<body>`; if upstream moves the portal, the step would still tick from the button and the palette bus, but not from the keyboard.
-- Next action: V 4.1.0 gate (full fmt, lint, all suites, screenshots, smoke), merge, tag `v4.1.0`.
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds. Rolled up; see `git log`.
