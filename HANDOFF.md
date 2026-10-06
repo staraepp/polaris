@@ -26,7 +26,7 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 - Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
 - Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
 - Rebrand (session 6): the user-facing name is **Polaris** and the accent is emerald green (tokens in `apps/web/src/index.css`). Internal identifiers are still upstream's on purpose; see the session 6 entry for the list. The logo is a placeholder (a "P" with a north star in its counter); the same entry lists every file to swap for final art.
-- Test status on this Mac (session 8, v3 gate): contracts 527, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,928, scripts 337 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. (v2 gate: web 5,920, the rest the same.) v1 gate: contracts 520, shared 1,107, desktop 1,413, web 5,890; server 9 failed (the 8 known + 1 flaky watcher test). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
+- Test status on this Mac (session 8, V 4.1.1 gate): contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,968, scripts 341 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. v3 gate: contracts 527, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,928, scripts 337 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. (v2 gate: web 5,920, the rest the same.) v1 gate: contracts 520, shared 1,107, desktop 1,413, web 5,890; server 9 failed (the 8 known + 1 flaky watcher test). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
 
 ### Effective effort: where it is resolved today
 
@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — V 4.1.1 gate: passed, merged, tagged `v4.1.1`
+
+- Status: done
+- What changed: polish cycles 014 to 023 (branch `polish-2`) merged into `main` with `--no-ff` and tagged `v4.1.1` (patch: polish only, no contract changes, no new dependencies). MORNING has a V 4.1.1 section; polishing stopped at 23 of 25 because the last scans found nothing clearly better.
+- How verified: `vp fmt --check` clean; `vp lint --report-unused-disable-directives` exit 0, 0 errors, 867 warnings (same as V 4.1.0). Suites: contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,968, scripts 341 + the 1 known failure, server 8 known failures / 6,430 passed / 21 skipped. Screenshots light and dark in `.playwright-mcp/v4.1.1/` (dashboard, skills, appearance) and `v4.1.1-sheet.png`. Smoke: `scripts/polaris-dev.mjs start` (pgid 9018, ports 13774/5734) → paired → landed on `/dashboard`, sidebar utility row present, no page errors (`v4.1.1-smoke.png`); stopped with `polaris-dev.mjs stop 9018`.
+- Risks: Same as the cycle entries; nothing new.
+- Next action: wait for Star. The desktop app still needs the identity decision in MORNING "Needs Star's approval".
+- Open questions: Desktop identity (app id, profile, home dir, URL scheme).
+
 ### 2026-10-06 — Claude (session 8) — polish 023: first steps in any order
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (021).
 - Open questions: None.
 
-### 2026-10-06 — Claude (session 8) — polish 019: Threads tile lines up
-
-- Status: done
-- What changed: `polaris/dashboard/ThreadsTile.tsx` and `dashboardThreads.ts`: new pure `needsLeadSlot(entries, hasIcon)`; the rows' leading slot (status dot or chat icon, from cycle 018) renders only when some row in the tile uses it, so plain lists align with their headings. Tests added for `needsLeadSlot`.
-- How verified: `vp test run apps/web/src/polaris/dashboard` 18 passed; web typecheck and lint clean. Isolated Playwright contexts at 400 px: with no icons, the heading text and titles both start at x 45 (light and dark); with one icon, titles move to x 73 for every row. Shots `.playwright-mcp/polish/019-*`.
-- Risks: None known.
-- Next action: next polish cycle (020).
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — polish 019: Threads tile lines up. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 018: chat icons on the dashboard. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 017: the dashboard counts as home in the sidebar. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 016: skills read as documents. Rolled up; see `git log`.

@@ -1,6 +1,18 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.1.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.1.1**. Start with "Look at these first" at the bottom.
+
+## V 4.1.1 (polish 014 to 023), tag `v4.1.1`
+
+Ten polish cycles on branch `polish-2`, merged as a patch. The ones you will notice:
+
+- **The dashboard is home in the sidebar too:** its footer keeps Settings, Dashboard, Skills, Pull Requests and Usage (it used to show a Back button that, on a fresh launch, led straight back to the dashboard).
+- **Skills read as documents:** Preview / Source switch; read-only skills and templates open rendered. On narrow windows the skill studio shows the list or one skill, with an "All skills" button.
+- **First steps in any order:** every open step has its button; the next one stays filled.
+- **Dashboard details:** chat icons lead thread rows (no more grey specks), links show where they go (`github.com`, `/usage`), the note says "Saved", Customize fits narrow windows.
+- **Background setting** shows the full file name, kind and size, and wraps on narrow windows.
+- Rows 014 to 023 in "Polish cycles" have the details and screenshots.
+- Gate: fmt and lint clean (0 errors, 867 warnings, same as V 4.1.0); contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,968, scripts 341 + the 1 known failure, server the 8 known failures / 6,430 passed. Smoke run on a fresh `polaris-dev.mjs` stack landed on the dashboard with no page errors. Contact sheet: `../.playwright-mcp/v4.1.1-sheet.png`.
 
 ## V 4.1.0 ("customizable everything", first slice), tag `v4.1.0`
 
@@ -47,7 +59,7 @@ Branches `v1`, `v2`, `v3` and `polish` merged into `main` with `--no-ff`; tags `
 
 ## Polish cycles
 
-One focused change per cycle, on branch `polish`, each its own commit. Before/after screenshots are in `../.playwright-mcp/polish/` (light and dark).
+One focused change per cycle, on branch `polish` (001 to 013) and `polish-2` (014 to 023, released as V 4.1.1), each its own commit. Before/after screenshots are in `../.playwright-mcp/polish/` (light and dark).
 
 | #   | Change                                                                                                                                                                                                                                                                                                                                                    | Before / after                                                                                                                               | Result |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
@@ -77,7 +89,7 @@ One focused change per cycle, on branch `polish`, each its own commit. Before/af
 
 ## Skipped or held back
 
-- **Polish cycles** resumed after V 4.1.0 (14 of 25 so far); they had paused at 13: after the versions, Star asked for V 4.0.0, then overnight UX work, which took priority. The stop rules were never hit.
+- **Polish cycles** stopped at 23 of 25. They had paused at 13 while V 4.0.0 and V 4.1.0 were built, then resumed. The last scans (thread view, usage, a 1920 px dashboard, Orbie up close) found nothing clearly better to change, so two cycles were left unused instead of spent on taste changes.
 - **Plugin API:** not built (blueprint rule, amendment guard).
 - **Slack-like chat and the planning suite:** design notes only; see "Needs Star's approval".
 - **Packaging Polaris as its own desktop app:** not done; it would collide with your T3 Code install (see "Needs Star's approval"). Electron was not run or packaged.
@@ -151,8 +163,8 @@ Sources: [The New Stack, hands-on review of Conductor](https://thenewstack.io/a-
 
 ## Look at these first
 
-1. **Open Polaris**: it lands on the dashboard now. Check the greeting, First steps and Customize (move, resize, add a Note or Links widget). Settings → General → "Open Polaris on" switches back to the old draft landing.
+1. **Open Polaris**: it lands on the dashboard now. Check the greeting, First steps (any step, any order) and Customize (move, resize, add a Note or Links widget). Settings → General → "Open Polaris on" switches back to the old draft landing.
 2. **Settings → Appearance → Background**: pick a photo or a short video and try Dim and Blur. Look at a thread over it in light and dark; the contrast floor note says when Polaris is dimming more than you asked.
 3. **Effort colors and Orbie**: the composer beam per tier (blue, gold, rainbow, teal, ice) and Orbie in the header, the working row and as the project avatar. Forced screenshots: `../.playwright-mcp/v4/sheet-tiers.png`.
 4. **"Needs Star's approval"** below, especially the desktop identity: a packaged Polaris would still be `com.t3tools.t3code` and share data with T3 Code. Say yes (and pick an app id) and that is one small branch.
-5. **Chat icons**: right-click a thread → Choose icon…
+5. **Chat icons and Skills**: right-click a thread → Choose icon… (it shows on the dashboard too); then open Skills and read one in Preview.
