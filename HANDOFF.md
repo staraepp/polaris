@@ -199,6 +199,15 @@ Recorded in `blueprint.md` "Decisions" (session 8 amendment). Applied at the ite
 | Did any version already build the bots? | **Yes, partly: v2 item 2** (`0469a36b8b`). One bot in the **thread header only**, a different shape per provider (`botConfig.ts`), states from `botState.ts`, behind `botAvatarsEnabled` (default **off**). Not in messages, thinking state or empty state; no accessories; no effort color.                                                                                                                                                                                               |
 | Planned version in `blueprint.md`       | `border-beam`: "Chatbox outline (v2)", marked **Chosen**; the outline was then built early in v1 (session 7, on your defaults) with our own CSS instead. `bot-avatars`: "Bots (v2)". `voice-glow`: "Voice input + Clide API (v2)". `liquid-gooey`: "Gooey (v2)". All four were built or wired in v2 except `border-beam`.                                                                                                                                                                  |
 
+### Vendoring `border-beam`: how hard it was
+
+Moderate, about half a day of agent time, most of it on looks rather than code.
+
+- **Easy:** the source is public, MIT and small (5 files, about 3,200 lines, no dependencies). Copying it and adding `colors` took one small resolver, because every palette read already went through `colorPalettes[variant].border`.
+- **Fiddly:** this repo's stricter compiler (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) rejected about 40 upstream table reads; they now go through small total helpers, no casts or ignores. A case-insensitive file clash (`EffortBeam.tsx` vs `effortBeam.ts` on macOS) broke the lazy import in tests until the config was renamed `beamLooks.ts`.
+- **Real problems found:** (1) the rotate sizes ignored `prefers-reduced-motion` and the pulse sizes vanished under it; both now hold still with their fade kept. (2) Its stock look is tuned for small cards: `md`'s color blobs are fixed-pixel, so they barely covered a 736 px composer, and the light stroke is 0.12 opacity. Fixed by measuring the element (the library already did this for `pulse-outside`) and by raising its own opacity hooks in `composerFx.css`.
+- **Upkeep:** `NOTICE.md` in the vendor folder lists the four changes; an update is "copy `src`, re-apply four marked changes, run the vendor tests".
+
 ## Deviations
 
 Every deviation from `blueprint.md`, with its reason. Newest last.
@@ -208,9 +217,13 @@ Every deviation from `blueprint.md`, with its reason. Newest last.
 | Session 7 (v1) | The chosen `border-beam` was replaced by a homemade CSS beam without being logged as a deviation.                                | `border-beam` had only fixed palettes and no custom colors, and the red flash / amber accent needed exact colors; vendoring was not considered. | **Fixed in v4**: `border-beam` vendored with a `colors` prop (this amendment). |
 | Session 8 (v2) | `liquid-gooey` (filed "later version" in the amendment) was already built in v2 behind `gooeyComposerMenuEnabled` (default off). | It was in the v2 plan; the chips are real `<button>` elements in a `role="menu"`.                                                               | Kept as is; nothing to undo.                                                   |
 
-## Version plan: v4 (the amendment)
+## Version numbers (Star, 2026-10-05)
 
-On branch `v4` from `main`, same gate as v1–v3, merged `--no-ff` and tagged `v4-done`.
+Polaris versions are **V MAJOR.MINOR.PATCH**. An enormous change bumps MAJOR; features bump MINOR; fixes and polish bump PATCH. The amendment is **V 4.0.0** (v1–v3 are V 1.0.0, V 2.0.0 and V 3.0.0). Git tags from now on are `vMAJOR.MINOR.PATCH`; the older `vN-done` tags stay as they are (nothing is renamed or deleted) and get `v1.0.0`, `v2.0.0`, `v3.0.0` tags on the same commits. The app's own version string (Settings, the updater) is **not** changed: the update feed still points at upstream, so that waits for you (see "Questions for Star").
+
+## Version plan: V 4.0.0 (the amendment)
+
+On branch `v4` from `main`, same gate as v1–v3, merged `--no-ff` and tagged `v4.0.0` (plus `v4-done` for continuity).
 
 1. Vendor `border-beam` with a `colors` prop and reduced-motion handling; replace the homemade beam; final effort colors and `--polaris-beam-*` tokens; forced-state screenshots for every tier.
 2. Quota-low: drop amber; red-coral badge with an icon beside the usage meter.
@@ -249,11 +262,22 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Questions for Star
 
+- **App version string.** Polaris versions are now V MAJOR.MINOR.PATCH (V 4.0.0 for the amendment), used for tags and notes. The desktop/web `package.json` versions are still upstream's, because the auto-updater compares them against upstream's release feed (`pingdotgg/t3code`). Switching them to 4.0.0 belongs with pointing the feed at your own releases.
+
 - **Usage meter default.** The composer usage meter ships on by default (quiet until a window is low). Upstream keeps its context indicator off by default; if you want the same, set `composerUsageMeterEnabled` to default `false` in `packages/contracts/src/settings.ts`.
 - **Discord Application ID.** Register an application at the Discord developer portal, paste its ID into `POLARIS_DISCORD_APPLICATION_ID` in `apps/desktop/src/polaris/discord/discordConfig.ts` (or export the env var of the same name for a dev run), and upload an asset named `polaris` for the large image. Until then the switch is disabled with an explanation.
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — V 4.0.0 item 1: vendored `border-beam` and the final effort colors
+
+- Status: done
+- What changed: `border-beam` 1.4.1 (MIT) vendored into `apps/web/src/polaris/vendor/border-beam/` with `LICENSE` and `NOTICE.md`; four marked changes: a `colors` prop (`resolvePalette`), reduced-motion handling for every size, stricter types, `md` blobs scaled to the element. The homemade CSS beam is gone: `EffortBeam.tsx` (lazy) draws the beam from `ComposerFx`, per-tier props in `beamLooks.ts`, colors in the `--polaris-beam-<tier>` tokens in `composerFx.css` (light on `:root`, dark on `.dark`) plus raised opacity hooks. Final colors: low true blue breathing, medium gold, high rainbow, xhigh aurora teal, max icy white-blue, neutral grey. The flash and voice ring keep the small CSS ring; the resolver is unchanged. Dev-only forced states: `localStorage["polaris:fx-force"]` (`devFxOverride.ts`). The tier stays frozen per turn (derived on read from the run's `modelSelection` plus its message's keyword, unchanged). blueprint tier table, Composer FX section and `AGENTS.md` updated.
+- How verified: `vp test run apps/web/src/polaris/vendor apps/web/src/polaris/fx` (26 passed); web typecheck clean; `vp lint` 0 errors. Forced-state screenshots for every tier, light and dark, plus reduced motion: `../.playwright-mcp/v4/tier-*.png`, `sheet-tiers.png`, `sheet-reduced-motion.png`.
+- Risks: screenshots catch one phase of a moving beam. Gold on light relies on the raised stroke hook. xhigh's teal sits near the brand hue; it is pushed toward cyan. Someone was running a real turn in the dev app's main thread during the shots (not started by me); later shots use a draft thread.
+- Next action: V 4.0.0 item 2, quota-low without amber (red-coral badge beside the usage meter).
+- Open questions: none new.
 
 ### 2026-10-05 — Claude (session 8) — v3 gate: passed, merged, tagged `v3-done`
 
@@ -283,14 +307,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Screenshots: `.playwright-mcp/v2-01-usage-meter-{setting,popover}-*`, `v2-02-bot-avatar-header-*`, `v2-02-composer-meter-voice-*`, `v2-03-effects-settings-*`, `v2-03-liquid-menu-open-*`, `v2-04-voice-{settings,listening,error}-*`, `v2-05-theme-fonts-*` (light and dark each).
 - Not exercised: a real Clide, a real microphone, the packaged app's mic prompt, a bot in the working state (no real agent turn).
 
-### 2026-10-05 — Claude (session 8) — v2 item 5: per-theme fonts
-
-- Done: Settings → Appearance → Typography has a "Fonts for <theme>" row. It edits the interface and monospace families for the theme painting the window right now (the light/dark half in automatic mode; the bare modes count as "the default theme"). `FontAppearanceSync` lays that theme's pair over the global fonts; empty fields fall through to the global choice, and a family the machine lacks falls back through the normal stack. Reset clears the theme's pair; Restore defaults clears all of them. `CommitInput` (save on blur/Enter) moved out of `VoiceSettings.tsx` so both rows share it. Also committed pnpm's `minimumReleaseAgeExclude` line for `voice-glow@0.3.0`, missed by the voice commit.
-- Files: `packages/contracts/src/settings.ts`, `apps/web/src/polaris/themeFonts/*`, `apps/web/src/routes/__root.tsx`, `components/settings/polaris/{ThemeFontsSetting,CommitInput}.tsx`, `SettingsPanels.tsx`, `settingsSearch.ts`.
-- Tests: 1 contract, 3 helper. Next: the v2 gate.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v2 item 5: per-theme fonts. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 4: voice input. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 3: liquid "+" composer menu. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 2: bot avatars. Rolled up; see `git log`.

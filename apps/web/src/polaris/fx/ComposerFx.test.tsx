@@ -11,7 +11,7 @@ import {
 } from "./ComposerFx";
 
 function Harness({ signals, keywordIdle }: { signals: ComposerFxSignals; keywordIdle: boolean }) {
-  return <ComposerFx state={useComposerFx(signals, keywordIdle)} />;
+  return <ComposerFx state={useComposerFx(signals, keywordIdle)} theme="dark" />;
 }
 
 describe("ComposerFx", () => {
@@ -22,9 +22,13 @@ describe("ComposerFx", () => {
     await act(async () => {
       renderer.render(<Harness signals={signals} keywordIdle={keywordIdle} />);
     });
+    // The beam is lazy: let its chunk resolve and render.
+    await act(() => import("./EffortBeam").then(() => undefined));
   };
   const ring = () => container.querySelector<HTMLElement>("[data-polaris-fx-ring]")!;
   const accent = () => container.querySelector<HTMLElement>("[data-polaris-fx-accent]")!;
+  const beam = () => container.querySelector<HTMLElement>("[data-polaris-effort-beam]")!;
+  const beamOn = () => beam().hasAttribute("data-active");
 
   beforeEach(() => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -49,14 +53,16 @@ describe("ComposerFx", () => {
     await render(IDLE_COMPOSER_FX_SIGNALS);
     expect(ring().dataset.layer).toBe("none");
     expect(accent().dataset.active).toBe("false");
+    expect(beamOn()).toBe(false);
     expect(ring().getAttribute("aria-hidden")).toBe("true");
+    expect(beam().getAttribute("aria-hidden")).toBe("true");
   });
 
-  it("spins the beam at the turn's tier while running", async () => {
+  it("runs the border-beam at the turn's tier while running", async () => {
     await render({ ...IDLE_COMPOSER_FX_SIGNALS, running: true, tier: "high" });
-    expect(ring().dataset.layer).toBe("beam");
-    expect(ring().dataset.tier).toBe("high");
-    expect(ring().dataset.animated).toBe("true");
+    expect(beamOn()).toBe(true);
+    expect(beam().dataset.tier).toBe("high");
+    expect(ring().dataset.layer).toBe("none");
   });
 
   it("lets the flash cover the beam and keeps the accent underneath", async () => {
@@ -68,9 +74,11 @@ describe("ComposerFx", () => {
       quotaLow: true,
     });
     expect(ring().dataset.layer).toBe("flash");
+    expect(beamOn()).toBe(false);
     expect(accent().dataset.active).toBe("true");
     await render({ ...IDLE_COMPOSER_FX_SIGNALS, running: true, tier: "max", quotaLow: true });
-    expect(ring().dataset.layer).toBe("beam");
+    expect(ring().dataset.layer).toBe("none");
+    expect(beamOn()).toBe(true);
     expect(accent().dataset.active).toBe("true");
   });
 
@@ -84,7 +92,9 @@ describe("ComposerFx", () => {
       tier: "medium",
       quotaFlashing: true,
     });
-    expect(ring().dataset.layer).toBe("beam");
-    expect(ring().dataset.animated).toBe("false");
+    // No flash under reduced motion; the beam shows and its CSS holds it still.
+    expect(ring().dataset.layer).toBe("none");
+    expect(beamOn()).toBe(true);
+    expect(beam().dataset.tier).toBe("medium");
   });
 });

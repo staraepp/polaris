@@ -6857,6 +6857,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
         >
           <ComposerFx
             state={polarisFxState}
+            theme={resolvedTheme}
             voice={
               polarisVoice.glow === null
                 ? null
