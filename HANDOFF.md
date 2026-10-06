@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows
+
+- Status: done
+- What changed: `components/settings/polaris/BackgroundSetting.tsx`: the stored-file row wraps (`flex-wrap`), the name shows in full on up to two lines, a second line gives kind and size (new exported `formatBytes`), and Replace/Remove sit at the end and drop below the name when there is no room. New `BackgroundSetting.test.ts` covers `formatBytes`.
+- How verified: `vp test run apps/web/src/components/settings/polaris/BackgroundSetting.test.ts` passed; web typecheck and lint clean. Isolated Playwright contexts at 400 px and 1280 px, light and dark, with a 136 KB JPEG: name in full and "Image · 136 KB" at all four. Shots `.playwright-mcp/polish/015-*`.
+- Risks: None known; a very long name without spaces breaks mid-word (`break-all`) by design.
+- Next action: next polish cycle (016).
+- Open questions: None.
+
 ### 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.1.0 item 3 commit (First steps), then the V 4.1.0 gate.
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons
-
-- Status: done
-- What changed: Right-click a thread in the sidebar → "Choose icon…" opens upstream's project icon picker (Lucide icon in a project color, emoji, or monogram), titled for threads; "Remove icon" appears once one is set. The icon shows before the thread's title in the sidebar row. Kept per device in localStorage `polaris:thread-icons:v1`, keyed by `scopedThreadKey` (`apps/web/src/polaris/threadIcons/`). Upstream touches, all small: `ProjectIconPickerDialog` gained optional `title`/`description` props (defaults unchanged); `threadActionMenu.logic.ts` gained `set-icon`/`clear-icon`, shown only when the sidebar passes the new optional `threadIcon` state (upstream's order tests untouched); `contextMenuFallback.ts` gained two Lucide paths (`shapes`, `circle-off`); `Sidebar.tsx` holds the map, the menu cases, the row prop and the dialog.
-- How verified: `vp test run apps/web/src/components apps/web/src/polaris` passed (new: menu order with and without an icon, set/replace/clear and decoding of stored icons); typecheck exit 0; lint on `Sidebar.tsx` has exactly `main`'s warnings (compared rule by rule), the other touched files none. Isolated Playwright contexts, light and dark: right-click → Choose icon… → rocket, teal → Save icon; stored entry present, the row shows the icon, the menu then offers Remove icon. Shots `.playwright-mcp/v4.1/thread-icon-*`.
-- Risks: icons do not follow a thread to another device (by design, like the rest of the per-device UI state). The native Electron context menu shows no icons for these items (it draws icons only for destructive ones, as before).
-- Next action: V 4.1.0 item 3, First steps on the dashboard, and item 4, Review next in the greeting.
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 gate: passed, merged, tagged `v4.0.0`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan. Rolled up; see `git log`.
