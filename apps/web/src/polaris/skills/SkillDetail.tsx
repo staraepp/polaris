@@ -99,12 +99,16 @@ function DetailHeader({
 }) {
   return (
     <header className="flex flex-wrap items-start gap-3">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {/* The title keeps at least 14rem; below that the actions wrap under
+          it instead of squeezing the name to a few letters. */}
+      <div className="flex min-w-0 flex-1 basis-56 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+          <h2 className="min-w-0 text-lg font-semibold tracking-tight break-words text-foreground">
+            {title}
+          </h2>
           {badges}
         </div>
-        <p className="truncate font-mono text-xs text-muted-foreground">{subtitle}</p>
+        <p className="line-clamp-2 font-mono text-xs break-all text-muted-foreground">{subtitle}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">{actions}</div>
     </header>

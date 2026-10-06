@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 022: skills fit narrow windows
+
+- Status: done
+- What changed: `polaris/skills/SkillStudioPage.tsx`: below `md`, the list hides once a skill is explicitly picked and the detail hides while none is, each taking full height; an "All skills" ghost button (`md:hidden`) clears the pick. `SkillDetail.tsx` header: the title block has `basis-56` so actions wrap under it, the title wraps instead of truncating, and the path is `line-clamp-2 break-all`.
+- How verified: `vp test run apps/web/src/polaris/skills` 4 passed; web typecheck and lint clean (a native `title` on the path was refused by `no-native-title-tooltip` and dropped). Isolated Playwright contexts at 400 px, light and dark: list only → pick → detail only with the back button → back → list only; at 1280 px both panes show and the back button is hidden. Shots `.playwright-mcp/polish/022-*`.
+- Risks: On narrow windows a provider or project switch returns to the list (it already cleared the pick).
+- Next action: next polish cycle (023).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — polish 021: the note says it saved
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (019).
 - Open questions: None.
 
-### 2026-10-06 — Claude (session 8) — polish 017: the dashboard counts as home in the sidebar
-
-- Status: done
-- What changed: `components/sidebar/mainAppLocation.ts`: `/dashboard` is no longer a sidebar utility page. On the dashboard the sidebar's bottom row shows the utility icons instead of Back, and the dashboard is remembered as the main-app location, so Back from Settings, Usage, Skills or Pull Requests returns to it. Before, a fresh launch's Back went to `/`, which redirects to the dashboard: a button that did nothing. New `mainAppLocation.test.ts`.
-- How verified: `vp test run apps/web/src/components/sidebar/mainAppLocation.test.ts` 2 passed; web typecheck and lint clean. Isolated Playwright contexts, light and dark: on the dashboard 0 Back buttons and 1 Settings; Settings → Back landed on `/dashboard`. Shots `.playwright-mcp/polish/017-*`.
-- Risks: Esc on the dashboard still steps back in browser history (unchanged).
-- Next action: next polish cycle (018).
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — polish 017: the dashboard counts as home in the sidebar. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 016: skills read as documents. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows. Rolled up; see `git log`.
