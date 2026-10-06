@@ -7,7 +7,7 @@ Star, this is the summary of the overnight run. Everything is local on this Mac:
 - **Why your T3 threads never came over:** you set Polaris up on 4.3.0, before the T3 Code import existed, so setup never offered it. On 4.7.0 the T3 import sits on the second tab of Tools → Import, and the first tab ("Claude Code & Codex") imports something else: the CLIs' session files. Your T3 Code data is fine and was never touched (64 threads in 14 projects).
 - **Now you can't miss it:** the dashboard says "64 T3 Code threads aren't in Polaris yet" with a **Bring them over** button, the Claude Code & Codex tab shows the same hint, and the T3 Code tab shows "64 new". One click on Import copies them all (tested with your real T3 Code data in a throwaway copy of Polaris: all 64 came over and showed up in the sidebar).
 - **The sidebar art is in the desktop app now.** The green blueprint behind "Polaris" used to be upstream's marker for dev builds only; it now shows in the installed app too. Settings → Appearance → Sidebar artwork turns it off.
-- Gate: see below.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged). Contracts 538, shared 1,120, client-runtime 1,998, desktop 1,420 (+44 skipped), web 5,996, scripts 343 + the 1 known failure, server the 8 known failures / 6,432 passed. One web test file (`MessagesTimeline.test.tsx`) sometimes fails to load in the full run and passes on a rerun; it is flaky, not broken by this release.
 
 ## V 4.7.0 (private updates for your friends), tag `v4.7.0`
 
