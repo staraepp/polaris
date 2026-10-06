@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
 
 import { resolveComposerFx, type ComposerFxInput, type ComposerFxState } from "./composerFxState";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
@@ -31,10 +31,31 @@ export function useComposerFx(signals: ComposerFxSignals, keywordIdle: boolean):
  * accent, so the accent stays visible under a running beam. Styles live in
  * `composerFx.css`, keyed on the data attributes, so a theme can retune them.
  */
-export function ComposerFx({ state }: { readonly state: ComposerFxState }) {
+// `voice-glow` loads the first time voice takes the outline.
+const VoiceGlow = lazy(() => import("../voice/VoiceGlow"));
+
+export interface ComposerVoiceGlow {
+  readonly level: () => number;
+  readonly processing: boolean;
+  readonly theme: "light" | "dark";
+}
+
+export function ComposerFx({
+  state,
+  voice = null,
+}: {
+  readonly state: ComposerFxState;
+  /** Voice owns the outline: the reactive glow joins the ring while motion is on. */
+  readonly voice?: ComposerVoiceGlow | null;
+}) {
   const ring = state.layer === "beam" || state.layer === "flash" || state.layer === "voice";
   return (
     <>
+      {voice !== null && state.layer === "voice" && state.animated ? (
+        <Suspense fallback={null}>
+          <VoiceGlow level={voice.level} processing={voice.processing} theme={voice.theme} />
+        </Suspense>
+      ) : null}
       <div
         aria-hidden
         data-polaris-fx-ring

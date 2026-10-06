@@ -90,7 +90,7 @@ function harness(options?: { listening?: ReadonlySet<string> }) {
 
 describe("DiscordPresenceController", () => {
   it("handshakes on the first listening socket and publishes the activity after READY", async () => {
-    const { controller, attempts, connections, scheduler } = harness();
+    const { controller, attempts, connections } = harness();
     controller.start(1_700_000_000_000);
     await flush();
     assert.deepStrictEqual(attempts, ["/tmp/discord-ipc-0", "/tmp/discord-ipc-1"]);

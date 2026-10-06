@@ -1106,6 +1106,28 @@ describe("branch naming settings", () => {
   );
 });
 
+describe("ClientSettings voice input (Polaris)", () => {
+  it("is off and unconfigured by default", () => {
+    expect(decodeClientSettings({})).toMatchObject({
+      voiceInputEnabled: false,
+      voiceBackend: "clide",
+      voiceClidePort: 0,
+      voiceOpenAiBaseUrl: "",
+      voiceOpenAiModel: "",
+      voiceLanguage: "",
+    });
+  });
+
+  it("validates the backend and the port", () => {
+    expect(decodeClientSettings({ voiceBackend: "openaiCompatible" }).voiceBackend).toBe(
+      "openaiCompatible",
+    );
+    expect(() => decodeClientSettings({ voiceBackend: "cloud" })).toThrow();
+    expect(() => decodeClientSettingsPatch({ voiceClidePort: 70_000 })).toThrow();
+    expect(decodeClientSettingsPatch({ voiceClidePort: 4567 })).toEqual({ voiceClidePort: 4567 });
+  });
+});
+
 describe("ClientSettings gooey composer menu (Polaris)", () => {
   it("is off by default", () => {
     expect(decodeClientSettings({}).gooeyComposerMenuEnabled).toBe(false);

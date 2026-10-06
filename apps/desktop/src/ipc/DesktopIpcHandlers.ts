@@ -79,6 +79,12 @@ import {
   getDiscordPresenceState,
   setDiscordPresenceEnabled,
 } from "./methods/polarisDiscordPresence.ts";
+import {
+  getVoiceSecrets,
+  setVoiceSecret,
+  transcribeVoice,
+  watchClideEvents,
+} from "./methods/polarisVoice.ts";
 
 export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers")(function* () {
   const ipc = yield* DesktopIpc.DesktopIpc;
@@ -102,6 +108,10 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   yield* ipc.handle(setClientSettings);
   yield* ipc.handle(getDiscordPresenceState);
   yield* ipc.handle(setDiscordPresenceEnabled);
+  yield* ipc.handle(getVoiceSecrets);
+  yield* ipc.handle(setVoiceSecret);
+  yield* ipc.handle(transcribeVoice);
+  yield* ipc.handle(watchClideEvents);
   yield* ipc.handle(getConnectionCatalog);
   yield* ipc.handle(getSnapShotState);
   yield* ipc.handle(setupSnapShot);

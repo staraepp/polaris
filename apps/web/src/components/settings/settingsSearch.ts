@@ -620,6 +620,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["quota limit usage meter gauge composer five hour weekly remaining"],
   },
   {
+    id: "voice-input",
+    title: "Voice input",
+    to: "/settings/general",
+    searchTerms: ["voice dictation microphone push to talk clide whisper transcription speech"],
+  },
+  {
     id: "gooey-composer-menu",
     title: "Liquid composer menu",
     to: "/settings/general",

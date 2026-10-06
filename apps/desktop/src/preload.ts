@@ -430,4 +430,24 @@ contextBridge.exposeInMainWorld("polarisBridge", {
     setEnabled: (enabled) =>
       ipcRenderer.invoke(IpcChannels.POLARIS_DISCORD_PRESENCE_SET_ENABLED_CHANNEL, enabled),
   },
+  voice: {
+    getSecrets: () => ipcRenderer.invoke(IpcChannels.POLARIS_VOICE_GET_SECRETS_CHANNEL),
+    setSecret: (kind, value) =>
+      ipcRenderer.invoke(IpcChannels.POLARIS_VOICE_SET_SECRET_CHANNEL, { kind, value }),
+    clearSecret: (kind) =>
+      ipcRenderer.invoke(IpcChannels.POLARIS_VOICE_SET_SECRET_CHANNEL, { kind, value: "" }),
+    transcribe: (request) =>
+      ipcRenderer.invoke(IpcChannels.POLARIS_VOICE_TRANSCRIBE_CHANNEL, request),
+    watchClide: (port) => ipcRenderer.invoke(IpcChannels.POLARIS_VOICE_WATCH_CLIDE_CHANNEL, port),
+    onClideEvent: (listener) => {
+      const wrappedListener = (_event: Electron.IpcRendererEvent, event: unknown) => {
+        if (typeof event !== "object" || event === null || !("type" in event)) return;
+        listener(event as Parameters<typeof listener>[0]);
+      };
+      ipcRenderer.on(IpcChannels.POLARIS_VOICE_CLIDE_EVENT_CHANNEL, wrappedListener);
+      return () => {
+        ipcRenderer.removeListener(IpcChannels.POLARIS_VOICE_CLIDE_EVENT_CHANNEL, wrappedListener);
+      };
+    },
+  },
 } satisfies PolarisBridge);

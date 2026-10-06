@@ -154,6 +154,8 @@ import {
 import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
 import { ComposerUsageMeter } from "~/polaris/quota/ComposerUsageMeter";
 import { composerPlusActions, LazyGooeyPlusMenu } from "~/polaris/gooey/gooeyPlusActions";
+import { useVoiceInput } from "~/polaris/voice/useVoiceInput";
+import { VoiceButton } from "~/polaris/voice/VoiceButton";
 import type { UsageMeterModel } from "~/polaris/quota/usageMeterModel";
 import {
   ComposerBannerStack,
@@ -2325,8 +2327,35 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
   );
 
   const selectedPromptEffort = composerProviderState.promptEffort;
+  // Polaris voice: the transcript lands at the cursor once the editor helpers exist below.
+  const polarisVoiceInsertRef = useRef<(text: string) => void>(() => {});
+  const polarisVoiceConfig = useMemo(
+    () => ({
+      backend: settings.voiceBackend,
+      clidePort: settings.voiceClidePort,
+      baseUrl: settings.voiceOpenAiBaseUrl,
+      model: settings.voiceOpenAiModel,
+      language: settings.voiceLanguage,
+    }),
+    [
+      settings.voiceBackend,
+      settings.voiceClidePort,
+      settings.voiceOpenAiBaseUrl,
+      settings.voiceOpenAiModel,
+      settings.voiceLanguage,
+    ],
+  );
+  const polarisVoice = useVoiceInput({
+    enabled: settings.voiceInputEnabled,
+    config: polarisVoiceConfig,
+    onTranscript: (text) => polarisVoiceInsertRef.current(text),
+  });
+  const polarisFxWithVoice = useMemo(
+    () => ({ ...polarisFx, voiceListening: polarisVoice.glow !== null }),
+    [polarisFx, polarisVoice.glow],
+  );
   const polarisFxState = useComposerFx(
-    polarisFx,
+    polarisFxWithVoice,
     composerProviderState.composerFrameClassName !== undefined,
   );
   // Upstream's keyword ring is the idle indicator only; any Polaris layer replaces it.
@@ -6128,6 +6157,11 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
       importContextFragment,
     ],
   );
+  useEffect(() => {
+    polarisVoiceInsertRef.current = (text) => {
+      insertComposerText(text, "cursor", { ensureLeadingBoundary: true });
+    };
+  }, [insertComposerText]);
 
   const insertComposerTextAtEnd = useCallback<ChatComposerHandle["insertTextAtEnd"]>(
     (text, options) => {
@@ -6821,7 +6855,18 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           }
           className={composerFrameClassName}
         >
-          <ComposerFx state={polarisFxState} />
+          <ComposerFx
+            state={polarisFxState}
+            voice={
+              polarisVoice.glow === null
+                ? null
+                : {
+                    level: polarisVoice.level,
+                    processing: polarisVoice.glow === "processing",
+                    theme: resolvedTheme,
+                  }
+            }
+          />
           <div
             ref={composerSurfaceRef}
             data-chat-composer-surface="true"
@@ -7501,6 +7546,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                   }
                   className="flex shrink-0 flex-nowrap items-center justify-end gap-2"
                 >
+                  {settings.voiceInputEnabled ? <VoiceButton voice={polarisVoice} /> : null}
                   {showComposerAttachAction ? (
                     <>
                       <input

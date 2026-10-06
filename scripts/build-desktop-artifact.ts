@@ -2722,6 +2722,8 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
       extendInfo: {
         NSScreenCaptureUsageDescription:
           "Polaris captures the active window when you use the window capture shortcut.",
+        NSMicrophoneUsageDescription:
+          "Polaris listens only while you use voice input, to transcribe what you say.",
       },
       protocols: [
         {

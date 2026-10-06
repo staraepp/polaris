@@ -129,7 +129,7 @@
   animation: polaris-flash-pulse 4s ease-in-out 1 forwards;
 }
 
-/* Reserved for the voice provider: a calm breathing ring in the brand hue. */
+/* Voice input: a calm breathing ring in the brand hue, under the voice-glow. */
 .polaris-composer-fx-ring[data-layer="voice"] {
   opacity: 1;
   background: linear-gradient(var(--primary), var(--primary));
