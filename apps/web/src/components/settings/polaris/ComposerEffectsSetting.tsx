@@ -6,19 +6,21 @@ import { ComposerFx } from "~/polaris/fx/ComposerFx";
 import type { ComposerFxState } from "~/polaris/fx/composerFxState";
 import type { EffortTier } from "~/polaris/fx/effortTier";
 import { usePrefersReducedMotion } from "~/polaris/fx/usePrefersReducedMotion";
+import { cn } from "~/lib/utils";
 
 import { Switch } from "../../ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "../../ui/toggle-group";
 import { SettingsRow } from "../settingsLayout";
 import { searchableSetting } from "../settingsSearch";
 
-/** What the preview can show: a running turn per effort tier, the idle beam, or voice. */
+/** What the preview can show: a running turn per effort tier, the keyword flames, the idle beam, or voice. */
 const PREVIEWS = [
   { id: "low", label: "Low" },
   { id: "medium", label: "Medium" },
   { id: "high", label: "High" },
   { id: "xhigh", label: "Extra high" },
   { id: "max", label: "Max" },
+  { id: "flames", label: "Flames" },
   { id: "idle", label: "Idle" },
   { id: "voice", label: "Voice" },
 ] as const;
@@ -36,6 +38,7 @@ function demoVoiceLevel(): number {
 function previewState(preview: PreviewId, animated: boolean): ComposerFxState {
   if (preview === "voice") return { layer: "voice", tier: "neutral", animated };
   if (preview === "idle") return { layer: animated ? "idle" : "none", tier: "neutral", animated };
+  if (preview === "flames") return { layer: "flames", tier: "max", animated };
   const tier: EffortTier = preview;
   return { layer: "beam", tier, animated };
 }
@@ -60,9 +63,10 @@ export function ComposerEffectsSetting() {
       description={
         <>
           The beam circles the composer only while the agent works, in the color of the turn's
-          effort level. Voice glows while you dictate; voice input is{" "}
-          {voiceEnabled ? "on" : "off until you turn it on under Voice"}. The idle beam is a faint
-          green line when nothing is running (off by default).
+          effort level. With Claude, the top thinking keyword in your message sets the composer on
+          fire, while you type it and while that turn runs. Voice glows while you dictate; voice
+          input is {voiceEnabled ? "on" : "off until you turn it on under Voice"}. The idle beam is
+          a faint green line when nothing is running (off by default).
           {reducedMotion ? " Reduced motion is on, so the preview stays still." : ""}
         </>
       }
@@ -79,7 +83,11 @@ export function ComposerEffectsSetting() {
       <div className="mt-3 flex flex-col gap-2.5">
         <div
           data-polaris-fx-preview
-          className="relative flex h-20 items-start rounded-3xl border border-border/70 bg-card px-4 py-3 text-sm text-muted-foreground/70 shadow-xs"
+          className={cn(
+            "relative flex h-20 items-start rounded-3xl border border-border/70 bg-card px-4 py-3 text-sm text-muted-foreground/70 shadow-xs",
+            // Room above for the flames to rise into.
+            preview === "flames" && "mt-8",
+          )}
         >
           <span className="relative z-30">
             {preview === "voice"

@@ -81,6 +81,20 @@
   animation: polaris-flash-pulse 4s ease-in-out 1 forwards;
 }
 
+/* The keyword level when its flames may not move (reduced motion, Calm mode)
+   or cannot (no WebGL): a still ember ring (V 5.3.0). */
+.polaris-composer-fx-ring[data-layer="embers"] {
+  opacity: 0.9;
+  background: linear-gradient(
+    120deg,
+    #b42318 0%,
+    #ea580c 30%,
+    #f59e0b 50%,
+    #ea580c 70%,
+    #b42318 100%
+  );
+}
+
 /* Voice input: a calm breathing ring in the brand hue, under the voice-glow. */
 .polaris-composer-fx-ring[data-layer="voice"] {
   opacity: 1;

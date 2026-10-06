@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 
 import { useClientSettings } from "~/hooks/useSettings";
 
@@ -12,7 +12,7 @@ import { useWindowActive } from "./useWindowActive";
 /** What ChatView knows about the turn and the quota; the composer adds the idle ring. */
 export type ComposerFxSignals = Pick<
   ComposerFxInput,
-  "voiceListening" | "quotaFlashing" | "running" | "tier"
+  "voiceListening" | "quotaFlashing" | "running" | "tier" | "keywordRun"
 >;
 
 export const IDLE_COMPOSER_FX_SIGNALS: ComposerFxSignals = {
@@ -20,6 +20,7 @@ export const IDLE_COMPOSER_FX_SIGNALS: ComposerFxSignals = {
   quotaFlashing: false,
   running: false,
   tier: "neutral",
+  keywordRun: false,
 };
 
 export function useComposerFx(signals: ComposerFxSignals, keywordIdle: boolean): ComposerFxState {
@@ -57,6 +58,10 @@ const VoiceGlow = lazy(() => import("../voice/VoiceGlow"));
 const EffortBeam = lazy(() =>
   import("./EffortBeam").then((module) => ({ default: module.EffortBeam })),
 );
+// The keyword level's flames (V 5.3.0) load the first time they are needed.
+const KeywordFlames = lazy(() =>
+  import("./KeywordFlames").then((module) => ({ default: module.KeywordFlames })),
+);
 
 export interface ComposerVoiceGlow {
   readonly level: () => number;
@@ -74,7 +79,19 @@ export function ComposerFx({
   /** Voice owns the outline: the reactive glow joins the ring while motion is on. */
   readonly voice?: ComposerVoiceGlow | null;
 }) {
-  const ring = state.layer === "flash" || state.layer === "voice";
+  const windowActive = useWindowActive();
+  const [flamesUnavailable, setFlamesUnavailable] = useState(false);
+  const flamesLive = state.layer === "flames" && state.animated && !flamesUnavailable;
+  // Mounted from the first time they burn, so turning them off fades out.
+  const [flamesMounted, setFlamesMounted] = useState(false);
+  if (flamesLive && !flamesMounted) setFlamesMounted(true);
+  // Flames that may not move, or cannot (no WebGL), are a still ember ring.
+  const ringLayer =
+    state.layer === "flash" || state.layer === "voice"
+      ? state.layer
+      : state.layer === "flames" && !flamesLive
+        ? "embers"
+        : "none";
   return (
     <>
       <Suspense fallback={null}>
@@ -90,10 +107,20 @@ export function ComposerFx({
           <VoiceGlow level={voice.level} processing={voice.processing} theme={voice.theme} />
         </Suspense>
       ) : null}
+      {flamesMounted ? (
+        <Suspense fallback={null}>
+          <KeywordFlames
+            active={flamesLive}
+            running={windowActive}
+            theme={theme}
+            onUnavailable={() => setFlamesUnavailable(true)}
+          />
+        </Suspense>
+      ) : null}
       <div
         aria-hidden
         data-polaris-fx-ring
-        data-layer={ring ? state.layer : "none"}
+        data-layer={ringLayer}
         data-tier={state.tier}
         data-animated={state.animated ? "true" : "false"}
         className="polaris-composer-fx-ring"

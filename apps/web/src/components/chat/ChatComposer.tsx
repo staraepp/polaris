@@ -2356,15 +2356,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     () => ({ ...polarisFx, voiceListening: polarisVoice.glow !== null }),
     [polarisFx, polarisVoice.glow],
   );
+  // The keyword level in the prompt (upstream marks it with a rainbow frame
+  // class): Polaris draws flames instead of that frame (V 5.3.0).
   const polarisFxState = useComposerFx(
     polarisFxWithVoice,
     composerProviderState.composerFrameClassName !== undefined,
   );
   // Polaris: Calm mode keeps the plain paperclip instead of the liquid menu.
   const polarisCalm = useCalmMode();
-  // Upstream's keyword ring is the idle indicator only; any Polaris layer replaces it.
-  const composerFrameClassName =
-    polarisFxState.layer === "ring" ? composerProviderState.composerFrameClassName : undefined;
   const selectedModelOptionsForDispatch = composerProviderState.modelOptionsForDispatch;
   const { enabled: planModeUiEnabled, interactionMode } = resolveComposerInteractionMode({
     planModeEnabled: settings.planModeEnabled,
@@ -6857,7 +6856,6 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
           data-model-only-strip={
             restingControlsHost?.closest("[data-composer-model-strip]") ? "true" : undefined
           }
-          className={composerFrameClassName}
         >
           <ComposerFx
             state={polarisFxState}

@@ -3255,8 +3255,9 @@ export default function ChatView(props: ChatViewProps) {
       quotaFlashing: polarisQuota.flashing,
       running: phase === "running",
       tier: polarisRunEffort.tier,
+      keywordRun: polarisRunEffort.keyword,
     }),
-    [polarisQuota.flashing, phase, polarisRunEffort.tier],
+    [polarisQuota.flashing, phase, polarisRunEffort.tier, polarisRunEffort.keyword],
   );
   // Dev builds only: forced FX states (devFxOverride.ts) also show the working
   // row and color Orbie, for screenshots without a real turn.
