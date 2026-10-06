@@ -1,3 +1,4 @@
+import { isScratchProject } from "@t3tools/client-runtime/state/projects";
 import { makeWindow } from "@t3tools/shared/usageFormat";
 import { useAtomValue } from "@effect/atom-react";
 import { Link } from "@tanstack/react-router";
@@ -13,6 +14,7 @@ import { WorkspacePageContainer } from "~/components/WorkspacePageContainer";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
 import { isElectron } from "~/env";
 import { useLocalStorage } from "~/hooks/useLocalStorage";
+import { useScratchProject } from "~/hooks/useScratchProject";
 import { useEscapeToGoBack } from "~/hooks/useNavigateBack";
 import { useProjects, useThreadShells } from "~/state/entities";
 import { primaryServerProvidersAtom } from "~/state/server";
@@ -64,9 +66,16 @@ export function DashboardPage() {
   const projects = useProjects();
   const threads = useThreadShells();
   const providers = useAtomValue(primaryServerProvidersAtom);
+  const { scratchWorkspaceRootFor } = useScratchProject();
+  // The scratch folder behind "Start without a project" is not a project to list.
   const sortedProjects = useMemo(
-    () => sortScopedProjectsForSidebar(projects, threads, "updated_at").slice(0, 4),
-    [projects, threads],
+    () =>
+      sortScopedProjectsForSidebar(projects, threads, "updated_at")
+        .filter(
+          (project) => !isScratchProject(project, scratchWorkspaceRootFor(project.environmentId)),
+        )
+        .slice(0, 4),
+    [projects, scratchWorkspaceRootFor, threads],
   );
   const { active, recent } = useMemo(
     () => selectDashboardThreads(threads, { active: 5, recent: 6 }),

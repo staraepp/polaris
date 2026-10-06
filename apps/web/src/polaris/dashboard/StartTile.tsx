@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useNewThreadHandler } from "~/hooks/useHandleNewThread";
+import { useScratchProject } from "~/hooks/useScratchProject";
 import { shortcutLabelForCommand } from "~/keybindings";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 
@@ -16,12 +17,27 @@ function PlusGlyph() {
   );
 }
 
+function ScratchGlyph() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4">
+      <path
+        d="M3.5 4.5h9M3.5 8h6M3.5 11.5h4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 /** A new thread in the latest project, or in any of the next few (Polaris dashboard). */
 export function StartTileBody({ projects }: { readonly projects: readonly EnvironmentProject[] }) {
   const handleNewThread = useNewThreadHandler();
   const [failed, setFailed] = useState(false);
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const newThreadShortcut = shortcutLabelForCommand(keybindings, "chat.new");
+  const { scratchEnvironmentId, startScratchThread } = useScratchProject();
   const start = (project: EnvironmentProject) => {
     setFailed(false);
     void handleNewThread(scopeProjectRef(project.environmentId, project.id)).catch(() =>
@@ -29,6 +45,8 @@ export function StartTileBody({ projects }: { readonly projects: readonly Enviro
     );
   };
   const [first, ...others] = projects;
+  // A thread with no project starts on the machine of the latest project.
+  const scratchTarget = scratchEnvironmentId(first?.environmentId ?? null);
   if (first === undefined) {
     return (
       <p className="m-auto max-w-52 text-center text-sm text-muted-foreground">
@@ -57,6 +75,16 @@ export function StartTileBody({ projects }: { readonly projects: readonly Enviro
             </li>
           ))}
         </ul>
+      ) : null}
+      {scratchTarget !== null ? (
+        <button
+          type="button"
+          onClick={() => void startScratchThread(scratchTarget)}
+          className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-muted-foreground outline-none hover:bg-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ScratchGlyph />
+          <span className="truncate">Start without a project</span>
+        </button>
       ) : null}
       {newThreadShortcut ? (
         <p className="mt-auto text-xs text-muted-foreground">
