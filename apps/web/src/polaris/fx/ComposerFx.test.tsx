@@ -46,6 +46,7 @@ describe("ComposerFx", () => {
     await act(() => renderer.unmount());
     container.remove();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("renders both layers off while idle and never touches the page's accessibility tree", async () => {
@@ -78,10 +79,24 @@ describe("ComposerFx", () => {
     expect(container.querySelector("[data-polaris-fx-accent]")).toBeNull();
   });
 
-  it("leaves the ring layer to upstream's keyword frame and holds the beam still under reduced motion", async () => {
+  it("burns for the keyword level, and falls back to the still ember ring without WebGL (V 5.3.0)", async () => {
+    // The flames start only in a focused window; jsdom has no WebGL, so they
+    // report themselves unavailable.
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
     await render(IDLE_COMPOSER_FX_SIGNALS, true);
-    expect(ring().dataset.layer).toBe("none");
+    await act(() => import("./KeywordFlames").then(() => undefined));
+    await act(async () => {});
+    expect(container.querySelector("[data-polaris-keyword-flames]")).not.toBeNull();
+    expect(ring().dataset.layer).toBe("embers");
+    expect(beamOn()).toBe(false);
+  });
+
+  it("draws the keyword level as a still ember ring and holds the beam still under reduced motion", async () => {
     reduceMotion = true;
+    await render(IDLE_COMPOSER_FX_SIGNALS, true);
+    expect(ring().dataset.layer).toBe("embers");
+    expect(container.querySelector("[data-polaris-keyword-flames]")).toBeNull();
     await render({
       ...IDLE_COMPOSER_FX_SIGNALS,
       running: true,

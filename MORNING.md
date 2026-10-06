@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.2.2**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.3.0**. Start with "Look at these first" at the bottom.
+
+## V 5.3.0 (the keyword level is on fire), tag `v5.3.0`
+
+- With Claude, type the top thinking keyword and the composer catches fire: real shader flames rise off its top edge and climb the sides, with embers and a warm glow. It keeps burning while that turn runs, and fades out when you remove the keyword.
+- See it any time in Settings → General → Effects → "Flames".
+- It only animates while Polaris is the focused window, picks a lighter quality on slow machines, and is a still ember ring with reduced motion or Calm mode on.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,028 (6,023 + 5 new), web production build passes.
 
 ## V 5.2.2 (Calm mode hides the activity chart), tag `v5.2.2`
 

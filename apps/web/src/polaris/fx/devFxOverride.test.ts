@@ -9,6 +9,10 @@ describe("parseDevFxOverride", () => {
       tier: "max",
       quotaLow: false,
     });
+    expect(parseDevFxOverride('{"running":true,"keywordRun":true}')).toEqual({
+      running: true,
+      keywordRun: true,
+    });
   });
 
   it("drops unknown fields, wrong types and junk", () => {

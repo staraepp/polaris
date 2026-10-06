@@ -15,12 +15,13 @@ export interface DevFxOverride {
   readonly quotaFlashing?: boolean;
   readonly quotaLow?: boolean;
   readonly running?: boolean;
+  readonly keywordRun?: boolean;
   readonly tier?: EffortTier;
 }
 
 const TIERS: readonly EffortTier[] = ["none", "low", "medium", "high", "xhigh", "max", "neutral"];
 const isEffortTier = (value: unknown): value is EffortTier => TIERS.some((tier) => tier === value);
-const FLAGS = ["voiceListening", "quotaFlashing", "quotaLow", "running"] as const;
+const FLAGS = ["voiceListening", "quotaFlashing", "quotaLow", "running", "keywordRun"] as const;
 
 /** Keeps only the known fields with the right types; anything else is dropped. */
 export function parseDevFxOverride(raw: string | null): DevFxOverride | null {

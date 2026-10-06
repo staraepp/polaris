@@ -7,6 +7,7 @@ const idle: ComposerFxInput = {
   quotaFlashing: false,
   running: false,
   tier: "neutral",
+  keywordRun: false,
   keywordIdle: false,
   idleBeam: false,
   reducedMotion: false,
@@ -20,7 +21,7 @@ describe("resolveComposerFx", () => {
       tier: "neutral",
       animated: true,
     });
-    expect(resolveComposerFx({ ...idle, idleBeam: true, keywordIdle: true }).layer).toBe("ring");
+    expect(resolveComposerFx({ ...idle, idleBeam: true, keywordIdle: true }).layer).toBe("flames");
     expect(resolveComposerFx({ ...idle, idleBeam: true, running: true, tier: "low" }).layer).toBe(
       "beam",
     );
@@ -36,7 +37,7 @@ describe("resolveComposerFx", () => {
     });
   });
 
-  it("orders voice over flash over beam over ring", () => {
+  it("orders voice over flash over beam over the keyword flames", () => {
     const all = {
       ...idle,
       voiceListening: true,
@@ -53,17 +54,17 @@ describe("resolveComposerFx", () => {
     expect(
       resolveComposerFx({ ...all, voiceListening: false, quotaFlashing: false, running: false })
         .layer,
-    ).toBe("ring");
+    ).toBe("flames");
   });
 
   it("shows no beam for a tier of none even while running", () => {
     expect(resolveComposerFx({ ...idle, running: true, tier: "none" }).layer).toBe("none");
     expect(
       resolveComposerFx({ ...idle, running: true, tier: "none", keywordIdle: true }).layer,
-    ).toBe("ring");
+    ).toBe("flames");
   });
 
-  it("drops the flash and freezes the beam under reduced motion, keeping the ring", () => {
+  it("drops the flash and freezes the beam and flames under reduced motion", () => {
     expect(resolveComposerFx({ ...idle, reducedMotion: true, quotaFlashing: true })).toEqual({
       layer: "none",
       tier: "neutral",
@@ -76,9 +77,11 @@ describe("resolveComposerFx", () => {
       tier: "medium",
       animated: false,
     });
-    expect(resolveComposerFx({ ...idle, reducedMotion: true, keywordIdle: true }).layer).toBe(
-      "ring",
-    );
+    expect(resolveComposerFx({ ...idle, reducedMotion: true, keywordIdle: true })).toEqual({
+      layer: "flames",
+      tier: "neutral",
+      animated: false,
+    });
   });
 
   it("draws no beam, flash or idle decoration in Calm mode (Polaris, V 5.1.0)", () => {
@@ -86,8 +89,11 @@ describe("resolveComposerFx", () => {
     expect(resolveComposerFx({ ...calm, running: true, tier: "high" }).layer).toBe("none");
     expect(resolveComposerFx({ ...calm, quotaFlashing: true }).layer).toBe("none");
     expect(resolveComposerFx(calm).layer).toBe("none");
+    expect(resolveComposerFx({ ...calm, running: true, tier: "max", keywordRun: true }).layer).toBe(
+      "none",
+    );
     expect(resolveComposerFx({ ...calm, keywordIdle: true })).toEqual({
-      layer: "ring",
+      layer: "flames",
       tier: "neutral",
       animated: false,
     });
@@ -97,5 +103,23 @@ describe("resolveComposerFx", () => {
       tier: "neutral",
       animated: false,
     });
+  });
+
+  it("burns while the keyword is in the prompt and while a keyword-level turn runs (V 5.3.0)", () => {
+    expect(resolveComposerFx({ ...idle, keywordIdle: true })).toEqual({
+      layer: "flames",
+      tier: "neutral",
+      animated: true,
+    });
+    expect(resolveComposerFx({ ...idle, running: true, tier: "max", keywordRun: true })).toEqual({
+      layer: "flames",
+      tier: "max",
+      animated: true,
+    });
+    // A plain max turn keeps the icy beam; voice and the flash still win.
+    expect(resolveComposerFx({ ...idle, running: true, tier: "max" }).layer).toBe("beam");
+    const keywordTurn = { ...idle, running: true, tier: "max", keywordRun: true } as const;
+    expect(resolveComposerFx({ ...keywordTurn, quotaFlashing: true }).layer).toBe("flash");
+    expect(resolveComposerFx({ ...keywordTurn, voiceListening: true }).layer).toBe("voice");
   });
 });
