@@ -1106,6 +1106,15 @@ describe("branch naming settings", () => {
   );
 });
 
+describe("ClientSettings gooey composer menu (Polaris)", () => {
+  it("is off by default", () => {
+    expect(decodeClientSettings({}).gooeyComposerMenuEnabled).toBe(false);
+    expect(decodeClientSettingsPatch({ gooeyComposerMenuEnabled: true })).toEqual({
+      gooeyComposerMenuEnabled: true,
+    });
+  });
+});
+
 describe("ClientSettings bot avatars (Polaris)", () => {
   it("is off by default with no per-provider picks", () => {
     const settings = decodeClientSettings({});

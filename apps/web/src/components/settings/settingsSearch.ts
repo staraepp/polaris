@@ -620,6 +620,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["quota limit usage meter gauge composer five hour weekly remaining"],
   },
   {
+    id: "gooey-composer-menu",
+    title: "Liquid composer menu",
+    to: "/settings/general",
+    searchTerms: ["gooey liquid plus menu attach composer chips effects"],
+  },
+  {
     id: "bot-avatars",
     title: "Bot avatars",
     to: "/settings/general",

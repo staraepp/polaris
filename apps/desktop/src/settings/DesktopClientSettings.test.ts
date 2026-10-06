@@ -54,6 +54,7 @@ const clientSettings: ClientSettings = {
   quotaLowThresholdPercent: 20,
   composerUsageMeterEnabled: true,
   botAvatarsEnabled: false,
+  gooeyComposerMenuEnabled: false,
   botAvatarByDriver: {},
   onboardingCompletedAt: null,
   panelAnimationDurationMs: 0,

@@ -188,12 +188,14 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 | `packages/contracts/src/usage.ts`       | `UsageBucket.toolCalls` (optional non-negative Int; absent when zero or not counted). No contract version bump: the module's own rule says optional bucket fields are additive                  | v1 leftover: tool calls over time                                      |
 | `packages/contracts/src/settings.ts`    | `ClientSettings.composerUsageMeterEnabled` (Boolean, default true; optional in the patch)                                                                                                       | v2: usage meter in the composer                                        |
 | `packages/contracts/src/settings.ts`    | `ClientSettings.botAvatarsEnabled` (Boolean, default false), `ClientSettings.botAvatarByDriver` (record of driver → one of the 18 `BOT_AVATAR_TYPES`, default `{}`); both optional in the patch | v2: bot avatars                                                        |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.gooeyComposerMenuEnabled` (Boolean, default false; optional in the patch)                                                                                                       | v2: liquid "+" composer menu                                           |
 
 ## New dependencies
 
-| Package       | Version | License | Where      | Why                                                                       |
-| ------------- | ------- | ------- | ---------- | ------------------------------------------------------------------------- |
-| `bot-avatars` | 0.2.2   | MIT     | `apps/web` | Thread-header bot (v2 item 2); no dependencies, React peer; loaded lazily |
+| Package        | Version | License | Where      | Why                                                                               |
+| -------------- | ------- | ------- | ---------- | --------------------------------------------------------------------------------- |
+| `bot-avatars`  | 0.2.2   | MIT     | `apps/web` | Thread-header bot (v2 item 2); no dependencies, React peer; loaded lazily         |
+| `liquid-gooey` | 0.2.2   | MIT     | `apps/web` | Liquid "+" composer menu (v2 item 3); no dependencies, React peers; loaded lazily |
 
 ## Needs Star's approval
 
@@ -208,6 +210,12 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — v2 item 3: liquid "+" composer menu
+
+- Done: behind `gooeyComposerMenuEnabled` (default off, Settings → General → Effects), the composer's paperclip becomes a "+" whose actions pop upward as liquid chips that split off and merge back (`apps/web/src/polaris/gooey/`, `liquid-gooey` MIT, lazy-loaded): Attach files (the same file input), Commands & skills (inserts `/`, opening upstream's command menu), Mention a file (inserts `@`). Real buttons in a `role="menu"`: focus moves to the first chip, ArrowUp/ArrowDown walk them, Escape closes and refocuses "+", outside clicks close; chips leave the tab order when closed. Reduced motion: instant moves. The "+" glyph is our own SVG; chip icons are upstream's lucide ones.
+- Tests: 1 contract, 3 jsdom (library mocked).
+- Left over: no effort chip yet (the traits picker is not reachable as a plain action); WebKit SVG-filter performance not measured (Electron is Chromium).
 
 ### 2026-10-05 — Claude (session 8) — v2 item 2: bot avatars
 
@@ -233,15 +241,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Done: the composer's context window popover gains a "This thread" block (`apps/web/src/polaris/threadUsage/`): run count, tokens in / out, tool calls, and a strip of the last 24 runs sized by tokens (runs that called tools in the brand green). Client-only from the thread projection: tokens from each provider turn's `turnTokenUsage` (main agent, mapped to runs through `nodes`), tool calls from tool-shaped turn items per run (`command_execution`, `file_change`, `file_search`, `web_search`, `dynamic_tool`, `subagent`). `useThreadUsage` keeps one object while the figures are unchanged, so streaming deltas don't re-render the memoised composer. Plumbing: `ChatView` → `ChatComposer.polarisThreadUsage` → `ComposerFooterPrimaryActions.threadUsage` → `ContextWindowMeter.threadUsage`. Tests: 4 logic, 2 jsdom.
 - Left over: it shows only when the context meter does (setting on, and the provider reports context); the figures cover the loaded part of the thread; a multi-file edit counts one tool call per changed file.
 
-### 2026-10-05 — Claude (session 8) — v1 item 4: tool calls over time
-
-- Done: usage buckets carry an optional `toolCalls` count (contract change below). Claude: `tool_use` and `server_tool_use` blocks per record. Claude writes one record per content block, so `dedupeWithinFile` now hands a dropped repeat's count to the record it keeps; the cross-file dedupe still drops copied messages whole. Codex: `response_item` tool-call payloads (`function_call`, `custom_tool_call`, `local_shell_call`, `web_search_call`) ride on the next `token_count` (`CodexScanState.pendingToolCalls`); copies in a fork's opening burst are dropped like copied usage. The reader's Codex gate also admits `_call"` lines, and the streaming selector keeps Claude `message.content[*].type` (`"*"` matches array indexes). Merge: `MergedUsage.toolCalls` and `DailyModelTotals.toolCalls`. UI: a "Tool calls over time" chart on Usage (the models chart with `metric="toolCalls"`), shown when anything was counted.
-- Per-driver decision: counted for Claude Code and Codex. Not counted for Grok, Cursor, OpenCode or Antigravity (their usage sources are read elsewhere and carry no per-call data we parse); Pi and ACP have no usage source.
-- Scan cache: still v5 and the same file. Rows may carry a 12th column; files gain `tc: 1`. A Claude or Codex file saved without the flag re-parses once (a one-time cold scan of the window) so its tool calls show; a deleted transcript keeps its saved usage, just without tool calls. An older server sharing the state dir ignores both and drops them on its next write, which only costs another re-parse.
-- Tests: 2 contract, 3 parser, 1 reader, 3 cache, 1 aggregation, 1 merge, 1 series; the streaming test now expects `toolCalls: 1` on its large `tool_use` record.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v1 item 4: tool calls over time. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 3: models over time. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 2: one-year Usage period. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 1: quota-low threshold setting. Rolled up; see `git log`.

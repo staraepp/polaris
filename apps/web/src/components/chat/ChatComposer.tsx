@@ -153,6 +153,7 @@ import {
 } from "~/polaris/fx/ComposerFx";
 import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
 import { ComposerUsageMeter } from "~/polaris/quota/ComposerUsageMeter";
+import { composerPlusActions, LazyGooeyPlusMenu } from "~/polaris/gooey/gooeyPlusActions";
 import type { UsageMeterModel } from "~/polaris/quota/usageMeterModel";
 import {
   ComposerBannerStack,
@@ -7518,23 +7519,37 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                           });
                         }}
                       />
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              onPointerDown={(event) => event.preventDefault()}
-                              onClick={() => attachmentInputRef.current?.click()}
-                              aria-label="Attach files"
-                            />
-                          }
-                        >
-                          <PaperclipIcon />
-                        </TooltipTrigger>
-                        <TooltipPopup>Attach files</TooltipPopup>
-                      </Tooltip>
+                      {settings.gooeyComposerMenuEnabled ? (
+                        <LazyGooeyPlusMenu
+                          actions={composerPlusActions({
+                            onAttach: () => attachmentInputRef.current?.click(),
+                            onCommand: () => {
+                              insertComposerText("/", "cursor", { ensureLeadingBoundary: true });
+                            },
+                            onMention: () => {
+                              insertComposerText("@", "cursor", { ensureLeadingBoundary: true });
+                            },
+                          })}
+                        />
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onPointerDown={(event) => event.preventDefault()}
+                                onClick={() => attachmentInputRef.current?.click()}
+                                aria-label="Attach files"
+                              />
+                            }
+                          >
+                            <PaperclipIcon />
+                          </TooltipTrigger>
+                          <TooltipPopup>Attach files</TooltipPopup>
+                        </Tooltip>
+                      )}
                     </>
                   ) : null}
                   <ComposerFooterPrimaryActions

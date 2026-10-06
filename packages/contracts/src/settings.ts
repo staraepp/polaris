@@ -413,6 +413,8 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   /** Polaris: quota gauge next to the send button (amber only when low). */
   composerUsageMeterEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /** Polaris: the composer's "+" pops out liquid action chips instead of a paperclip. */
+  gooeyComposerMenuEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   /** Polaris: a small animated bot in the thread header that mirrors the run. */
   botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   /** Polaris: bot shape per provider driver; missing drivers use the built-in pick. */
@@ -1804,6 +1806,7 @@ export const ClientSettingsPatch = Schema.Struct({
   quotaLowThresholdPercent: Schema.optionalKey(QuotaLowThresholdPercent),
   composerUsageMeterEnabled: Schema.optionalKey(Schema.Boolean),
   botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
+  gooeyComposerMenuEnabled: Schema.optionalKey(Schema.Boolean),
   botAvatarByDriver: Schema.optionalKey(Schema.Record(Schema.String, BotAvatarType)),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),

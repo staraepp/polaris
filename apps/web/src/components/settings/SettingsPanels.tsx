@@ -168,6 +168,7 @@ import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
+import { GooeyComposerMenuSetting } from "./polaris/GooeyComposerMenuSetting";
 import { ComposerUsageMeterSetting } from "./polaris/ComposerUsageMeterSetting";
 import { QuotaLowThresholdSetting } from "./polaris/QuotaLowThresholdSetting";
 
@@ -552,6 +553,9 @@ export function useSettingsRestore(onRestored?: () => void) {
       Object.keys(settings.botAvatarByDriver).length > 0
         ? ["Bot avatars"]
         : []),
+      ...(settings.gooeyComposerMenuEnabled !== DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled
+        ? ["Liquid composer menu"]
+        : []),
       ...(settings.diffColorScheme !== DEFAULT_UNIFIED_SETTINGS.diffColorScheme
         ? ["Diff colors"]
         : []),
@@ -714,6 +718,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.composerUsageMeterEnabled,
       settings.botAvatarsEnabled,
       settings.botAvatarByDriver,
+      settings.gooeyComposerMenuEnabled,
       settings.panelAnimationDurationMs,
       settings.responseStreamingMode,
       settings.persistComposerContextStrip,
@@ -825,6 +830,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       composerUsageMeterEnabled: DEFAULT_UNIFIED_SETTINGS.composerUsageMeterEnabled,
       botAvatarsEnabled: DEFAULT_UNIFIED_SETTINGS.botAvatarsEnabled,
       botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
+      gooeyComposerMenuEnabled: DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled,
       panelAnimationDurationMs: DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs,
       sidebarThreadPreviewCount: DEFAULT_UNIFIED_SETTINGS.sidebarThreadPreviewCount,
       sidebarProjectGroupingMode: DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
@@ -3355,7 +3361,8 @@ export function GeneralSettingsPanel() {
         <ComposerUsageMeterSetting />
         <QuotaLowThresholdSetting />
       </SettingsSection>
-      <SettingsSection id="bots" title="Bots">
+      <SettingsSection id="effects" title="Effects">
+        <GooeyComposerMenuSetting />
         <BotAvatarsSetting />
       </SettingsSection>
       <SettingsSection id="about" title="About">
