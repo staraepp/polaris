@@ -76,6 +76,7 @@ import {
 import { WorkspacePageContainer } from "../WorkspacePageContainer";
 import { WorkspacePageHeader } from "../WorkspacePageHeader";
 import { ToolsHubCrumbs } from "../../polaris/hub/ToolsHubCrumbs";
+import { useCalmMode } from "../../polaris/calm/useCalmMode";
 import { UsageActivitySection } from "./UsageActivitySection";
 import { UsageLimitsSection } from "./UsageLimits";
 import { UsagePriceOverrides } from "./UsagePriceOverrides";
@@ -139,6 +140,11 @@ export function UsagePage() {
   const refreshingRef = useRef(false);
   const [activityRefreshToken, setActivityRefreshToken] = useState(0);
   const [breakdown, setBreakdown] = useState<"model" | "time">("model");
+  // Polaris: Calm mode shows the total, the providers and the chart; the rest
+  // waits behind "Show details".
+  const polarisCalm = useCalmMode();
+  const [polarisDetailsOpen, setPolarisDetailsOpen] = useState(false);
+  const showDetails = !polarisCalm || polarisDetailsOpen;
   const [priceDialog, setPriceDialog] = useState<{ readonly model?: string } | null>(null);
   const [selectedModelKey, setSelectedModelKey] = useState<string | null>(null);
   const [selectedEnvironmentIds, setSelectedEnvironmentIds] =
@@ -512,10 +518,10 @@ export function UsagePage() {
                           : formatTokens(merged.totalTokens)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {formatCount(merged.sessions)} sessions
+                        {polarisCalm ? null : `${formatCount(merged.sessions)} sessions`}
                         {metric === "cost" && (
                           <>
-                            {" · API estimate"}
+                            {polarisCalm ? "API estimate" : " · API estimate"}
                             {merged.costQuality.unpricedShare > 0 && (
                               <>
                                 {" "}
@@ -590,9 +596,11 @@ export function UsagePage() {
                                 <span className="truncate">
                                   {PROVIDER_PRESENTATION[provider].label}
                                 </span>
-                                <span className="shrink-0 whitespace-nowrap text-2xs text-muted-foreground tabular-nums">
-                                  {sessionLabel}
-                                </span>
+                                {polarisCalm ? null : (
+                                  <span className="shrink-0 whitespace-nowrap text-2xs text-muted-foreground tabular-nums">
+                                    {sessionLabel}
+                                  </span>
+                                )}
                               </span>
                             </span>
                             <span className="shrink-0 text-sm font-medium text-foreground tabular-nums">
@@ -601,11 +609,13 @@ export function UsagePage() {
                                 : formatTokens(totals?.totalTokens ?? 0)}
                             </span>
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {metric === "cost"
-                              ? `${formatPercent(share)} of cost · ${formatTokens(totals?.totalTokens ?? 0)} tokens`
-                              : `${formatPercent(share)} of tokens · ${formatUsd(totals?.costUsd ?? 0)}`}
-                          </span>
+                          {polarisCalm ? null : (
+                            <span className="text-xs text-muted-foreground">
+                              {metric === "cost"
+                                ? `${formatPercent(share)} of cost · ${formatTokens(totals?.totalTokens ?? 0)} tokens`
+                                : `${formatPercent(share)} of tokens · ${formatUsd(totals?.costUsd ?? 0)}`}
+                            </span>
+                          )}
                         </div>
                       );
                     })}
@@ -630,238 +640,263 @@ export function UsagePage() {
                   </div>
                 </section>
 
-                <UsageActivitySection
-                  metric={metric === "tokens" ? "tokens" : "cost"}
-                  selectedEnvironmentIds={selectedEnvironmentIds}
-                  refreshToken={activityRefreshToken}
-                />
-
-                <section className="flex flex-col gap-2">
-                  <h2 className="text-sm font-medium text-foreground">Totals</h2>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-4 py-1 md:grid-cols-5">
-                    <Metric label="Processed tokens" value={formatTokens(merged.totalTokens)} />
-                    <Metric label="Cached input" value={formatTokens(merged.cachedInputTokens)} />
-                    <Metric
-                      label="Uncached input"
-                      value={formatTokens(merged.uncachedInputTokens)}
-                    />
-                    <Metric label="Output" value={formatTokens(merged.outputTokens)} />
-                    <Metric
-                      label="Cache savings"
-                      value={formatUsd(merged.costQuality.cacheSavingsUsd)}
-                    />
-                  </div>
-                </section>
-
-                {merged.totalTokens > 0 ? (
-                  <section className="grid gap-x-12 gap-y-8 lg:grid-cols-2">
-                    {metric === "tokens" ? (
-                      <UsageShareBar
-                        label="Tokens by type"
-                        segments={tokenTypeSegments(merged)}
-                        format={formatTokens}
-                      />
-                    ) : (
-                      <>
-                        <UsageShareBar
-                          label="Cost by type"
-                          segments={costTypeSegments(merged.categoryCost)}
-                          format={formatUsd}
-                        />
-                        {merged.speedCost.fast + merged.speedCost.ultrafast > 0 ? (
-                          <UsageShareBar
-                            label="Cost by speed"
-                            segments={speedCostSegments(merged.speedCost)}
-                            format={formatUsd}
-                            aside={<SpeedPremium premiumUsd={merged.speedCost.premium} />}
-                          />
-                        ) : null}
-                      </>
-                    )}
-                  </section>
+                {polarisCalm ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="self-start"
+                    aria-expanded={polarisDetailsOpen}
+                    onClick={() => setPolarisDetailsOpen((open) => !open)}
+                  >
+                    {polarisDetailsOpen ? "Hide details" : "Show details"}
+                  </Button>
                 ) : null}
 
-                {isPast24Hours ? null : (
-                  <UsageModelTrend
-                    days={days}
-                    daily={merged.daily}
-                    metric={metric === "tokens" ? "tokens" : "cost"}
-                  />
-                )}
+                {showDetails ? (
+                  <>
+                    <UsageActivitySection
+                      metric={metric === "tokens" ? "tokens" : "cost"}
+                      selectedEnvironmentIds={selectedEnvironmentIds}
+                      refreshToken={activityRefreshToken}
+                    />
 
-                {isPast24Hours || merged.toolCalls === 0 ? null : (
-                  <UsageModelTrend
-                    days={days}
-                    daily={merged.daily}
-                    metric="toolCalls"
-                    title="Tool calls over time"
-                  />
-                )}
+                    <section className="flex flex-col gap-2">
+                      <h2 className="text-sm font-medium text-foreground">Totals</h2>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-4 py-1 md:grid-cols-5">
+                        <Metric label="Processed tokens" value={formatTokens(merged.totalTokens)} />
+                        <Metric
+                          label="Cached input"
+                          value={formatTokens(merged.cachedInputTokens)}
+                        />
+                        <Metric
+                          label="Uncached input"
+                          value={formatTokens(merged.uncachedInputTokens)}
+                        />
+                        <Metric label="Output" value={formatTokens(merged.outputTokens)} />
+                        <Metric
+                          label="Cache savings"
+                          value={formatUsd(merged.costQuality.cacheSavingsUsd)}
+                        />
+                      </div>
+                    </section>
 
-                <section className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-sm font-medium text-foreground">Breakdown</h2>
-                    <ToggleGroup
-                      aria-label="Usage breakdown"
-                      variant="segmented"
-                      value={[breakdown]}
-                      onValueChange={(next) => {
-                        const value = next[0];
-                        if (value === "model" || value === "time") setBreakdown(value);
-                      }}
-                    >
-                      {(
-                        [
-                          { value: "model", label: "Model" },
-                          { value: "time", label: isPast24Hours ? "Hour" : "Day" },
-                        ] as const
-                      ).map((option) => (
-                        <Toggle key={option.value} value={option.value}>
-                          {option.label}
-                        </Toggle>
-                      ))}
-                    </ToggleGroup>
-                  </div>
-
-                  {breakdown === "model" ? (
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border text-right text-xs text-muted-foreground">
-                          <th className="py-2 pr-3 text-left font-normal">#</th>
-                          <th className="w-full py-2 text-left font-normal">Model</th>
-                          <th className="py-2 pl-6 font-normal">Cost</th>
-                          <th className="hidden py-2 pl-6 font-normal sm:table-cell">Share</th>
-                          <th className="py-2 pl-6 font-normal">Tokens</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {breakdownModels.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                              No activity in this window.
-                            </td>
-                          </tr>
+                    {merged.totalTokens > 0 ? (
+                      <section className="grid gap-x-12 gap-y-8 lg:grid-cols-2">
+                        {metric === "tokens" ? (
+                          <UsageShareBar
+                            label="Tokens by type"
+                            segments={tokenTypeSegments(merged)}
+                            format={formatTokens}
+                          />
                         ) : (
-                          breakdownModels.map((model, index) => {
-                            const key = `${model.provider}:${model.model}`;
-                            const value = metric === "tokens" ? model.totalTokens : model.costUsd;
-                            const share = modelShare(
-                              model,
-                              metric === "tokens" ? "tokens" : "cost",
-                            );
-                            return (
-                              <tr
-                                key={key}
-                                className="relative border-b border-border/50 text-right whitespace-nowrap text-muted-foreground tabular-nums transition-colors hover:bg-muted/50 has-focus-visible:bg-muted/50"
-                              >
-                                <td className="py-2.5 pr-3 text-left text-xs">{index + 1}</td>
-                                <td className="py-2.5 text-left whitespace-normal">
-                                  {/* The button's overlay makes the whole row open the model.
-                                      Focus shows as the row's hover fill, not a ring. */}
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedModelKey(key)}
-                                    className="flex items-center gap-2 text-left text-foreground outline-none after:absolute after:inset-0"
-                                  >
-                                    <ProviderMark provider={model.provider} className="size-3.5" />
-                                    {model.model}
-                                  </button>
-                                  <div aria-hidden className="mt-1.5 h-0.5 max-w-48">
-                                    <div
-                                      className="h-full rounded-full"
-                                      style={{
-                                        // A short minimum keeps tiny shares a dash, not a dot.
-                                        width:
-                                          value > 0 && breakdownPeak > 0
-                                            ? `max(0.5rem, ${(value / breakdownPeak) * 100}%)`
-                                            : 0,
-                                        backgroundColor:
-                                          PROVIDER_PRESENTATION[model.provider].color,
-                                      }}
-                                    />
-                                  </div>
-                                </td>
-                                <td className="py-2.5 pl-6 text-foreground">
-                                  {isModelCostUnknown(model) ? (
-                                    <span className="text-muted-foreground">Unpriced</span>
-                                  ) : (
-                                    formatUsd(model.costUsd)
-                                  )}
-                                </td>
-                                <td className="hidden py-2.5 pl-6 sm:table-cell">
-                                  {share === null ? "" : formatPercent(share)}
-                                </td>
-                                <td className="py-2.5 pl-6">{formatTokens(model.totalTokens)}</td>
-                              </tr>
-                            );
-                          })
+                          <>
+                            <UsageShareBar
+                              label="Cost by type"
+                              segments={costTypeSegments(merged.categoryCost)}
+                              format={formatUsd}
+                            />
+                            {merged.speedCost.fast + merged.speedCost.ultrafast > 0 ? (
+                              <UsageShareBar
+                                label="Cost by speed"
+                                segments={speedCostSegments(merged.speedCost)}
+                                format={formatUsd}
+                                aside={<SpeedPremium premiumUsd={merged.speedCost.premium} />}
+                              />
+                            ) : null}
+                          </>
                         )}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <table className="w-full table-fixed text-sm">
-                      <colgroup>
-                        <col className="w-2/5" />
-                        {activeProviders.map((provider) => (
-                          <col key={provider} style={{ width: timeValueColumnWidth }} />
-                        ))}
-                        <col style={{ width: timeValueColumnWidth }} />
-                        <col style={{ width: timeValueColumnWidth }} />
-                      </colgroup>
-                      <thead>
-                        <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                          <th className="py-2 font-normal">{isPast24Hours ? "Hour" : "Day"}</th>
-                          {activeProviders.map((provider) => (
-                            <th key={provider} className="py-2 text-right font-normal">
-                              {PROVIDER_PRESENTATION[provider].label}
-                            </th>
+                      </section>
+                    ) : null}
+
+                    {isPast24Hours ? null : (
+                      <UsageModelTrend
+                        days={days}
+                        daily={merged.daily}
+                        metric={metric === "tokens" ? "tokens" : "cost"}
+                      />
+                    )}
+
+                    {isPast24Hours || merged.toolCalls === 0 ? null : (
+                      <UsageModelTrend
+                        days={days}
+                        daily={merged.daily}
+                        metric="toolCalls"
+                        title="Tool calls over time"
+                      />
+                    )}
+
+                    <section className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <h2 className="text-sm font-medium text-foreground">Breakdown</h2>
+                        <ToggleGroup
+                          aria-label="Usage breakdown"
+                          variant="segmented"
+                          value={[breakdown]}
+                          onValueChange={(next) => {
+                            const value = next[0];
+                            if (value === "model" || value === "time") setBreakdown(value);
+                          }}
+                        >
+                          {(
+                            [
+                              { value: "model", label: "Model" },
+                              { value: "time", label: isPast24Hours ? "Hour" : "Day" },
+                            ] as const
+                          ).map((option) => (
+                            <Toggle key={option.value} value={option.value}>
+                              {option.label}
+                            </Toggle>
                           ))}
-                          <th className="py-2 text-right font-normal">Total</th>
-                          <th className="py-2 text-right font-normal">Tokens</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {breakdownPeriods.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={activeProviders.length + 3}
-                              className="py-6 text-center text-muted-foreground"
-                            >
-                              No activity in this window.
-                            </td>
-                          </tr>
-                        ) : (
-                          breakdownPeriods.map((period) => (
-                            <tr
-                              key={"hourStart" in period ? period.hourStart : period.day}
-                              className="border-b border-border/50 transition-colors hover:bg-muted/50"
-                            >
-                              <td className="py-2 text-foreground">
-                                {"hourStart" in period
-                                  ? formatHourShort(period.hourStart, window.timeZone)
-                                  : formatDayShort(period.day)}
-                              </td>
-                              {activeProviders.map((provider) => (
-                                <td
-                                  key={provider}
-                                  className="py-2 text-right text-muted-foreground tabular-nums"
-                                >
-                                  {formatUsd(period.byProvider.get(provider)?.costUsd ?? 0)}
-                                </td>
-                              ))}
-                              <td className="py-2 text-right text-foreground tabular-nums">
-                                {formatUsd(period.costUsd)}
-                              </td>
-                              <td className="py-2 text-right text-muted-foreground tabular-nums">
-                                {formatTokens(period.totalTokens)}
-                              </td>
+                        </ToggleGroup>
+                      </div>
+
+                      {breakdown === "model" ? (
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border text-right text-xs text-muted-foreground">
+                              <th className="py-2 pr-3 text-left font-normal">#</th>
+                              <th className="w-full py-2 text-left font-normal">Model</th>
+                              <th className="py-2 pl-6 font-normal">Cost</th>
+                              <th className="hidden py-2 pl-6 font-normal sm:table-cell">Share</th>
+                              <th className="py-2 pl-6 font-normal">Tokens</th>
                             </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  )}
-                </section>
+                          </thead>
+                          <tbody>
+                            {breakdownModels.length === 0 ? (
+                              <tr>
+                                <td colSpan={5} className="py-6 text-center text-muted-foreground">
+                                  No activity in this window.
+                                </td>
+                              </tr>
+                            ) : (
+                              breakdownModels.map((model, index) => {
+                                const key = `${model.provider}:${model.model}`;
+                                const value =
+                                  metric === "tokens" ? model.totalTokens : model.costUsd;
+                                const share = modelShare(
+                                  model,
+                                  metric === "tokens" ? "tokens" : "cost",
+                                );
+                                return (
+                                  <tr
+                                    key={key}
+                                    className="relative border-b border-border/50 text-right whitespace-nowrap text-muted-foreground tabular-nums transition-colors hover:bg-muted/50 has-focus-visible:bg-muted/50"
+                                  >
+                                    <td className="py-2.5 pr-3 text-left text-xs">{index + 1}</td>
+                                    <td className="py-2.5 text-left whitespace-normal">
+                                      {/* The button's overlay makes the whole row open the model.
+                                      Focus shows as the row's hover fill, not a ring. */}
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedModelKey(key)}
+                                        className="flex items-center gap-2 text-left text-foreground outline-none after:absolute after:inset-0"
+                                      >
+                                        <ProviderMark
+                                          provider={model.provider}
+                                          className="size-3.5"
+                                        />
+                                        {model.model}
+                                      </button>
+                                      <div aria-hidden className="mt-1.5 h-0.5 max-w-48">
+                                        <div
+                                          className="h-full rounded-full"
+                                          style={{
+                                            // A short minimum keeps tiny shares a dash, not a dot.
+                                            width:
+                                              value > 0 && breakdownPeak > 0
+                                                ? `max(0.5rem, ${(value / breakdownPeak) * 100}%)`
+                                                : 0,
+                                            backgroundColor:
+                                              PROVIDER_PRESENTATION[model.provider].color,
+                                          }}
+                                        />
+                                      </div>
+                                    </td>
+                                    <td className="py-2.5 pl-6 text-foreground">
+                                      {isModelCostUnknown(model) ? (
+                                        <span className="text-muted-foreground">Unpriced</span>
+                                      ) : (
+                                        formatUsd(model.costUsd)
+                                      )}
+                                    </td>
+                                    <td className="hidden py-2.5 pl-6 sm:table-cell">
+                                      {share === null ? "" : formatPercent(share)}
+                                    </td>
+                                    <td className="py-2.5 pl-6">
+                                      {formatTokens(model.totalTokens)}
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            )}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <table className="w-full table-fixed text-sm">
+                          <colgroup>
+                            <col className="w-2/5" />
+                            {activeProviders.map((provider) => (
+                              <col key={provider} style={{ width: timeValueColumnWidth }} />
+                            ))}
+                            <col style={{ width: timeValueColumnWidth }} />
+                            <col style={{ width: timeValueColumnWidth }} />
+                          </colgroup>
+                          <thead>
+                            <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                              <th className="py-2 font-normal">{isPast24Hours ? "Hour" : "Day"}</th>
+                              {activeProviders.map((provider) => (
+                                <th key={provider} className="py-2 text-right font-normal">
+                                  {PROVIDER_PRESENTATION[provider].label}
+                                </th>
+                              ))}
+                              <th className="py-2 text-right font-normal">Total</th>
+                              <th className="py-2 text-right font-normal">Tokens</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {breakdownPeriods.length === 0 ? (
+                              <tr>
+                                <td
+                                  colSpan={activeProviders.length + 3}
+                                  className="py-6 text-center text-muted-foreground"
+                                >
+                                  No activity in this window.
+                                </td>
+                              </tr>
+                            ) : (
+                              breakdownPeriods.map((period) => (
+                                <tr
+                                  key={"hourStart" in period ? period.hourStart : period.day}
+                                  className="border-b border-border/50 transition-colors hover:bg-muted/50"
+                                >
+                                  <td className="py-2 text-foreground">
+                                    {"hourStart" in period
+                                      ? formatHourShort(period.hourStart, window.timeZone)
+                                      : formatDayShort(period.day)}
+                                  </td>
+                                  {activeProviders.map((provider) => (
+                                    <td
+                                      key={provider}
+                                      className="py-2 text-right text-muted-foreground tabular-nums"
+                                    >
+                                      {formatUsd(period.byProvider.get(provider)?.costUsd ?? 0)}
+                                    </td>
+                                  ))}
+                                  <td className="py-2 text-right text-foreground tabular-nums">
+                                    {formatUsd(period.costUsd)}
+                                  </td>
+                                  <td className="py-2 text-right text-muted-foreground tabular-nums">
+                                    {formatTokens(period.totalTokens)}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      )}
+                    </section>
+                  </>
+                ) : null}
               </>
             )}
           </WorkspacePageContainer>

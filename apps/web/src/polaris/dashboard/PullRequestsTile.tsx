@@ -8,7 +8,10 @@ import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { useEnvironments } from "~/state/environments";
 import { usePullRequestList, type EnvironmentQueryTarget } from "~/state/pullRequests";
 
+import { useCalmMode } from "../calm/useCalmMode";
+
 const ROWS = 6;
+const CALM_ROWS = 3;
 
 /** The newest open pull requests across connected servers (Polaris dashboard). */
 export function newestOpenPullRequests(
@@ -36,7 +39,12 @@ export function PullRequestsTileBody() {
     [environments],
   );
   const { data, error, isPending } = usePullRequestList(targets);
-  const rows = useMemo(() => newestOpenPullRequests(data?.entries ?? [], ROWS), [data]);
+  // Calm mode: the three newest, titles only.
+  const calm = useCalmMode();
+  const rows = useMemo(
+    () => newestOpenPullRequests(data?.entries ?? [], calm ? CALM_ROWS : ROWS),
+    [calm, data],
+  );
 
   if (targets.length === 0) {
     return (
@@ -81,7 +89,7 @@ export function PullRequestsTileBody() {
               />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-sm text-foreground">{entry.title}</span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className={calm ? "sr-only" : "truncate text-xs text-muted-foreground"}>
                   {entry.repository} #{entry.number}
                   {entry.isDraft ? " · Draft" : ""}
                 </span>
