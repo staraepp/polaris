@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 023: first steps in any order
+
+- Status: done
+- What changed: `polaris/dashboard/FirstSteps.tsx`: each step that is not done shows its action, not only the next one; the next step's button is `default` (filled), the others `outline`. Doc comment updated. Steps are still checked from real state only.
+- How verified: `vp test run apps/web/src/polaris/dashboard` 20 passed; web typecheck and lint clean. Isolated Playwright contexts, 1280 px light and dark and 400 px light: buttons "Open (⌘K) | Customize | Appearance" with only the first filled; Customize entered edit mode and Appearance opened `/settings/appearance`. Shots `.playwright-mcp/polish/023-*`.
+- Risks: None known.
+- Next action: next polish cycle (024).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — polish 022: skills fit narrow windows
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (020).
 - Open questions: None.
 
-### 2026-10-06 — Claude (session 8) — polish 018: chat icons on the dashboard
-
-- Status: done
-- What changed: `polaris/dashboard/ThreadsTile.tsx`: the leading slot of a thread row shows the thread's chat icon (same `polaris:thread-icons:v1` map the sidebar writes, read with `useLocalStorage`, so it updates live); a thread that needs you keeps its status dot, as a corner badge when there is an icon. Idle threads with no icon no longer show a grey `bg-border` speck; the slot stays empty so titles align.
-- How verified: `vp test run apps/web/src/polaris/dashboard` 16 passed; web typecheck and lint clean. Isolated Playwright contexts, light and dark, with one thread given a violet rocket in localStorage: the icon led that row, the other row had no speck. Shots `.playwright-mcp/polish/018-*`.
-- Risks: The icon-plus-status corner dot was not seen live (forcing a working thread would need a real turn); its classes mirror the plain dot.
-- Next action: next polish cycle (019).
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — polish 018: chat icons on the dashboard. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 017: the dashboard counts as home in the sidebar. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 016: skills read as documents. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows. Rolled up; see `git log`.
