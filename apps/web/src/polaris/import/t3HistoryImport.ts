@@ -1,5 +1,6 @@
 import type {
   PolarisT3HistoryProject,
+  PolarisT3HistoryScanResult,
   PolarisT3HistoryUnavailableReason,
 } from "@t3tools/contracts";
 
@@ -13,6 +14,20 @@ export function defaultT3Selection(projects: readonly PolarisT3HistoryProject[])
     projects
       .filter((project) => project.importedThreadCount < project.threadCount)
       .map((project) => project.sourceProjectId),
+  );
+}
+
+/**
+ * How many T3 Code threads are not in Polaris yet (0 while scanning or when
+ * T3 Code is not readable). Drives the hints that point people to the T3 Code
+ * import (V 4.7.1): it sits on the Import page's second tab, and anyone who
+ * set up Polaris before V 4.4.0 never saw the onboarding offer.
+ */
+export function t3NewThreadCount(scan: PolarisT3HistoryScanResult | null): number {
+  if (scan?._tag !== "available") return 0;
+  return scan.projects.reduce(
+    (sum, project) => sum + Math.max(0, project.threadCount - project.importedThreadCount),
+    0,
   );
 }
 

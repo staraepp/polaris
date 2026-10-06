@@ -1249,6 +1249,18 @@ describe("ClientSettings bot looks, orbs and the idle beam (Polaris, V 4.5.0)", 
   });
 });
 
+describe("ClientSettings sidebar artwork (Polaris, V 4.7.1)", () => {
+  it("is on by default and can be turned off", () => {
+    expect(decodeClientSettings({}).sidebarArtworkEnabled).toBe(true);
+    expect(decodeClientSettings({ sidebarArtworkEnabled: false }).sidebarArtworkEnabled).toBe(
+      false,
+    );
+    expect(decodeClientSettingsPatch({ sidebarArtworkEnabled: false })).toEqual({
+      sidebarArtworkEnabled: false,
+    });
+  });
+});
+
 describe("ClientSettings composer usage meter (Polaris)", () => {
   it("is on by default and can be turned off", () => {
     expect(decodeClientSettings({}).composerUsageMeterEnabled).toBe(true);

@@ -511,6 +511,8 @@ export const ClientSettingsSchema = Schema.Struct({
   activityOrbsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
   /** Polaris (V 4.5.0): a faint beam around the idle composer; off by default. */
   composerIdleBeamEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  /** Polaris (V 4.7.1): the green artwork behind "Polaris" in the sidebar header, in every build. */
+  sidebarArtworkEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
   ),
@@ -1915,6 +1917,7 @@ export const ClientSettingsPatch = Schema.Struct({
   botColors: Schema.optionalKey(BotColors),
   activityOrbsEnabled: Schema.optionalKey(Schema.Boolean),
   composerIdleBeamEnabled: Schema.optionalKey(Schema.Boolean),
+  sidebarArtworkEnabled: Schema.optionalKey(Schema.Boolean),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),

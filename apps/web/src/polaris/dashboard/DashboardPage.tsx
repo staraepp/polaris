@@ -62,6 +62,7 @@ import { NoteWidgetBody } from "./NoteWidget";
 import { selectDashboardThreads } from "./dashboardThreads";
 import { PullRequestsTileBody } from "./PullRequestsTile";
 import { StartTileBody } from "./StartTile";
+import { T3ImportNotice } from "./T3ImportNotice";
 import { ThreadsTileBody } from "./ThreadsTile";
 import { UsageTileBody } from "./UsageTile";
 
@@ -344,6 +345,7 @@ export function DashboardPage() {
                   }}
                   onCustomize={() => setEditing(true)}
                 />
+                <T3ImportNotice />
               </>
             )}
             {layout.widgets.length === 0 ? (

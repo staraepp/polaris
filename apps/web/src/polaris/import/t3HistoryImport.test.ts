@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { defaultT3Selection, summarizeT3Import, t3UnavailableText } from "./t3HistoryImport";
+import {
+  defaultT3Selection,
+  summarizeT3Import,
+  t3NewThreadCount,
+  t3UnavailableText,
+} from "./t3HistoryImport";
 
 const project = (id: string, threadCount: number, importedThreadCount: number) => ({
   sourceProjectId: id,
@@ -23,6 +28,22 @@ describe("defaultT3Selection", () => {
     expect([
       ...defaultT3Selection([project("new", 3, 0), project("done", 2, 2), project("some", 4, 1)]),
     ]).toEqual(["new", "some"]);
+  });
+});
+
+describe("t3NewThreadCount", () => {
+  it("adds up the threads Polaris does not have yet", () => {
+    expect(
+      t3NewThreadCount({
+        _tag: "available",
+        projects: [project("new", 3, 0), project("done", 2, 2), project("some", 4, 1)],
+      }),
+    ).toBe(6);
+  });
+
+  it("is zero while scanning or when T3 Code cannot be read", () => {
+    expect(t3NewThreadCount(null)).toBe(0);
+    expect(t3NewThreadCount({ _tag: "unavailable", reason: "missing" })).toBe(0);
   });
 });
 

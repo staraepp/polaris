@@ -12,6 +12,8 @@ export interface HubTab<Id extends string> {
   readonly id: Id;
   readonly label: string;
   readonly icon?: ReactNode;
+  /** A short count after the label, for example "64 new". */
+  readonly badge?: string | undefined;
 }
 
 export function HubTabs<Id extends string>({
@@ -50,6 +52,11 @@ export function HubTabs<Id extends string>({
           >
             {tab.icon}
             {tab.label}
+            {tab.badge ? (
+              <span className="rounded-full bg-primary-subtle px-1.5 py-px text-2xs font-medium text-primary-text tabular-nums">
+                {tab.badge}
+              </span>
+            ) : null}
           </Tabs.Tab>
         ))}
         <Tabs.Indicator className="absolute top-1/2 left-0 z-0 h-8 w-(--active-tab-width) translate-x-(--active-tab-left) -translate-y-1/2 rounded-lg bg-background shadow-xs ring-1 ring-border/60 transition-[translate,width] duration-200 ease-out motion-reduce:transition-none" />
