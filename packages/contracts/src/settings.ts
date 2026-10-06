@@ -145,6 +145,13 @@ export type BotAccessory = typeof BotAccessory.Type;
 export const LAUNCH_PAGES = ["dashboard", "newThread"] as const;
 export const LaunchPage = Schema.Literals(LAUNCH_PAGES);
 export type LaunchPage = typeof LaunchPage.Type;
+/**
+ * Polaris: the name friends see in shared whiteboards, docs and chat. Empty
+ * until onboarding asks; otherwise 2 to 24 letters, digits, `.`, `_` or `-`.
+ */
+export const COLLAB_USERNAME_PATTERN = /^[A-Za-z0-9._-]{2,24}$/;
+export const CollabUsername = Schema.String.check(Schema.isPattern(/^(?:[A-Za-z0-9._-]{2,24})?$/));
+export type CollabUsername = typeof CollabUsername.Type;
 
 /** Polaris: where voice clips are transcribed (`clide-api-spec.md`, or an OpenAI-compatible server). */
 export const VoiceBackendSetting = Schema.Literals(["clide", "openaiCompatible"]);
@@ -480,6 +487,8 @@ export const ClientSettingsSchema = Schema.Struct({
   backgroundBlur: BackgroundBlur.pipe(Schema.withDecodingDefault(Effect.succeed(0))),
   /** Polaris: where the app opens; the dashboard since V 4.0.0. */
   launchPage: LaunchPage.pipe(Schema.withDecodingDefault(Effect.succeed("dashboard" as const))),
+  /** Polaris: your username for collaboration features; asked during onboarding. */
+  collabUsername: CollabUsername.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
   /** Polaris: what Orbie wears; none by default. */
   botAccessory: BotAccessory.pipe(Schema.withDecodingDefault(Effect.succeed("none" as const))),
   /** Polaris: bot shape per provider driver; missing drivers use the built-in pick. */
@@ -1873,6 +1882,7 @@ export const ClientSettingsPatch = Schema.Struct({
   botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
   botAccessory: Schema.optionalKey(BotAccessory),
   launchPage: Schema.optionalKey(LaunchPage),
+  collabUsername: Schema.optionalKey(CollabUsername),
   backgroundEnabled: Schema.optionalKey(Schema.Boolean),
   backgroundDim: Schema.optionalKey(BackgroundDim),
   backgroundBlur: Schema.optionalKey(BackgroundBlur),

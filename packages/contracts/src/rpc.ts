@@ -76,6 +76,13 @@ import {
   AgentSessionScanError,
 } from "./agentSessions.ts";
 import {
+  PolarisT3HistoryError,
+  PolarisT3HistoryImportInput,
+  PolarisT3HistoryImportResult,
+  PolarisT3HistoryScanInput,
+  PolarisT3HistoryScanResult,
+} from "./polarisT3History.ts";
+import {
   AssetAccessError,
   AssetCreateUrlInput,
   AssetCreateUrlResult,
@@ -357,6 +364,9 @@ export const WS_METHODS = {
   filesystemBrowse: "filesystem.browse",
   agentSessionsScan: "agentSessions.scan",
   agentSessionsImport: "agentSessions.import",
+  // Polaris: T3 Code history import (read-only source).
+  polarisT3HistoryScan: "polaris.t3History.scan",
+  polarisT3HistoryImport: "polaris.t3History.import",
   assetsCreateUrl: "assets.createUrl",
   assetsPersistChatAttachments: "assets.persistChatAttachments",
   attachmentsCreateUploadUrl: "attachments.createUploadUrl",
@@ -1200,6 +1210,18 @@ const WsAgentSessionsImportRpc = Rpc.make(WS_METHODS.agentSessionsImport, {
   ]),
 });
 
+const WsPolarisT3HistoryScanRpc = Rpc.make(WS_METHODS.polarisT3HistoryScan, {
+  payload: PolarisT3HistoryScanInput,
+  success: PolarisT3HistoryScanResult,
+  error: Schema.Union([PolarisT3HistoryError, EnvironmentAuthorizationError]),
+});
+
+const WsPolarisT3HistoryImportRpc = Rpc.make(WS_METHODS.polarisT3HistoryImport, {
+  payload: PolarisT3HistoryImportInput,
+  success: PolarisT3HistoryImportResult,
+  error: Schema.Union([PolarisT3HistoryError, EnvironmentAuthorizationError]),
+});
+
 const WsAssetsCreateUrlRpc = Rpc.make(WS_METHODS.assetsCreateUrl, {
   payload: AssetCreateUrlInput,
   success: AssetCreateUrlResult,
@@ -1806,6 +1828,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsFilesystemBrowseRpc,
   WsAgentSessionsScanRpc,
   WsAgentSessionsImportRpc,
+  WsPolarisT3HistoryScanRpc,
+  WsPolarisT3HistoryImportRpc,
   WsAssetsCreateUrlRpc,
   WsAssetsPersistChatAttachmentsRpc,
   WsAttachmentsCreateUploadUrlRpc,

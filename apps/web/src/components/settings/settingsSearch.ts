@@ -645,6 +645,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["gooey liquid plus menu attach composer chips effects"],
   },
   {
+    id: "collab-username",
+    title: "Username",
+    to: "/settings/general",
+    searchTerms: ["username name profile collaboration friends whiteboard docs chat"],
+  },
+  {
     id: "launch-page",
     title: "Open Polaris on",
     to: "/settings/general",

@@ -37,9 +37,10 @@ function ChatIndexRouteView() {
 
 /**
  * Landing on the index route opens the dashboard (Polaris, the default launch
- * page) or drops straight into a draft thread for the most recently active
- * project, so the first screen is never a dead end. Falls back to an
- * add-project hero when no project exists yet.
+ * page, even before any project exists) or, with the "new thread" launch page,
+ * drops straight into a draft thread for the most recently active project, so
+ * the first screen is never a dead end. Falls back to an add-project hero when
+ * no project exists yet.
  */
 function IndexDraftLanding() {
   const projects = useProjects();
@@ -74,8 +75,9 @@ function IndexDraftLanding() {
   if (!bootstrapped) {
     return null;
   }
+  // Polaris: the dashboard is home, with or without projects.
+  if (opensDashboard) return <Navigate to="/dashboard" replace />;
   if (mostRecentProject !== null) {
-    if (opensDashboard) return <Navigate to="/dashboard" replace />;
     return startState.failed ? (
       <DraftStartError
         onRetry={() => {

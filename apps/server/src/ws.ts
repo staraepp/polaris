@@ -246,6 +246,7 @@ import {
 } from "@t3tools/shared/usageLimits";
 import * as AgentSessionScanner from "./project/AgentSessionScanner.ts";
 import * as AgentSessionImporter from "./project/AgentSessionImporter.ts";
+import * as T3HistoryImporter from "./polaris/t3History/T3HistoryImporter.ts";
 import * as UsageLimitSources from "./usage/UsageLimitSources.ts";
 
 const CONFIG_DISCOVERY_TIMEOUT = Duration.seconds(5);
@@ -1246,6 +1247,7 @@ const makeWsRpcLayer = (
         yield* RepositoryIdentityResolver.RepositoryIdentityResolver;
       const agentSessionScanner = yield* AgentSessionScanner.AgentSessionScanner;
       const agentSessionImporter = yield* AgentSessionImporter.AgentSessionImporter;
+      const t3HistoryImporter = yield* T3HistoryImporter.T3HistoryImporter;
       const checkpointDiffQuery = yield* CheckpointDiffQuery.CheckpointDiffQuery;
       const keybindings = yield* Keybindings.Keybindings;
       const environmentTheme = yield* EnvironmentTheme.EnvironmentThemeService;
@@ -3137,6 +3139,16 @@ const makeWsRpcLayer = (
           observeRpcEffect(
             WS_METHODS.agentSessionsImport,
             agentSessionImporter.importRecentAgentThreads(input),
+            { "rpc.aggregate": "workspace" },
+          ),
+        [WS_METHODS.polarisT3HistoryScan]: () =>
+          observeRpcEffect(WS_METHODS.polarisT3HistoryScan, t3HistoryImporter.scan(), {
+            "rpc.aggregate": "workspace",
+          }),
+        [WS_METHODS.polarisT3HistoryImport]: (input) =>
+          observeRpcEffect(
+            WS_METHODS.polarisT3HistoryImport,
+            t3HistoryImporter.importProject(input),
             { "rpc.aggregate": "workspace" },
           ),
         [WS_METHODS.assetsCreateUrl]: (input) =>

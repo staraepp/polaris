@@ -7,6 +7,7 @@ import { layer as providerSessionRuntimeLayer } from "../persistence/ProviderSes
 import * as TextGeneration from "../textGeneration/TextGeneration.ts";
 import { ProviderAuthServiceLive } from "../provider/Layers/ProviderAuthService.ts";
 import { layer as agentSessionImporterLayer } from "../project/AgentSessionImporter.ts";
+import * as T3HistoryImporter from "../polaris/t3History/T3HistoryImporter.ts";
 import * as AgentSessionScanner from "../project/AgentSessionScanner.ts";
 import { layer as projectServiceLayer } from "../project/ProjectService.ts";
 import { layer as projectSetupScriptRunnerLayer } from "../project/ProjectSetupScriptRunner.ts";
@@ -232,6 +233,11 @@ const agentSessionImporterProvided = agentSessionImporterLayer.pipe(
   ),
 );
 
+// Polaris: T3 Code history import (reads ~/.t3 read-only).
+const t3HistoryImporterProvided = T3HistoryImporter.layer().pipe(
+  Layer.provide(legacyV1ThreadImporterProvided),
+);
+
 const threadManagementProvided = threadManagementServiceLayer.pipe(
   Layer.provide(Layer.merge(orchestratorProvided, legacyV1ThreadImporterProvided)),
 );
@@ -319,6 +325,7 @@ export const OrchestrationV2ProductionLayerLive = Layer.mergeAll(
   ),
   providerContinuationWorkerProvided,
   agentSessionImporterProvided,
+  t3HistoryImporterProvided,
 ).pipe(
   Layer.provide(Scheduler.layer),
   Layer.provideMerge(OrchestrationEventInfrastructureLayerLive),

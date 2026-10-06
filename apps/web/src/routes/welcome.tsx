@@ -7,6 +7,7 @@ import * as Option from "effect/Option";
 import { NoProjectsHero } from "../components/NoProjectsHero";
 import { WelcomeWizard } from "../components/onboarding/WelcomeWizard";
 import { useNewThreadHandler } from "../hooks/useHandleNewThread";
+import { useClientSettings } from "../hooks/useSettings";
 
 const decodeEnvironmentId = Schema.decodeOption(EnvironmentId);
 
@@ -33,6 +34,7 @@ function WelcomeRouteView() {
   const isWelcomeRoute = useLocation({ select: (location) => location.pathname === "/welcome" });
   const [dismissed, setDismissed] = useState(false);
   const openNewThread = useNewThreadHandler();
+  const opensDashboard = useClientSettings((settings) => settings.launchPage === "dashboard");
   // An authenticated gate means a primary server is serving this app —
   // desktop, `npx t3`, or a dev server — and that server is "this machine"
   // no matter what hostname the browser used. Only hosted-static has no
@@ -47,6 +49,11 @@ function WelcomeRouteView() {
           resumeEnvironmentId={resumeEnvironmentId}
           onDone={async (projectRef) => {
             setDismissed(true);
+            // Polaris: setup ends on the dashboard, the app's home.
+            if (opensDashboard) {
+              await navigate({ to: "/dashboard", replace: true });
+              return;
+            }
             if (projectRef !== undefined) {
               await openNewThread(projectRef, { replace: true }).catch(() =>
                 navigate({ to: "/", replace: true }),

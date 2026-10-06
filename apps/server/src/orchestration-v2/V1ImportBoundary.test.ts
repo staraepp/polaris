@@ -19,6 +19,8 @@ const legacyReaders = ["orchestration-v2/legacy/", "persistence/Migrations/"] as
 const legacyReaderFiles: Record<string, string> = {
   // Provider history for settings migration reads V1 thread sessions once at load.
   "serverSettings.ts": "one-time provider history for settings migration",
+  // Polaris: copies T3 Code's V1 rows in so the legacy importer can open them.
+  "polaris/t3History/T3HistoryImporter.ts": "T3 Code history import (feeds the legacy importer)",
 };
 const retiredPaths = [
   "orchestration",
@@ -82,9 +84,11 @@ it("keeps the legacy importer out of reach of new code", () => {
     .toSorted();
   // Startup imports pending transcripts, the V2 runtime wires the importer, and
   // thread and project services hydrate a V1 transcript before they act on it.
+  // Polaris: the T3 Code history import runs the importer after copying rows in.
   assert.deepEqual(importers, [
     "orchestration-v2/ThreadManagementService.ts",
     "orchestration-v2/runtimeLayer.ts",
+    "polaris/t3History/T3HistoryImporter.ts",
     "project/ProjectService.ts",
     "serverRuntimeStartup.ts",
   ]);

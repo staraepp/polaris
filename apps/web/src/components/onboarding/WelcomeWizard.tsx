@@ -67,13 +67,16 @@ import { connectPairing } from "../../connection/onboarding";
 import { getProviderSummary } from "../settings/providerStatus";
 import { getDriverOption } from "../settings/providerDriverMeta";
 import { ChatGptWelcomeCoordinator } from "../settings/ChatGptWelcomeCoordinator";
+import { useT3HistoryScan } from "../../polaris/import/useT3HistoryScan";
+import { T3Step } from "../../polaris/onboarding/T3Step";
+import { WelcomeShell } from "../../polaris/onboarding/WelcomeShell";
+import { YouStep } from "../../polaris/onboarding/YouStep";
 import { AddManagedCodexAccountDialog, CodexSetupSection } from "../settings/CodexSetupSection";
 import { readCodexSetupMode } from "../settings/CodexSetupSection.logic";
 import { buildProviderInstanceUpdatePatch } from "../settings/SettingsPanels.logic";
 import { TerminalViewport } from "../ThreadTerminalDrawer";
 import { CloudEnvironmentConnectRows } from "../cloud/CloudEnvironmentConnectList";
 import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
-import { PolarisStar } from "../T3Wordmark";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
@@ -83,7 +86,6 @@ import { Input } from "../ui/input";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { ScrollArea } from "../ui/scroll-area";
 import { Spinner } from "../ui/spinner";
-import { WizardPanel, WizardSteps, WizardPopup, WizardHeader } from "../ui/wizard";
 import { Dialog } from "../ui/dialog";
 import { toastManager } from "../ui/toast";
 import { cn } from "../../lib/utils";
@@ -98,11 +100,19 @@ import { formatRelativeTime } from "../../timestampFormat";
  * re-runnable by clearing the flag.
  */
 
-type WizardStep = "connection" | "agents" | "import";
+// Polaris: "you" (username) comes first; "t3" is offered after Projects when T3 Code has history.
+type WizardStep = "you" | "connection" | "agents" | "import" | "t3";
 const NO_ENVIRONMENTS: readonly EnvironmentId[] = [];
 
 const AGENT_ONBOARDING_THREAD_ID = ThreadId.make("onboarding-agent-setup");
-const ONBOARDING_STAGES = ["Connect", "Agents", "Projects"] as const;
+const ONBOARDING_STAGES = ["You", "Connect", "Agents", "Projects"] as const;
+const ORBIE_GREETINGS: Record<WizardStep, string> = {
+  you: "Hi! I'm Orbie. I'll help you get set up.",
+  connection: "Which computers should I work on?",
+  agents: "Let's make sure your agents are ready.",
+  import: "Want to bring your past work along?",
+  t3: "I found your T3 Code threads too.",
+};
 const SCAN_LIMIT_MESSAGE = "Scan limit reached. Some projects or conversations may be missing.";
 
 export function WelcomeWizard({
@@ -116,7 +126,7 @@ export function WelcomeWizard({
   readonly onDone: (projectRef?: ScopedProjectRef) => void | Promise<void>;
 }) {
   const completeOnboarding = useCompleteOnboarding();
-  const [step, setStep] = useState<WizardStep>(resumeEnvironmentId ? "agents" : "connection");
+  const [step, setStep] = useState<WizardStep>(resumeEnvironmentId ? "agents" : "you");
   const { environments } = useEnvironments();
   const [selection, setSelection] = useState<ReadonlySet<EnvironmentId> | null>(null);
   const autoSelectedComputers = useRef(new Set<EnvironmentId>());
@@ -155,7 +165,13 @@ export function WelcomeWizard({
     setSetupIds(ids);
     setStep("agents");
   };
-  const stageIndex = step === "agents" ? 1 : step === "import" ? 2 : 0;
+  const stageIndex = step === "you" ? 0 : step === "connection" ? 1 : step === "agents" ? 2 : 3;
+  const t3Scan = useT3HistoryScan(
+    step === "import" || step === "t3" ? (primaryEnvironment?.environmentId ?? null) : null,
+  );
+  const t3Offer =
+    t3Scan.data?._tag === "available" &&
+    t3Scan.data.projects.some((project) => project.importedThreadCount < project.threadCount);
   const finish = useCallback(
     (projectRef?: ScopedProjectRef, importWarning?: string, importedThreadCount = 0) => {
       if (finishingPromiseRef.current !== null) return finishingPromiseRef.current;
@@ -209,73 +225,76 @@ export function WelcomeWizard({
     },
     [completeOnboarding, onDone],
   );
+  // Polaris: offer T3 Code history before finishing, when there is any.
+  const pendingFinishRef = useRef<Parameters<typeof finish> | null>(null);
+  const finishOrOfferT3 = (...args: Parameters<typeof finish>) => {
+    if (step === "import" && t3Offer) {
+      pendingFinishRef.current = args;
+      setIsImporting(false);
+      setStep("t3");
+      return Promise.resolve(true);
+    }
+    return finish(...args);
+  };
 
   return (
     <Dialog open disablePointerDismissal onOpenChange={(_, event) => event.cancel()}>
-      <WizardPopup
-        size="wide"
-        bottomStickOnMobile={false}
-        showCloseButton={false}
+      <WelcomeShell
+        title="Set up Polaris"
+        steps={ONBOARDING_STAGES}
+        currentStep={stageIndex}
+        greeting={ORBIE_GREETINGS[step]}
+        holdHeight={isLoadingProjects}
         initialFocus={() => document.getElementById("onboarding-pairing-url") ?? true}
+        isStepDisabled={(index) => isImporting || index >= stageIndex}
+        onStepChange={(index) => {
+          if (isImporting || index >= stageIndex) return;
+          setStep(index === 0 ? "you" : index === 1 ? "connection" : "agents");
+        }}
       >
-        <WizardHeader
-          title="Set up Polaris"
-          identity={
-            <div className="flex items-baseline gap-1.5" role="img" aria-label="Polaris">
-              <PolarisStar className="size-5 shrink-0 text-primary" aria-hidden />
-              <span className="text-2xl font-medium tracking-tight text-foreground">Polaris</span>
-            </div>
-          }
-        >
-          <WizardSteps
-            steps={ONBOARDING_STAGES}
-            currentStep={stageIndex}
-            isStepDisabled={(index) => isImporting || index >= stageIndex}
-            onStepChange={(index) => {
-              if (isImporting || index > stageIndex) return;
-              setStep(index === 0 ? "connection" : "agents");
+        {step === "you" ? (
+          <YouStep onContinue={() => setStep("connection")} />
+        ) : step === "connection" ? (
+          <ConnectionStep
+            expandPairingInitially={!localAvailable && !hasCloudPublicConfig()}
+            selectedIds={selectedIds}
+            autoSelectedComputers={autoSelectedComputers.current}
+            onSelectionChange={setSelection}
+            onToggleEnvironment={(environmentId, checked) =>
+              setSelection((current) => {
+                const next = new Set(current ?? selectedIds);
+                if (checked) next.add(environmentId);
+                else next.delete(environmentId);
+                return next;
+              })
+            }
+            onContinue={() =>
+              startSetup(
+                environments
+                  .filter((environment) => selectedIds.has(environment.environmentId))
+                  .map((environment) => environment.environmentId),
+              )
+            }
+            onPaired={(environmentId) => {
+              setSelection(new Set([...selectedIds, environmentId]));
             }}
           />
-        </WizardHeader>
-
-        <WizardPanel holdHeight={isLoadingProjects}>
-          {step === "connection" ? (
-            <ConnectionStep
-              expandPairingInitially={!localAvailable && !hasCloudPublicConfig()}
-              selectedIds={selectedIds}
-              autoSelectedComputers={autoSelectedComputers.current}
-              onSelectionChange={setSelection}
-              onToggleEnvironment={(environmentId, checked) =>
-                setSelection((current) => {
-                  const next = new Set(current ?? selectedIds);
-                  if (checked) next.add(environmentId);
-                  else next.delete(environmentId);
-                  return next;
-                })
-              }
-              onContinue={() =>
-                startSetup(
-                  environments
-                    .filter((environment) => selectedIds.has(environment.environmentId))
-                    .map((environment) => environment.environmentId),
-                )
-              }
-              onPaired={(environmentId) => {
-                setSelection(new Set([...selectedIds, environmentId]));
-              }}
-            />
-          ) : step === "agents" ? (
-            <AgentsStep environmentIds={setupIds} onContinue={() => setStep("import")} />
-          ) : (
-            <ImportStep
-              scans={scans}
-              isImporting={isImporting}
-              setIsImporting={setIsImporting}
-              onDone={finish}
-            />
-          )}
-        </WizardPanel>
-      </WizardPopup>
+        ) : step === "agents" ? (
+          <AgentsStep environmentIds={setupIds} onContinue={() => setStep("import")} />
+        ) : step === "import" ? (
+          <ImportStep
+            scans={scans}
+            isImporting={isImporting}
+            setIsImporting={setIsImporting}
+            onDone={finishOrOfferT3}
+          />
+        ) : (
+          <T3Step
+            environmentId={primaryEnvironment?.environmentId ?? null}
+            onFinish={() => void finish(...(pendingFinishRef.current ?? []))}
+          />
+        )}
+      </WelcomeShell>
       <ChatGptWelcomeCoordinator />
     </Dialog>
   );
