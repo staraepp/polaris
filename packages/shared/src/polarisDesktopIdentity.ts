@@ -33,5 +33,12 @@ export const UPSTREAM_DESKTOP_SCHEMES = ["t3code", "t3code-dev"] as const;
 export const POLARIS_DESKTOP_PROFILE = "polaris";
 export const POLARIS_DESKTOP_DEV_PROFILE = "polaris-dev";
 
+/**
+ * First port the desktop app tries for its bundled server (it scans upward
+ * from here). Upstream starts at 3773; a different start keeps the two apps
+ * from trading ports, and pairing links, depending on which opened first.
+ */
+export const POLARIS_DESKTOP_BACKEND_PORT = 3783;
+
 /** Server state folder in the home directory when `T3CODE_HOME` is not set. */
 export const POLARIS_HOME_DIR_NAME = ".polaris";
