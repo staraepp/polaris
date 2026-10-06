@@ -39,6 +39,22 @@ function allIds(state: ThreadActionMenuState): string[] {
 }
 
 describe("buildThreadActionMenuItems", () => {
+  it("offers thread icons after rename only when the sidebar passes the icon state (Polaris)", () => {
+    expect(ids(baseState)).not.toContain("set-icon");
+    const unset = ids({ ...baseState, threadIcon: "unset" });
+    expect(unset.slice(unset.indexOf("rename"), unset.indexOf("rename") + 2)).toEqual([
+      "rename",
+      "set-icon",
+    ]);
+    expect(unset).not.toContain("clear-icon");
+    const set = ids({ ...baseState, threadIcon: "set" });
+    expect(set.slice(set.indexOf("rename"), set.indexOf("rename") + 3)).toEqual([
+      "rename",
+      "set-icon",
+      "clear-icon",
+    ]);
+  });
+
   it("hides lifecycle items when the environment lacks the capabilities", () => {
     expect(
       ids({

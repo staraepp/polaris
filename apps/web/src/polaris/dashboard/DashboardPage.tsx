@@ -15,6 +15,7 @@ import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
 import { isElectron } from "~/env";
 import { useLocalStorage } from "~/hooks/useLocalStorage";
 import { useScratchProject } from "~/hooks/useScratchProject";
+import { useClientSettings } from "~/hooks/useSettings";
 import { useEscapeToGoBack } from "~/hooks/useNavigateBack";
 import { useProjects, useThreadShells } from "~/state/entities";
 import { primaryServerProvidersAtom } from "~/state/server";
@@ -31,6 +32,7 @@ import {
 } from "~/components/ui/menu";
 
 import { DashboardGreeting } from "./DashboardGreeting";
+import { FirstSteps } from "./FirstSteps";
 import {
   addWidget,
   CUSTOM_WIDGET_KINDS,
@@ -109,6 +111,12 @@ export function DashboardPage() {
   );
   const layout = useMemo(() => normalizeLayout(storedLayout), [storedLayout]);
   const [editing, setEditing] = useState(false);
+  const lookChanged = useClientSettings(
+    (settings) =>
+      settings.botAccessory !== "none" ||
+      settings.backgroundEnabled ||
+      Object.keys(settings.themeFonts).length > 0,
+  );
   // Esc leaves edit mode first, then the page.
   useEscapeToGoBack(editing ? () => setEditing(false) : undefined);
   const [drag, setDrag] = useState<{
@@ -325,7 +333,18 @@ export function DashboardPage() {
                 not need and add notes or links of your own. Kept on this device.
               </p>
             ) : (
-              <DashboardGreeting active={active} />
+              <>
+                <DashboardGreeting active={active} />
+                <FirstSteps
+                  signals={{
+                    hasProject: projects.length > 0,
+                    hasThread: active.length + recent.length > 0,
+                    dashboardCustomized: !isDefaultLayout(layout),
+                    lookChanged,
+                  }}
+                  onCustomize={() => setEditing(true)}
+                />
+              </>
             )}
             {layout.widgets.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">

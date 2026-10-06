@@ -10,6 +10,22 @@ const ICON_PATHS: Record<string, ReadonlyArray<{ tag: string; attrs: Record<stri
     { tag: "path", attrs: { d: "M10 12h4" } },
   ],
   check: [{ tag: "path", attrs: { d: "M20 6 9 17l-5-5" } }],
+  // Polaris chat icons (Lucide "shapes" and "circle-off", ISC).
+  shapes: [
+    {
+      tag: "path",
+      attrs: {
+        d: "M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z",
+      },
+    },
+    { tag: "rect", attrs: { x: "3", y: "14", width: "7", height: "7", rx: "1" } },
+    { tag: "circle", attrs: { cx: "17.5", cy: "17.5", r: "3.5" } },
+  ],
+  "circle-off": [
+    { tag: "path", attrs: { d: "m2 2 20 20" } },
+    { tag: "path", attrs: { d: "M8.35 2.69A10 10 0 0 1 21.3 15.65" } },
+    { tag: "path", attrs: { d: "M19.08 19.08A10 10 0 1 1 4.92 4.92" } },
+  ],
   timer: [
     { tag: "line", attrs: { x1: "10", x2: "14", y1: "2", y2: "2" } },
     { tag: "line", attrs: { x1: "12", x2: "15", y1: "14", y2: "11" } },

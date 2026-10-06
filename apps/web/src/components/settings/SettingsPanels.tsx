@@ -167,6 +167,7 @@ import {
 import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
+import { BackgroundSetting } from "./polaris/BackgroundSetting";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
 import { LaunchPageSetting } from "./polaris/LaunchPageSetting";
 import { ORBIE_NAME } from "../../polaris/bots/orbie";
@@ -1335,6 +1336,8 @@ export function AppearanceSettingsPanel() {
             </div>
           }
         />
+
+        <BackgroundSetting />
 
         {showEnvironmentIdentification ? (
           <SettingsRow

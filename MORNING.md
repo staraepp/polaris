@@ -1,6 +1,14 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.1.0**. Start with "Look at these first" at the bottom.
+
+## V 4.1.0 ("customizable everything", first slice), tag `v4.1.0`
+
+- **Your own background, image or video** (Settings → Appearance → Background, off by default). Kept only in this browser's storage. Dim and Blur sliders; glass sidebar and cards over it. A contrast floor samples the picture and never lets the scrim go below what keeps body text at 4.5:1 and muted labels at 3:1 (a logged deviation: strict 4.5:1 for muted text would hide most photos). Video plays muted and holds still with Reduce motion, in the background, in an unfocused window or on low battery.
+- **Chat icons:** right-click a thread → Choose icon… (Lucide icon in a project color, emoji, or monogram); shown before its title in the sidebar, kept per device.
+- **First steps:** a card under the greeting with five onboarding steps detected from real state, only the next one with a button; hide it any time, and it leaves when done.
+- **Review next:** the greeting jumps to the thread waiting on you, so the dashboard works as a review queue.
+- Contact sheet: `../.playwright-mcp/v4.1-sheet.png`.
 
 ## V 4.0.0 (the amendment), tag `v4.0.0`
 
@@ -10,6 +18,32 @@ Star, this is the summary of the overnight run. Everything is local on this Mac:
 - **Home is the dashboard.** Polaris opens on it (Settings → General → "Open Polaris on" switches back). Greeting with Orbie and a live line, widgets you can move, resize, remove, add back, plus your own Note and Links widgets.
 - **Guards.** No plugin API. A stub Clide server for voice work (`scripts/polaris-clide-stub.ts`); AFFiNE docs spike with its license (mixed: MIT, an Enterprise license for the server folders, MPL-2.0 parts); Slack-like chat design note; the liquid "+" menu uses real buttons.
 - **Secrets scan:** clean (section below).
+
+## v1 to v3 (earlier in the run)
+
+Branches `v1`, `v2`, `v3` and `polish` merged into `main` with `--no-ff`; tags `v1-done`/`v1.0.0`, `v2-done`/`v2.0.0`, `v3-done`/`v3.0.0`. Nothing was pushed. Details for each item are in `HANDOFF.md` (entries and History) and `git log`.
+
+**v1 (finishing the v1 leftovers), tag `v1-done`**
+
+- Usage: "Models over time" stacked chart per model (cost/tokens), keyboard-readable with an sr-only table.
+- Usage: tool calls over time (new optional `UsageBucket.toolCalls`, counted by the Claude and Codex transcript parsers; scan cache re-parses once to pick them up).
+- Usage: a one-year period (`usage.period.year`, Mod+Shift+5) and a fix so "1 year" persists.
+- Quota-low threshold as a setting (Off, or 10–50% left).
+- Per-thread usage ("This thread": tokens and tool calls per run) in the context meter popover.
+
+**v2 (composer and atmosphere), tag `v2-done`**
+
+- Usage meter beside the send button (5-hour and weekly windows; quiet until the low-quota threshold, red-coral since V 4.0.0). On by default (see Questions).
+- Bot avatars in the thread header (`bot-avatars`, MIT); since V 4.0.0 this is Orbie, on by default.
+- Liquid "+" composer menu (`liquid-gooey`, MIT), off by default.
+- Voice input: push-to-talk with Clide (desktop main process, token in `safeStorage`) or any OpenAI-compatible server; `voice-glow` beam while listening. Off by default.
+- Per-theme fonts: the theme on screen can wear its own interface and monospace families.
+
+**v3 (workspace), tag `v3-done`**
+
+- Bento dashboard (`/dashboard`): Start, Threads, Today (spend + limits), Pull requests, activity; now the home page with custom widgets (V 4.0.0).
+- Skill studio (`/skills`): every skill the provider sees, by source; edit the project's own SKILL.md; create new skills.
+- Four frontend skill templates Polaris ships (design review, accessible components, motion polish, UI states), installable from the studio.
 
 ## Polish cycles
 
@@ -31,6 +65,56 @@ One focused change per cycle, on branch `polish`, each its own commit. Before/af
 | 012 | Dashboard activity chart became readable: the header shows the day under the pointer ("$73.84 spent on Sep 28") with that bar highlighted; with focus, arrow keys / Home / End step through days and the reading is announced                                                              | `012-activity-readout-{before,after}-{light,dark}.png`                                                             | kept   |
 | 013 | Per-theme fonts: a family that is not installed (e.g. a typo like "Gergia") is now flagged on the field (aria-invalid red border) with a status line saying the global font is used instead; before, it fell back silently                                                                 | `013-theme-font-missing-{before,after}-{light,dark}.png`                                                           | kept   |
 
+## Skipped or held back
+
+- **Polish cycles** paused at 13 of 25: after the versions, Star asked for V 4.0.0, then overnight UX work, which took priority. The stop rules were never hit.
+- **Plugin API:** not built (blueprint rule, amendment guard).
+- **Slack-like chat and the planning suite:** design notes only; see "Needs Star's approval".
+- **Packaging Polaris as its own desktop app:** not done; it would collide with your T3 Code install (see "Needs Star's approval"). Electron was not run or packaged.
+- **Review next** has no screenshot: no thread was waiting on you, and making one would need a real turn.
+- **AFFiNE:** docs-only spike, nothing self-hosted (amendment rule).
+
+## Contract changes
+
+Additive only (new optional fields, new RPCs or commands), each covered by tests.
+
+| File                                    | Change                                                                                                                                                                                                                                                                                                                                                           | Reason                                                                                |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.quotaLowThresholdPercent` (Int 0..50, default 20; optional in the patch) and the exported option list                                                                                                                                                                                                                                            | v1 leftover: the quota warning threshold as a setting (0 turns it off)                |
+| `packages/contracts/src/keybindings.ts` | new command `usage.period.year` (default binding Mod+Shift+5 in `packages/shared/src/keybindings.ts`)                                                                                                                                                                                                                                                            | v1 leftover: one-year Usage period                                                    |
+| `packages/contracts/src/usage.ts`       | `UsageBucket.toolCalls` (optional non-negative Int; absent when zero or not counted). No contract version bump: the module's own rule says optional bucket fields are additive                                                                                                                                                                                   | v1 leftover: tool calls over time                                                     |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.composerUsageMeterEnabled` (Boolean, default true; optional in the patch)                                                                                                                                                                                                                                                                        | v2: usage meter in the composer                                                       |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.botAvatarsEnabled` (Boolean, default false), `ClientSettings.botAvatarByDriver` (record of driver → one of the 18 `BOT_AVATAR_TYPES`, default `{}`); both optional in the patch                                                                                                                                                                  | v2: bot avatars                                                                       |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.gooeyComposerMenuEnabled` (Boolean, default false; optional in the patch)                                                                                                                                                                                                                                                                        | v2: liquid "+" composer menu                                                          |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.voiceInputEnabled` (default false), `voiceBackend` (`"clide" \| "openaiCompatible"`, default `"clide"`), `voiceClidePort` (Int 0..65535, 0 = unset), `voiceOpenAiBaseUrl`, `voiceOpenAiModel`, `voiceLanguage` (strings, default `""`); all optional in the patch. Secrets are not settings: they live in the desktop shell's `safeStorage` file | v2: voice input                                                                       |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.themeFonts`: record of theme id → `{ sans?, code? }` (default `{}`), optional in the patch                                                                                                                                                                                                                                                       | v2: per-theme fonts                                                                   |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.botAccessory` (`"none" \| "hat" \| "glasses" \| "headphones" \| "bowTie"`, default `"none"`; optional in the patch) and **`botAvatarsEnabled` default changed from `false` to `true`** (an explicit saved `false` is kept)                                                                                                                       | V 4.0.0: Orbie everywhere, with an optional accessory                                 |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.launchPage` (`"dashboard" \| "newThread"`, default `"dashboard"`; optional in the patch)                                                                                                                                                                                                                                                         | V 4.0.0: Polaris opens on the dashboard; the old landing stays one setting away       |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.backgroundEnabled` (default `false`), `backgroundDim` (int 30–90, default 60), `backgroundBlur` (int 0–24, default 0); all optional in the patch                                                                                                                                                                                                 | V 4.1.0: your own image or video background; the file itself stays in browser storage |
+
+## New dependencies
+
+| Package        | Version | License | Where      | Why                                                                                   |
+| -------------- | ------- | ------- | ---------- | ------------------------------------------------------------------------------------- |
+| `bot-avatars`  | 0.2.2   | MIT     | `apps/web` | Thread-header bot (v2 item 2); no dependencies, React peer; loaded lazily             |
+| `liquid-gooey` | 0.2.2   | MIT     | `apps/web` | Liquid "+" composer menu (v2 item 3); no dependencies, React peers; loaded lazily     |
+| `voice-glow`   | 0.3.0   | MIT     | `apps/web` | Voice-reactive composer glow (v2 item 4); no dependencies, React peers; loaded lazily |
+
+## Needs Star's approval
+
+- **Slack-like chat.** Not built. Design note in "Guards (V 4.0.0)" below: pick between the two readings (several people in one server, or a Slack-like layout for your own agent threads); the second has a safe first slice.
+- **Planning suite.** Not built. The AFFiNE docs spike is done (see "Guards (V 4.0.0)"); the recommendation there needs your yes before anything is installed or embedded.
+- **Plugin API.** Not built, by the blueprint's rule and the amendment; hard-fork editing still works.
+- **A desktop app of its own (your "full desktop app" ask).** The Electron shell in `apps/desktop` builds and its tests pass, but a packaged Polaris would still be **T3 Code to macOS**: app id `com.t3tools.t3code` (`scripts/build-desktop-artifact.ts:57`), Electron profile `~/Library/Application Support/t3code-v2` (`t3code-dev` in dev; `apps/desktop/src/app/DesktopUserData.ts`), server state in `~/.t3`, the `t3code://` scheme and window class `t3code`. Installed next to your real T3 Code, it would share that data and its single-instance lock (whichever opens second gives way), and the auto-updater still follows upstream's feed (see "App version string"). These are the internal identifiers `AGENTS.md` says to leave alone unless you ask, so I did not change them and did not run or package Electron. Proposed change, one branch, when you say yes: app id `app.polaris.desktop` (or a reverse-domain id you own), profile `polaris` / `polaris-dev`, home `~/.polaris` (with `T3CODE_HOME` still honored), scheme `polaris://`, window class `polaris`, the updater feed off until you have releases, then `vp run dist:desktop:dmg:arm64` for an unsigned local `.dmg` (Gatekeeper: right-click → Open). Nothing to migrate: no Polaris desktop data exists yet.
+
+## Questions for Star
+
+- **App version string.** Polaris versions are now V MAJOR.MINOR.PATCH (V 4.0.0 for the amendment), used for tags and notes. The desktop/web `package.json` versions are still upstream's, because the auto-updater compares them against upstream's release feed (`pingdotgg/t3code`). Switching them to 4.0.0 belongs with pointing the feed at your own releases.
+
+- **Usage meter default.** The composer usage meter ships on by default (quiet until a window is low). Upstream keeps its context indicator off by default; if you want the same, set `composerUsageMeterEnabled` to default `false` in `packages/contracts/src/settings.ts`.
+- **Discord Application ID.** Register an application at the Discord developer portal, paste its ID into `POLARIS_DISCORD_APPLICATION_ID` in `apps/desktop/src/polaris/discord/discordConfig.ts` (or export the env var of the same name for a dev run), and upload an asset named `polaris` for the large image. Until then the switch is disabled with an explanation.
+- **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
+
 ## Secrets scan (V 4.0.0, item 6)
 
 Run on 2026-10-05 over everything the fork added since the upstream snapshot `3e6b450` (79 commits at the time, 411 files, 19,603 added lines; no unmerged local branches), plus commit metadata and the 21 added PNGs.
@@ -40,3 +124,25 @@ Run on 2026-10-05 over everything the fork added since the upstream snapshot `3e
 - **Dev token:** `.polaris/dev-auth-token` is gitignored (`.gitignore:50`) and not tracked.
 - **Images:** the 21 added PNGs (rebrand icons) carry no text or EXIF chunks.
 - **One thing to know (not a secret):** `HANDOFF.md` "Before you push" has a `cd` line with this Mac's absolute repo path, which shows your macOS username. It is there for you to copy; drop it before publishing the repo if you mind.
+
+## UX research (overnight, 2026-10-05)
+
+What comparable agent apps do, and what Polaris took from it:
+
+| Habit seen                                                        | Where                                                                      | Polaris                                                                                                                                               |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One place gathers finished or blocked agent work (a review queue) | Codex app's review queue for automations; Cursor 3's Agents window sidebar | The dashboard is now home; its greeting has a "Review next" jump to the top thread waiting on you; the Threads widget already sorts "needs you" first |
+| Status readable without opening a thread                          | Cursor 3 (status in the sidebar), Conductor (agents side by side)          | Already upstream (sidebar status pills, dock badge); Orbie's state and the live greeting line add to it                                               |
+| Onboarding continues after setup                                  | (general pattern; upstream has a setup wizard)                             | "First steps" card: five steps checked from real state, hideable                                                                                      |
+| Personal touches that keep text readable                          | —                                                                          | Image/video background with a Dim scrim, glass sidebar, chat icons                                                                                    |
+| Side-by-side agents, checkpoints, multi-model compare             | Conductor                                                                  | Not taken: upstream already has worktrees and checkpoints; a grid view is a bigger design (idea for later)                                            |
+
+Sources: [The New Stack, hands-on review of Conductor](https://thenewstack.io/a-hands-on-review-of-conductor-an-ai-parallel-runner-app/) · [madewithlove on Conductor](https://madewithlove.com/blog/conductor-running-multiple-ai-coding-agents-in-parallel/) · [Codex app docs](https://developers.openai.com/codex/app) · [Codex app features](https://developers.openai.com/codex/app/features) · [Codex desktop automations and review queue](https://codex.danielvaughan.com/2026/04/08/codex-desktop-automations/) · [DataCamp on Cursor 3](https://www.datacamp.com/blog/cursor-3) · [Cursor 3 agent-first interface (Medium)](https://medium.com/@tentenco/cursor-3-ships-an-agent-first-interface-heres-what-it-actually-changes-1f2bf8f383e2)
+
+## Look at these first
+
+1. **Open Polaris**: it lands on the dashboard now. Check the greeting, First steps and Customize (move, resize, add a Note or Links widget). Settings → General → "Open Polaris on" switches back to the old draft landing.
+2. **Settings → Appearance → Background**: pick a photo or a short video and try Dim and Blur. Look at a thread over it in light and dark; the contrast floor note says when Polaris is dimming more than you asked.
+3. **Effort colors and Orbie**: the composer beam per tier (blue, gold, rainbow, teal, ice) and Orbie in the header, the working row and as the project avatar. Forced screenshots: `../.playwright-mcp/v4/sheet-tiers.png`.
+4. **"Needs Star's approval"** below, especially the desktop identity: a packaged Polaris would still be `com.t3tools.t3code` and share data with T3 Code. Say yes (and pick an app id) and that is one small branch.
+5. **Chat icons**: right-click a thread → Choose icon…

@@ -21,6 +21,8 @@ export type ThreadActionMenuId =
   | `snooze:${string}`
   | "unsnooze"
   | "rename"
+  | "set-icon"
+  | "clear-icon"
   | "regenerate-title"
   | "mark-unread"
   | "copy"
@@ -98,6 +100,8 @@ export interface ThreadActionMenuState {
     readonly titleRegeneration: boolean;
   };
   readonly snoozePresets: ReadonlyArray<SnoozePreset>;
+  /** Polaris chat icons: whether this thread has its own icon; unset hides both items. */
+  readonly threadIcon?: "set" | "unset" | undefined;
 }
 
 /**
@@ -155,6 +159,14 @@ export function buildThreadActionMenuItems(
         ]
       : []),
     { id: "rename", label: "Rename thread", icon: "pencil", separatorBefore: true },
+    ...(state.threadIcon === undefined
+      ? []
+      : [
+          { id: "set-icon" as const, label: "Choose icon…", icon: "shapes" },
+          ...(state.threadIcon === "set"
+            ? [{ id: "clear-icon" as const, label: "Remove icon", icon: "circle-off" }]
+            : []),
+        ]),
     ...(state.supports.titleRegeneration
       ? [
           {

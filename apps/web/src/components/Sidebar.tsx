@@ -140,6 +140,13 @@ import { startNewThreadFromContext } from "../lib/chatThreadActions";
 import { useClientSettings } from "../hooks/useSettings";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import { ThreadIcon } from "../polaris/threadIcons/ThreadIcon";
+import { ThreadIconPicker } from "../polaris/threadIcons/ThreadIconPicker";
+import {
+  setThreadIcon,
+  StoredThreadIcons,
+  THREAD_ICONS_STORAGE_KEY,
+} from "../polaris/threadIcons/threadIcons";
 import { useNowMinute } from "../hooks/useNowMinute";
 import {
   useEnvironmentIdentities,
@@ -1125,6 +1132,8 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
   isRenaming: boolean;
   renamingTitle: string;
   onContextMenu: (threadRef: ScopedThreadRef, position: { x: number; y: number }) => void;
+  /** Polaris chat icons: the icon picked for this thread on this device. */
+  customIcon?: StoredThreadIcons[string] | undefined;
   onSettle: (threadRef: ScopedThreadRef) => void;
   onActionSweepStart: (
     threadRef: ScopedThreadRef,
@@ -1642,6 +1651,9 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
         isRegeneratingTitle && "opacity-55",
       )}
     >
+      {props.customIcon ? (
+        <ThreadIcon icon={props.customIcon} className="me-1.5 -mt-0.5 align-middle" />
+      ) : null}
       {thread.title}
     </span>
   );
@@ -2320,6 +2332,8 @@ const SidebarSearchResultRow = memo(function SidebarSearchResultRow(props: {
     </li>
   );
 });
+
+const NO_THREAD_ICONS: StoredThreadIcons = {};
 
 export default function Sidebar() {
   const projects = useProjects();
@@ -3177,6 +3191,21 @@ export default function Sidebar() {
   );
 
   const [renamingThreadKey, setRenamingThreadKey] = useState<string | null>(null);
+  // Polaris chat icons: kept on this device, keyed like the rest of the row state.
+  const [threadIcons, setThreadIcons] = useLocalStorage(
+    THREAD_ICONS_STORAGE_KEY,
+    NO_THREAD_ICONS,
+    StoredThreadIcons,
+  );
+  // Read when the context menu opens, without re-creating its handler.
+  const threadIconsRef = useRef(threadIcons);
+  useLayoutEffect(() => {
+    threadIconsRef.current = threadIcons;
+  }, [threadIcons]);
+  const [threadIconTarget, setThreadIconTarget] = useState<{
+    readonly key: string;
+    readonly title: string;
+  } | null>(null);
   const [renamingTitle, setRenamingTitle] = useState("");
   const startThreadRename = useCallback((threadRef: ScopedThreadRef, title: string) => {
     setRenamingThreadKey(scopedThreadKey(threadRef));
@@ -4490,6 +4519,7 @@ export default function Sidebar() {
                 titleRegeneration: supportsTitleRegeneration,
               },
               snoozePresets,
+              threadIcon: threadIconsRef.current[threadKey] ? "set" : "unset",
             }),
             position,
           ),
@@ -4576,6 +4606,12 @@ export default function Sidebar() {
           }
           case "rename":
             startThreadRename(threadRef, thread.title);
+            return;
+          case "set-icon":
+            setThreadIconTarget({ key: threadKey, title: thread.title });
+            return;
+          case "clear-icon":
+            setThreadIcons((current) => setThreadIcon(current, threadKey, null));
             return;
           case "regenerate-title": {
             if (isRegeneratingTitle) return;
@@ -4701,6 +4737,7 @@ export default function Sidebar() {
       serverConfigs,
       setProjectScopeKey,
       setThreadAutoSettle,
+      setThreadIcons,
       startThreadRename,
       updateThreadMetadata,
       timestampFormat,
@@ -5119,6 +5156,7 @@ export default function Sidebar() {
                             // sortable wrapper keeps its identity during a drag.
                             key={`${threadKey}:${rowVariant}`}
                             thread={thread}
+                            customIcon={threadIcons[threadKey]}
                             variant={rowVariant}
                             // Snoozed rows wake, settled rows un-settle, and cards settle.
                             variantAction={
@@ -5424,6 +5462,12 @@ export default function Sidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarChromeFooter />
+      <ThreadIconPicker
+        target={threadIconTarget}
+        current={threadIconTarget ? (threadIcons[threadIconTarget.key] ?? null) : null}
+        onClose={() => setThreadIconTarget(null)}
+        onSelect={(key, icon) => setThreadIcons((current) => setThreadIcon(current, key, icon))}
+      />
     </>
   );
 }
