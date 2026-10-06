@@ -226,6 +226,13 @@ Polaris versions are **V MAJOR.MINOR.PATCH**. An enormous change bumps MAJOR; fe
 
 After V 4.0.0 ships: customizable chat icons, customizable backgrounds (image) and video backgrounds, and more surface customization in the same spirit. Behind settings, honoring reduced motion (video pauses), low power and contrast (text stays on readable surfaces). Design note before code.
 
+**Design note (written 2026-10-05, before code).** Research pass on comparable tools (Conductor, the Codex app, Cursor 3's Agents window; sources in MORNING.md) found the same three habits: one place that gathers finished or blocked agent work, status you can read without opening a thread, and personal touches that never cost legibility. Upstream already has the dock badge (`apps/desktop/src/ipc/methods/notificationBadge.ts`) and a welcome wizard (connection, agents, import), so V 4.1.0 does not rebuild those.
+
+1. **Backgrounds (image or video), off by default.** The file is picked by the user and kept in the renderer's IndexedDB on this device (no server change, no network, no path access needed; works in the browser and in Electron). Caps: 25 MB image, 200 MB video. Client settings hold only the non-secret knobs: `backgroundKind` (`none`/`image`/`video`), `backgroundDim` (scrim strength, default 60%, so text on the page keeps AA contrast), `backgroundBlur` (0–24 px). Drawn as a fixed layer behind the app; the existing `surface-glass` utility (`--glass-opacity`) lets the sidebar and cards show it. Video is muted, looped and inline, and **pauses** under reduced motion (first frame stays as a still), when the page is hidden or the window loses focus, and on battery below 20% when the Battery API exists. No presets that ship third-party media; no gradients.
+2. **Chat icons.** A per-thread icon from a small custom SVG set plus a token color, chosen from the thread's context menu, kept per device (localStorage map by thread id), shown in the sidebar row. No emoji. Projects keep their existing icon picker.
+3. **First steps (onboarding after the wizard).** A dashboard widget with real, checked progress: add a project, start a thread, open the command palette, customize the dashboard, set up voice (optional). Each item is detected from real state, not ticked by hand, and the widget dismisses itself when done or on "Hide".
+4. **Needs-you list (real-time feedback).** The dashboard greeting's live line becomes a short list of threads waiting on you (approval, input, plan ready) with one-click jumps, so the dashboard is the review queue.
+
 ## Version plan: V 4.0.0 (the amendment)
 
 On branch `v4` from `main`, same gate as v1–v3, merged `--no-ff` and tagged `v4.0.0` (plus `v4-done` for continuity).
@@ -295,6 +302,7 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Slack-like chat.** Not built. Design note in "Guards (V 4.0.0)" below: pick between the two readings (several people in one server, or a Slack-like layout for your own agent threads); the second has a safe first slice.
 - **Planning suite.** Not built. The AFFiNE docs spike is done (see "Guards (V 4.0.0)"); the recommendation there needs your yes before anything is installed or embedded.
 - **Plugin API.** Not built, by the blueprint's rule and the amendment; hard-fork editing still works.
+- **A desktop app of its own (your "full desktop app" ask).** The Electron shell in `apps/desktop` builds and its tests pass, but a packaged Polaris would still be **T3 Code to macOS**: app id `com.t3tools.t3code` (`scripts/build-desktop-artifact.ts:57`), Electron profile `~/Library/Application Support/t3code-v2` (`t3code-dev` in dev; `apps/desktop/src/app/DesktopUserData.ts`), server state in `~/.t3`, the `t3code://` scheme and window class `t3code`. Installed next to your real T3 Code, it would share that data and its single-instance lock (whichever opens second gives way), and the auto-updater still follows upstream's feed (see "App version string"). These are the internal identifiers `AGENTS.md` says to leave alone unless you ask, so I did not change them and did not run or package Electron. Proposed change, one branch, when you say yes: app id `app.polaris.desktop` (or a reverse-domain id you own), profile `polaris` / `polaris-dev`, home `~/.polaris` (with `T3CODE_HOME` still honored), scheme `polaris://`, window class `polaris`, the updater feed off until you have releases, then `vp run dist:desktop:dmg:arm64` for an unsigned local `.dmg` (Gatekeeper: right-click → Open). Nothing to migrate: no Polaris desktop data exists yet.
 
 ## Questions for Star
 
@@ -305,6 +313,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — V 4.0.0 gate: passed, merged, tagged `v4.0.0`
+
+- Status: done
+- What changed: Branch `v4` merged into `main` with `--no-ff`; tags `v4.0.0` and `v4-done`, plus `v1.0.0`, `v2.0.0`, `v3.0.0` on the existing `v1-done`, `v2-done`, `v3-done` commits (old tags kept). HANDOFF "Needs Star's approval" gained the desktop-identity item (a packaged Polaris would still be T3 Code to macOS: `com.t3tools.t3code`, profile `t3code-v2`, `~/.t3`).
+- How verified: `vp fmt --check` exit 0; `vp lint` 0 errors in committed files (the only error was in the untracked V 4.1.0 drafts, not part of the merge). Suites: contracts 529, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,943 all passed; scripts 341 passed + the 1 known failure; server 8 failed / 6,430 passed / 21 skipped, the same 8 known names. Screenshots `.playwright-mcp/v4-{dashboard,thread-forced-medium,settings-launch}-{light,dark}.png`; smoke: a fresh `scripts/polaris-dev.mjs` stack booted (web 200, title "Polaris (Alpha)", nothing on 3773), paired once in an isolated context and opened on `/dashboard` (`v4-smoke-first-run.png`), then stopped with its temp home removed.
+- Risks: the fresh stack skipped the welcome wizard because the server bootstraps a project from its working directory (upstream behavior); the wizard path itself was not re-checked.
+- Next action: V 4.1.0 on branch `v4.1` from `main`: backgrounds, chat icons, First steps, Review next (design note in "Version plan: V 4.1.0").
+- Open questions: Desktop identity (see "Needs Star's approval").
 
 ### 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan
 
@@ -342,17 +359,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.0.0 item 4, the dashboard as the landing page with custom widgets.
 - Open questions: none new.
 
-### 2026-10-05 — Claude (session 8) — V 4.0.0 item 2: quota-low without amber
-
-- Status: done
-- What changed: the composer's persistent amber accent halo is gone (`composerFxState` lost `accent`, `ComposerFx` its accent layer, `ChatView` stopped passing `quotaLow` to the FX). `ComposerUsageMeter`: rings stay neutral; when a window is at or below the threshold, a red-coral badge with a dial icon and the remaining share sits beside them, and the trigger's label ends in ", low". New token `--polaris-quota-low` (light `#b8352b`, dark `#ff7a6b`, AA on its 12% surface) exposed as the `quota-low` Tailwind color in `index.css`; the popover note and the dashboard Usage tile use it too. The 4 s red flash is unchanged. Dev-only `quotaLow` in `polaris:fx-force` forces the meter's low state. blueprint quota sections updated; the "amber reserved for quota-low" taste rule is removed.
-- How verified: `vp test run apps/web/src/polaris` (86 passed); web typecheck clean. Before/after, light and dark: `../.playwright-mcp/v4/quota-low-{before,after}-{light,dark}.png` (sheets `sheet-quota-low-{before,after}.png`).
-- Risks: the forced shots show the real 88% left (the low state was forced); real low values read the same way. While forcing it I briefly set the threshold to 90 in the shared browser profile, which is outside its 0–50 range and stopped client settings from loading in that browser until I restored 20; later shots use a throwaway browser context.
-- Next action: V 4.0.0 item 3, Orbie everywhere (message avatars, thinking state, project avatars, empty state).
-- Open questions: none new.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.0.0 item 2: quota-low without amber. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 1: vendored `border-beam` and the final effort colors. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v3 gate: passed, merged, tagged `v3-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v3 items 2–3: skill studio and frontend skills. Rolled up; see `git log`.

@@ -2,6 +2,15 @@
 
 Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed. Start with "Look at these first" at the bottom.
 
+## V 4.0.0 (the amendment), tag `v4.0.0`
+
+- **Effort beam, vendored.** `border-beam` 1.4.1 copied into `apps/web/src/polaris/vendor/border-beam/` (MIT, changes listed in its NOTICE.md: a `colors` prop, reduced motion for every size, strict types, blob scaling). Final tier colors: none static, low true blue, medium gold, high rainbow, xhigh teal, max ice. Frozen per turn. Forced screenshots for every tier in `../.playwright-mcp/v4/`.
+- **Quota-low without amber.** The 4 s red flash stays; then a red-coral badge with a dial icon and the percent beside the usage meter.
+- **Orbie**, the assistant's bot (one name constant): thread header, working and thinking rows, the empty thread, each answer, and projects without an icon (instead of "SR"-style initials). Working / default / sleeping, effort color while working, optional hat, glasses, headphones or bow tie. Only visible bots animate.
+- **Home is the dashboard.** Polaris opens on it (Settings → General → "Open Polaris on" switches back). Greeting with Orbie and a live line, widgets you can move, resize, remove, add back, plus your own Note and Links widgets.
+- **Guards.** No plugin API. A stub Clide server for voice work (`scripts/polaris-clide-stub.ts`); AFFiNE docs spike with its license (mixed: MIT, an Enterprise license for the server folders, MPL-2.0 parts); Slack-like chat design note; the liquid "+" menu uses real buttons.
+- **Secrets scan:** clean (section below).
+
 ## Polish cycles
 
 One focused change per cycle, on branch `polish`, each its own commit. Before/after screenshots are in `../.playwright-mcp/polish/` (light and dark).
