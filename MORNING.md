@@ -1,6 +1,14 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.2.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.3.0**. Start with "Look at these first" at the bottom.
+
+## V 4.3.0 (import sessions any time; app version = V number), tag `v4.3.0`
+
+- **Import Claude Code and Codex sessions whenever you like.** New page `/import`: command palette → "Import Claude Code and Codex sessions", or the dashboard Start tile → "Import past sessions". It lists every folder those CLIs have worked in on this Mac (same picker as the welcome wizard: repositories grouped, recent ones pre-selected, other folders folded away). Pick folders, press Import: Polaris creates a project where needed and turns each conversation into a thread. Nothing leaves the machine and nothing is spent: it only reads the CLIs' session files. Re-running never duplicates a thread. Finished conversations arrive settled, so look under **Settled** in the sidebar.
+- **The app's version is now the V number**: `4.3.0` in Settings → General → About, in the server and in the dmg name (`release/Polaris-4.3.0-arm64.dmg`). Side effects, both good: the server now applies the provider compatibility rules for the V2 orchestrator this fork actually runs, and upstream's `t3 update` command treats T3 Code's 0.0.x as a downgrade and refuses without `--allow-downgrade`, so it cannot quietly swap Polaris for T3 Code.
+- Name stays "Polaris (Alpha)", as you said.
+- Gate: fmt and lint clean (0 errors, 867 warnings); contracts 531, shared 1,115, client-runtime 1,998, desktop 1,415 (+44 skipped), web 5,974 (+6 import tests), scripts 341 + the 1 known failure, server the 8 known failures / 6,430 passed (three compatibility test fixtures widened to cover 4.x).
+- **Not done:** importing T3 Code's own threads (from `~/.t3`) — see "Questions for Star".
 
 ## V 4.2.0 (Polaris as its own desktop app), tag `v4.2.0`
 
@@ -141,7 +149,7 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Questions for Star
 
-- **App version string.** Polaris versions are now V MAJOR.MINOR.PATCH (V 4.0.0 for the amendment), used for tags and notes. The desktop/web `package.json` versions are still upstream's, because the auto-updater compares them against upstream's release feed (`pingdotgg/t3code`). Switching them to 4.0.0 belongs with pointing the feed at your own releases.
+- **Importing your T3 Code threads** (you said yes): next, as V 4.4.0. Plan: start the empty Polaris from a read-only backup of T3 Code's database (`~/.t3` is only read), with anything in flight removed so Polaris never resumes T3 Code's work.
 
 - **Usage meter default.** The composer usage meter ships on by default (quiet until a window is low). Upstream keeps its context indicator off by default; if you want the same, set `composerUsageMeterEnabled` to default `false` in `packages/contracts/src/settings.ts`.
 - **Discord Application ID.** Register an application at the Discord developer portal, paste its ID into `POLARIS_DISCORD_APPLICATION_ID` in `apps/desktop/src/polaris/discord/discordConfig.ts` (or export the env var of the same name for a dev run), and upload an asset named `polaris` for the large image. Until then the switch is disabled with an explanation.
@@ -173,8 +181,9 @@ Sources: [The New Stack, hands-on review of Conductor](https://thenewstack.io/a-
 
 ## Look at these first
 
+0. **Import sessions**: command palette → "Import Claude Code and Codex sessions" (or the dashboard Start tile). Pick a folder or two and import; finished conversations show under Settled.
 1. **Open Polaris**: it lands on the dashboard now. Check the greeting, First steps (any step, any order) and Customize (move, resize, add a Note or Links widget). Settings → General → "Open Polaris on" switches back to the old draft landing.
 2. **Settings → Appearance → Background**: pick a photo or a short video and try Dim and Blur. Look at a thread over it in light and dark; the contrast floor note says when Polaris is dimming more than you asked.
 3. **Effort colors and Orbie**: the composer beam per tier (blue, gold, rainbow, teal, ice) and Orbie in the header, the working row and as the project avatar. Forced screenshots: `../.playwright-mcp/v4/sheet-tiers.png`.
-4. **The desktop app**: open `release/Polaris-0.0.45-arm64.dmg`, drag Polaris to Applications, right-click → Open, allow its keychain entry. It runs next to T3 Code with its own data.
+4. **The desktop app**: open `release/Polaris-4.3.0-arm64.dmg`, drag Polaris to Applications, right-click → Open, allow its keychain entry. It runs next to T3 Code with its own data.
 5. **Chat icons and Skills**: right-click a thread → Choose icon… (it shows on the dashboard too); then open Skills and read one in Preview.
