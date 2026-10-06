@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { SidebarInset } from "~/components/ui/sidebar";
-import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "~/components/WorkspaceBreadcrumb";
+import { WorkspaceBreadcrumb } from "~/components/WorkspaceBreadcrumb";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
 import { ToolsHubCrumbs } from "~/polaris/hub/ToolsHubCrumbs";
 import { isElectron } from "~/env";

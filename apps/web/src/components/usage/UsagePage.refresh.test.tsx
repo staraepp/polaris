@@ -86,6 +86,14 @@ vi.mock("../WorkspaceBreadcrumb", () => ({
 }));
 vi.mock("../WorkspacePageContainer", () => ({ WorkspacePageContainer: "main" }));
 vi.mock("../WorkspacePageHeader", () => ({ WorkspacePageHeader: "header" }));
+// Polaris: the Tools hub switcher reads app state this test does not set up.
+vi.mock("../../polaris/hub/ToolsHubCrumbs", () => ({
+  ToolsHubCrumbs: () => (
+    <li>
+      <h1>Usage</h1>
+    </li>
+  ),
+}));
 vi.mock("./UsageProviderChart", () => ({ UsageProviderChart: "div" }));
 vi.mock("./UsagePriceOverrides", () => ({ UsagePriceOverrides: () => null }));
 vi.mock("../chat/ProviderInstanceIcon", () => ({ ProviderInstanceIcon: () => null }));

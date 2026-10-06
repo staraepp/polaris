@@ -20,7 +20,7 @@ import {
 import { SidebarInset } from "~/components/ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { sortScopedProjectsForSidebar } from "~/components/Sidebar.logic";
-import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "~/components/WorkspaceBreadcrumb";
+import { WorkspaceBreadcrumb } from "~/components/WorkspaceBreadcrumb";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
 import { ToolsHubCrumbs } from "~/polaris/hub/ToolsHubCrumbs";
 import { isElectron } from "~/env";

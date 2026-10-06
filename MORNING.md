@@ -7,7 +7,7 @@ Star, this is the summary of the overnight run. Everything is local on this Mac:
 - **Fewer buttons.** The sidebar footer is now just **Settings**, **Home** (the dashboard) and **Tools**.
 - **Tools** holds Skills, Import, Usage and Pull requests. The button opens the one you used last. Each tool's header reads "Tools / Skills ▾": click the name to jump to another tool. The command palette entries and links still work as before.
 - The **Workspace** hub (whiteboards, docs, chat with friends) arrives with V 5.0.0, once there is something to put in it.
-- Gate: GATE_LINE
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged). Contracts 537, shared 1,115, client-runtime 1,998, desktop 1,415 (+44 skipped), web 5,992, scripts 342 + the 1 known failure, server the 8 known failures / 6,432 passed. Screenshots in `../.playwright-mcp/v4.6.0/`, light, dark and narrow, no page errors.
 
 ## V 4.5.0 (bots in every shape, thinking orbs, a visible beam and voice), tag `v4.5.0`
 

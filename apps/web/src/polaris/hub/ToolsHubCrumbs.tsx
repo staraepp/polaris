@@ -1,9 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ChartNoAxesColumnIcon, ChevronDownIcon, DownloadIcon } from "lucide-react";
+import { ChartNoAxesColumnIcon, CheckIcon, ChevronDownIcon, DownloadIcon } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 
 import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { readPullRequestListPreferences } from "~/components/pullRequest/pullRequestListPreferences";
+import { Button } from "~/components/ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "~/components/ui/menu";
 import {
   WorkspaceBreadcrumbItem,
@@ -67,7 +68,8 @@ export function ToolsHubCrumbs({
           <Menu>
             <MenuTrigger
               aria-label={`${label}. Switch tool`}
-              className="-mx-1.5 flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-accent"
+              render={<Button variant="ghost" size="sm" />}
+              className="-mx-2.5 min-w-0"
             >
               <span className="truncate">{label}</span>
               <ChevronDownIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
@@ -77,11 +79,11 @@ export function ToolsHubCrumbs({
                 <MenuItem
                   key={tool.id}
                   onClick={() => openTool(tool.id)}
-                  className={tool.id === current ? "font-medium" : undefined}
                   aria-current={tool.id === current ? "page" : undefined}
                 >
                   <ToolIcon tool={tool.id} />
                   {tool.label}
+                  {tool.id === current ? <CheckIcon aria-hidden className="ms-auto" /> : null}
                 </MenuItem>
               ))}
             </MenuPopup>
