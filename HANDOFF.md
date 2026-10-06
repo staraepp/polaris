@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 020: links show where they go
+
+- Status: done
+- What changed: `polaris/dashboard/dashboardLayout.ts`: new pure `dashboardLinkHint(link)` (host without `www.` for web addresses, the path for in-app links, null when the label already says it or the link is refused). `LinksWidget.tsx` shows it in muted `text-xs` after the label; the label keeps its width and the hint truncates first. Tests added.
+- How verified: `vp test run apps/web/src/polaris/dashboard` 20 passed; web typecheck and lint clean. Isolated Playwright contexts with a seeded Links widget, 1280 px light and dark and 400 px light: hints `github.com`, `/usage`, `notes.example.org`, none on the `docs.example.com` row. Shots `.playwright-mcp/polish/020-*`.
+- Risks: None known; the hint is derived locally, no network.
+- Next action: next polish cycle (021).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — polish 019: Threads tile lines up
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (017).
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows
-
-- Status: done
-- What changed: `components/settings/polaris/BackgroundSetting.tsx`: the stored-file row wraps (`flex-wrap`), the name shows in full on up to two lines, a second line gives kind and size (new exported `formatBytes`), and Replace/Remove sit at the end and drop below the name when there is no room. New `BackgroundSetting.test.ts` covers `formatBytes`.
-- How verified: `vp test run apps/web/src/components/settings/polaris/BackgroundSetting.test.ts` passed; web typecheck and lint clean. Isolated Playwright contexts at 400 px and 1280 px, light and dark, with a 136 KB JPEG: name in full and "Image · 136 KB" at all four. Shots `.playwright-mcp/polish/015-*`.
-- Risks: None known; a very long name without spaces breaks mid-word (`break-all`) by design.
-- Next action: next polish cycle (016).
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps. Rolled up; see `git log`.

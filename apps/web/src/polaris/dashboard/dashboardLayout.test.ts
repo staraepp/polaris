@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import {
+  dashboardLinkHint,
   addWidget,
   dashboardTileSpan,
   dashboardWidgetSpan,
@@ -124,5 +125,21 @@ describe("dashboard layout", () => {
       expect.objectContaining({ kind: "internal" }),
     );
     expect(resolveDashboardLink("  ")).toBeNull();
+  });
+});
+
+describe("dashboardLinkHint", () => {
+  it("names the host or in-app path a link opens", () => {
+    expect(dashboardLinkHint({ label: "Repo", url: "github.com/me/polaris" })).toBe("github.com");
+    expect(dashboardLinkHint({ label: "Notes", url: "https://www.example.org/a/b" })).toBe(
+      "example.org",
+    );
+    expect(dashboardLinkHint({ label: "Spend", url: "/usage" })).toBe("/usage");
+  });
+
+  it("stays quiet when the label already says it, or the link is broken", () => {
+    expect(dashboardLinkHint({ label: "docs.example.com", url: "docs.example.com" })).toBeNull();
+    expect(dashboardLinkHint({ label: "Example.org", url: "https://example.org/x" })).toBeNull();
+    expect(dashboardLinkHint({ label: "Bad", url: "javascript:alert(1)" })).toBeNull();
   });
 });
