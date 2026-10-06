@@ -323,6 +323,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude Code — V 5.2.1: Calm mode trims Usage and Pull requests
+
+- Status: done
+- What changed: Star: "the thing with most text is like the usage, prs, etc." With Calm on: the dashboard Today tile shows the spend and one bar per provider (its tightest window, "87% left"; `tightestWindow` in `UsageTile.tsx`) instead of the tokens line and every window; the dashboard Pull requests tile shows the three newest titles without the repository line. The Usage page (Cost and Tokens views) shows the total, one line per provider (no sessions, shares or tokens) and the chart, then a "Show details" button (`aria-expanded`) that reveals the activity heatmap, totals, cost by type, model trends and the breakdown table (they are not rendered until then). Pull request rows (`PullRequestListRow.tsx`, so the page and a thread's panel) become one line: state glyph, title, time; the number, checks/review glyphs, diff counts, author, repository and labels stay in the pull request's detail. Calm off is unchanged. `UsagePage.refresh.test.tsx` now mocks `useCalmMode` (it mocks the settings module whole). Version 5.2.1.
+- How verified: web typecheck exit 0; full web suite 481 files / 6,023 tests pass (+2 in `UsageTile.test.ts`); fmt clean; lint 0 errors / 868 warnings (unchanged); `vp build` passes; `providerCompatibility.test.ts` 11 pass. Dev stack in Playwright with Calm on: dashboard tiles, the Pull requests page and the Usage page (light and dark; Show/Hide details toggles, `aria-expanded` read back). Screenshots `../.playwright-mcp/v5.2.1/` (not committed).
+- Risks: a thread's linked pull requests panel uses the same one-line row but was not looked at. The Limits view of the Usage page is unchanged (it was already short). With Calm on, PR rows are shorter than the list's `contain-intrinsic-block-size` estimate, which only affects the scrollbar size before rows render.
+- Next action: tune Calm against Star's Claude-app screenshot when it is re-sent; then the VPS sync service for the Workspace.
+- Open questions: should Calm also hide the dashboard's "Last 30 days" chart?
+
 ### 2026-10-06 — Claude Code — V 5.2.0: Calm mode says less, more warmly
 
 - Status: done
@@ -359,17 +368,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 5.0.0 Workspace: whiteboards and docs (Star asked for them next), then the VPS sync service.
 - Open questions: None.
 
-### 2026-10-06 — Claude Code — V 4.7.0: private updates from the VPS, invite code, username out of builds
-
-- Status: done
-- What changed: a private update feed on the VPS (`infra/polaris-server/`: nginx container `polaris-updates` on 127.0.0.1:3095, its own Cloudflare tunnel `polaris` → `https://polaris.sstarvfx.com`, files in `/opt/polaris/updates`, invite codes in `/opt/polaris/nginx/invites.map`, never in git). Builds bake in the feed (`packages/shared/src/polarisUpdateFeed.ts`, generic publish target in `scripts/build-desktop-artifact.ts`). The desktop app sends the user's invite code with every update request (`ElectronUpdater.polarisLayer`, code stored by `apps/desktop/src/polaris/updates/PolarisUpdateInvite.ts` with `safeStorage`, IPC `polaris:updates-*`, `window.polarisBridge.updates`). Windows uses electron-updater; macOS uses `MacManualUpdater` (download the dmg into Downloads, sha512 check, open it, quit) because the app is unsigned. Code entry: onboarding's first step and Settings → General → Updates (`UpdateInviteSetting.tsx`). Release: `node scripts/polaris-publish-update.mjs`. Builds no longer carry the builder's home path (rustflags `--remap-path-prefix`, `.modules.yaml` excluded).
-- How verified: unit tests for the feed parser, the Mac updater (fake server: missing/rejected code, nothing new, download + checksum, tampered file) and the build helpers; desktop, shared, web and scripts typechecks; full gate (MORNING V 4.7.0); live feed: `/health` 200, no or wrong code 401, right code 200; the real 4.7.0 release published and fetched through `MacManualUpdater` with the real code (see MORNING).
-- Risks: the in-app install itself (opening the dmg, Windows restart into the new version) was not run, because that needs the packaged app launched. Windows updating is untested on Windows. A mistaken DNS record `polaris.staraep.fun.sstarvfx.com` (to the deepseek-harness tunnel, answers 404) must be deleted in the Cloudflare dashboard.
-- Next action: V 5.0.0 collaboration on the same VPS service (sync server, Excalidraw, Tiptap docs, chat) in a Workspace hub.
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — V 4.7.0: private updates from the VPS, invite code, username out of builds. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.6.0: one Tools hub instead of four sidebar buttons. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.5.0: bots in every shape, thinking orbs, a visible beam and voice. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.4.1: Windows x64 installer cross-built on the Mac. Rolled up; see `git log`.

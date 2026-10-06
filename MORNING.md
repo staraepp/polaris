@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.2.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.2.1**. Start with "Look at these first" at the bottom.
+
+## V 5.2.1 (Calm mode trims Usage and Pull requests), tag `v5.2.1`
+
+- With Calm on, the dashboard's Today tile is the spend plus one bar per provider, and its Pull requests tile is three titles.
+- The Usage page shows the total, each provider's amount and the chart; everything else (activity, totals, cost by type, models, the table) is behind "Show details".
+- Pull request lists are one line each: title and time. Open one for the rest.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,023 (6,021 + 2 new), web production build passes.
 
 ## V 5.2.0 (Calm mode says less, more warmly), tag `v5.2.0`
 

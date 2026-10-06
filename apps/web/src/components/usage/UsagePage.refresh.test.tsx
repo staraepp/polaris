@@ -28,6 +28,7 @@ vi.mock("../../state/server", () => ({
 vi.mock("../../state/use-atom-command", () => ({ useAtomCommand: () => state.refreshProviders }));
 vi.mock("../../env", () => ({ isElectron: false }));
 vi.mock("../../hooks/useSettings", () => ({ usePrimarySettings: () => "24h" }));
+vi.mock("../../polaris/calm/useCalmMode", () => ({ useCalmMode: () => false }));
 vi.mock("../../state/usage", () => ({
   useUsage: () => ({
     merged: mergeUsage([], USAGE_CONTRACT_VERSION),

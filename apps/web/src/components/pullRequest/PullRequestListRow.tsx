@@ -6,6 +6,7 @@ import type {
 import type { ReactNode } from "react";
 
 import { cn } from "~/lib/utils";
+import { useCalmMode } from "~/polaris/calm/useCalmMode";
 import { formatRelativeTimeLabel } from "~/timestampFormat";
 
 import { MiddleTruncate } from "../ui/middle-truncate";
@@ -52,6 +53,8 @@ export function PullRequestRowGlyph({
   below?: ReactNode;
   className?: string;
 }) {
+  // Polaris: Calm mode keeps the lifecycle glyph and drops the checks glyph.
+  const calm = useCalmMode();
   return (
     <span className={cn("flex w-4 shrink-0 flex-col items-center gap-0.5", className)}>
       <span className="relative inline-flex">
@@ -68,7 +71,7 @@ export function PullRequestRowGlyph({
           />
         </span>
       </span>
-      {below ? <span className="inline-flex text-2xs">{below}</span> : null}
+      {below && !calm ? <span className="inline-flex text-2xs">{below}</span> : null}
     </span>
   );
 }
@@ -94,6 +97,22 @@ export function PullRequestRowLines({
   metaClassName?: string;
   updatedAt?: string | null | undefined;
 }) {
+  // Polaris: Calm mode shows one line, the title and when it last changed. The
+  // number, signals, diff counts, author, repository and labels stay in the
+  // pull request itself.
+  const calm = useCalmMode();
+  if (calm) {
+    return (
+      <span className="flex min-w-0 flex-1 items-center gap-3 py-0.5">
+        <span className="min-w-0 truncate text-sm">{title}</span>
+        {updatedAt ? (
+          <span className="ml-auto shrink-0 whitespace-nowrap text-2xs text-muted-foreground tabular-nums">
+            {formatRelativeTimeLabel(updatedAt)}
+          </span>
+        ) : null}
+      </span>
+    );
+  }
   return (
     <span className="min-w-0 flex-1">
       <span className="flex min-w-0 items-center gap-1.5">
