@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.3.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.4.0**. Start with "Look at these first" at the bottom.
+
+## V 4.4.0 (T3 Code import, a nicer welcome, the dashboard as home), tag `v4.4.0`
+
+- **Your T3 Code threads, any time.** Import page → **T3 Code** tab (or command palette → "Import Claude Code and Codex sessions", then the tab). It lists T3 Code's projects with thread counts; pick some and press Import. Polaris reads T3 Code's database **read-only** (T3 Code can stay open and is never changed), copies those projects' threads into Polaris, and opens each one with its full conversation. Running it again only adds what is new ("Nothing new" otherwise). Tool-call details, approvals and attachments from T3 Code are not copied, only the conversations (upstream's own upgrade does the same).
+- **A nicer welcome.** Setup is now a full-screen green aurora with Orbie greeting you and the steps on the left: **You** (new: your username for whiteboards, docs and chat; change it later in Settings → General) → Connect → Agents → Projects, then an extra **T3 Code** step when T3 Code has threads Polaris does not have yet.
+- **The dashboard is home.** Opening Polaris and finishing setup land on the dashboard, even before you have a project (no more new-chat tab).
+- Gate: fmt and lint clean (0 errors, 867 warnings); contracts 535, shared 1,115, client-runtime 1,998, desktop 1,415 (+44 skipped), web 5,982, scripts 341 + the 1 known failure, server the 8 known failures / 6,432 passed (the V1 import boundary test now lists the T3 importer, with its reason).
 
 ## V 4.3.0 (import sessions any time; app version = V number), tag `v4.3.0`
 
@@ -149,8 +156,6 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Questions for Star
 
-- **Importing your T3 Code threads** (you said yes): next, as V 4.4.0. Plan: start the empty Polaris from a read-only backup of T3 Code's database (`~/.t3` is only read), with anything in flight removed so Polaris never resumes T3 Code's work.
-
 - **Usage meter default.** The composer usage meter ships on by default (quiet until a window is low). Upstream keeps its context indicator off by default; if you want the same, set `composerUsageMeterEnabled` to default `false` in `packages/contracts/src/settings.ts`.
 - **Discord Application ID.** Register an application at the Discord developer portal, paste its ID into `POLARIS_DISCORD_APPLICATION_ID` in `apps/desktop/src/polaris/discord/discordConfig.ts` (or export the env var of the same name for a dev run), and upload an asset named `polaris` for the large image. Until then the switch is disabled with an explanation.
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
@@ -181,9 +186,10 @@ Sources: [The New Stack, hands-on review of Conductor](https://thenewstack.io/a-
 
 ## Look at these first
 
-0. **Import sessions**: command palette → "Import Claude Code and Codex sessions" (or the dashboard Start tile). Pick a folder or two and import; finished conversations show under Settled.
+0. **New welcome and T3 Code import**: open Settings → reopen setup (or visit `/welcome`) to see the new onboarding; Import page → T3 Code tab brings your T3 Code threads over.
+1. **Import sessions**: command palette → "Import Claude Code and Codex sessions" (or the dashboard Start tile). Pick a folder or two and import; finished conversations show under Settled.
 1. **Open Polaris**: it lands on the dashboard now. Check the greeting, First steps (any step, any order) and Customize (move, resize, add a Note or Links widget). Settings → General → "Open Polaris on" switches back to the old draft landing.
-2. **Settings → Appearance → Background**: pick a photo or a short video and try Dim and Blur. Look at a thread over it in light and dark; the contrast floor note says when Polaris is dimming more than you asked.
-3. **Effort colors and Orbie**: the composer beam per tier (blue, gold, rainbow, teal, ice) and Orbie in the header, the working row and as the project avatar. Forced screenshots: `../.playwright-mcp/v4/sheet-tiers.png`.
-4. **The desktop app**: open `release/Polaris-4.3.0-arm64.dmg`, drag Polaris to Applications, right-click → Open, allow its keychain entry. It runs next to T3 Code with its own data.
-5. **Chat icons and Skills**: right-click a thread → Choose icon… (it shows on the dashboard too); then open Skills and read one in Preview.
+1. **Settings → Appearance → Background**: pick a photo or a short video and try Dim and Blur. Look at a thread over it in light and dark; the contrast floor note says when Polaris is dimming more than you asked.
+1. **Effort colors and Orbie**: the composer beam per tier (blue, gold, rainbow, teal, ice) and Orbie in the header, the working row and as the project avatar. Forced screenshots: `../.playwright-mcp/v4/sheet-tiers.png`.
+1. **The desktop app**: open `release/Polaris-4.3.0-arm64.dmg`, drag Polaris to Applications, right-click → Open, allow its keychain entry. It runs next to T3 Code with its own data.
+1. **Chat icons and Skills**: right-click a thread → Choose icon… (it shows on the dashboard too); then open Skills and read one in Preview.
