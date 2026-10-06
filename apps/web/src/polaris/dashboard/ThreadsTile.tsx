@@ -1,18 +1,27 @@
+import { scopedThreadKey, scopeThreadRef } from "@t3tools/client-runtime/environment";
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/models";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 
+import { useLocalStorage } from "~/hooks/useLocalStorage";
 import { cn } from "~/lib/utils";
+import { ThreadIcon } from "~/polaris/threadIcons/ThreadIcon";
+import { StoredThreadIcons, THREAD_ICONS_STORAGE_KEY } from "~/polaris/threadIcons/threadIcons";
 import { formatRelativeTimeLabel } from "~/timestampFormat";
 
 import type { DashboardThread } from "./dashboardThreads";
 
+const NO_THREAD_ICONS: StoredThreadIcons = {};
+
 function ThreadRow({
   entry,
   projectTitle,
+  icon,
 }: {
   readonly entry: DashboardThread;
   readonly projectTitle: string | undefined;
+  /** The chat icon picked in the sidebar, if any. */
+  readonly icon: StoredThreadIcons[string] | undefined;
 }) {
   const { thread, status } = entry;
   return (
@@ -22,14 +31,25 @@ function ThreadRow({
         params={{ environmentId: thread.environmentId, threadId: thread.id }}
         className="group flex min-w-0 items-center gap-3 rounded-xl px-2 py-2 outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
       >
+        {/* The chat icon when there is one, with the status as a corner dot;
+            otherwise the status dot alone. An idle thread with no icon keeps
+            the slot empty so titles stay aligned. */}
         <span
           aria-hidden="true"
-          className={cn(
-            "size-1.5 shrink-0 rounded-full",
-            status ? status.dotClass : "bg-border",
-            status?.pulse && "motion-safe:animate-pulse",
-          )}
-        />
+          className="relative flex size-4 shrink-0 items-center justify-center"
+        >
+          {icon ? <ThreadIcon icon={icon} className="size-4" /> : null}
+          {status ? (
+            <span
+              className={cn(
+                "rounded-full",
+                icon ? "absolute -right-0.5 -bottom-0.5 size-2 ring-2 ring-background" : "size-1.5",
+                status.dotClass,
+                status.pulse && "motion-safe:animate-pulse",
+              )}
+            />
+          ) : null}
+        </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm text-foreground">{thread.title || "Untitled"}</span>
           <span className="truncate text-xs text-muted-foreground">
@@ -67,6 +87,13 @@ export function ThreadsTileBody({
   );
   const titleOf = (entry: DashboardThread) =>
     projectTitles.get(`${entry.thread.environmentId} ${entry.thread.projectId}`);
+  const [threadIcons] = useLocalStorage(
+    THREAD_ICONS_STORAGE_KEY,
+    NO_THREAD_ICONS,
+    StoredThreadIcons,
+  );
+  const iconOf = (entry: DashboardThread) =>
+    threadIcons[scopedThreadKey(scopeThreadRef(entry.thread.environmentId, entry.thread.id))];
 
   if (active.length === 0 && recent.length === 0) {
     return (
@@ -84,7 +111,12 @@ export function ThreadsTileBody({
           </h3>
           <ul className="flex flex-col">
             {active.map((entry) => (
-              <ThreadRow key={entry.thread.id} entry={entry} projectTitle={titleOf(entry)} />
+              <ThreadRow
+                key={entry.thread.id}
+                entry={entry}
+                projectTitle={titleOf(entry)}
+                icon={iconOf(entry)}
+              />
             ))}
           </ul>
         </div>
@@ -96,7 +128,12 @@ export function ThreadsTileBody({
           </h3>
           <ul className="flex flex-col">
             {recent.map((entry) => (
-              <ThreadRow key={entry.thread.id} entry={entry} projectTitle={titleOf(entry)} />
+              <ThreadRow
+                key={entry.thread.id}
+                entry={entry}
+                projectTitle={titleOf(entry)}
+                icon={iconOf(entry)}
+              />
             ))}
           </ul>
         </div>

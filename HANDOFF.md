@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 018: chat icons on the dashboard
+
+- Status: done
+- What changed: `polaris/dashboard/ThreadsTile.tsx`: the leading slot of a thread row shows the thread's chat icon (same `polaris:thread-icons:v1` map the sidebar writes, read with `useLocalStorage`, so it updates live); a thread that needs you keeps its status dot, as a corner badge when there is an icon. Idle threads with no icon no longer show a grey `bg-border` speck; the slot stays empty so titles align.
+- How verified: `vp test run apps/web/src/polaris/dashboard` 16 passed; web typecheck and lint clean. Isolated Playwright contexts, light and dark, with one thread given a violet rocket in localStorage: the icon led that row, the other row had no speck. Shots `.playwright-mcp/polish/018-*`.
+- Risks: The icon-plus-status corner dot was not seen live (forcing a working thread would need a real turn); its classes mirror the plain dot.
+- Next action: next polish cycle (019).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — polish 017: the dashboard counts as home in the sidebar
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: next polish cycle (015).
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`
-
-- Status: done
-- What changed: Branch `v4.1` merged into `main` with `--no-ff`; tags `v4.1.0` and `v4.1-done`. MORNING.md reassembled with every required section (V 4.1.0, V 4.0.0, v1–v3, polish cycles, skipped, contract changes, new dependencies, approvals, questions, secrets scan, UX research with sources, the five things to look at first).
-- How verified: `vp fmt --check` exit 0; `vp lint` exit 0 with 0 errors; typecheck contracts/shared/desktop/web 0 errors. Suites: contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,960 passed; scripts 341 + the 1 known failure; server 8 failed / 6,430 passed / 21 skipped, the same 8 known. Contact sheet `.playwright-mcp/v4.1-sheet.png` (background on dashboard, thread and settings, and First steps, light and dark). Smoke: a fresh `polaris-dev.mjs` stack booted (web 200, nothing on 3773), paired once in an isolated context, landed on `/dashboard` with First steps (`v4.1-smoke.png`), then stopped with its temp home removed.
-- Risks: as in the item entries (Battery API and unfocused-window pauses not exercised live; Review next not seen live).
-- Next action: Desktop identity is waiting on Star. Otherwise: resume polish cycles (14 of 25) on a `polish-2` branch, one focused change each, with before/after shots.
-- Open questions: Desktop identity, Slack-like chat reading, planning-suite next step (all under "Needs Star's approval").
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 3: First steps. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons. Rolled up; see `git log`.
