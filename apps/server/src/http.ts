@@ -6,6 +6,10 @@ import {
 } from "@t3tools/contracts";
 import { isDevProxiedPath } from "@t3tools/shared/devProxy";
 import { decodeOtlpTraceRecords } from "@t3tools/shared/observability";
+import {
+  POLARIS_DESKTOP_SCHEMES,
+  UPSTREAM_DESKTOP_SCHEMES,
+} from "@t3tools/shared/polarisDesktopIdentity";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -50,7 +54,10 @@ import { browserApiCorsAllowedHeaders, browserApiCorsAllowedMethods } from "./ht
 
 const OTLP_TRACES_PROXY_PATH = "/api/observability/v1/traces";
 const LOOPBACK_HOSTNAMES = new Set(["127.0.0.1", "::1", "localhost"]);
-const DESKTOP_RENDERER_ORIGINS = ["t3code://app", "t3code-dev://app"];
+// Polaris desktop renderers, plus upstream's so a T3 Code desktop client still connects.
+const DESKTOP_RENDERER_ORIGINS = [...POLARIS_DESKTOP_SCHEMES, ...UPSTREAM_DESKTOP_SCHEMES].map(
+  (scheme) => `${scheme}://app`,
+);
 const SVG_CONTENT_SECURITY_POLICY = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 // HTML previews are agent output, not the app. The sandbox gives the document an
 // opaque origin: scripts run, but same-origin cookies, storage, and API calls are

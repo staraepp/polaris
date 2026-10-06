@@ -1,11 +1,14 @@
 import { isLoopbackHost } from "./preview.ts";
+import { POLARIS_DESKTOP_SCHEMES } from "./polarisDesktopIdentity.ts";
 
 /** Only return to a local client or the hosted T3 client, never an arbitrary OAuth-supplied URL. */
 export function providerAuthReturnUrl(value: string | undefined): string | undefined {
   if (!value) return undefined;
   try {
     const url = new URL(value);
-    const desktop = ["t3code:", "t3code-dev:"].includes(url.protocol) && url.host === "app";
+    // Only Polaris's own app: a T3 Code scheme here would hand the sign-in to the other app.
+    const desktop =
+      POLARIS_DESKTOP_SCHEMES.some((scheme) => url.protocol === `${scheme}:`) && url.host === "app";
     const web =
       ["http:", "https:"].includes(url.protocol) &&
       (isLoopbackHost(url.hostname) || url.origin === "https://app.t3.codes");
