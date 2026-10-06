@@ -1,0 +1,32 @@
+/*
+ * The app background (Polaris, V 4.1.0). Everything here applies only while a
+ * background is showing (`html[data-polaris-backdrop]`, set by AppBackground).
+ * Unlayered on purpose: it must beat the `bg-background` / `bg-sidebar`
+ * utilities, which live in Tailwind's utilities layer.
+ */
+/*
+ * The layout's solid page fills step aside so the picture shows through: the
+ * inset, each page's own wrapper directly inside it, and the chat columns
+ * marked `data-polaris-backdrop-surface`. Inputs, cards and menus keep theirs.
+ */
+html[data-polaris-backdrop] [data-slot="sidebar-inset"],
+html[data-polaris-backdrop] [data-slot="sidebar-inset"] > .bg-background,
+html[data-polaris-backdrop] [data-polaris-backdrop-surface] {
+  background-color: transparent;
+}
+
+/*
+ * The theme writes the page color inline on <body> (browser chrome sync), and
+ * an in-flow body background would paint over the fixed layer. <html> keeps
+ * its color as the canvas underneath.
+ */
+html[data-polaris-backdrop] body {
+  background-color: transparent !important;
+}
+
+/* The sidebar becomes glass over the picture, honoring Glass opacity. */
+html[data-polaris-backdrop] [data-slot="sidebar-inner"] {
+  background: color-mix(in srgb, var(--sidebar) var(--glass-opacity), transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}

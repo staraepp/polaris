@@ -1147,6 +1147,28 @@ describe("ClientSettings gooey composer menu (Polaris)", () => {
   });
 });
 
+describe("ClientSettings app background (Polaris)", () => {
+  it("is off by default with a 60% dim and no blur", () => {
+    const settings = decodeClientSettings({});
+    expect(settings.backgroundEnabled).toBe(false);
+    expect(settings.backgroundDim).toBe(60);
+    expect(settings.backgroundBlur).toBe(0);
+  });
+
+  it("keeps dim and blur inside their ranges", () => {
+    expect(decodeClientSettings({ backgroundDim: 90, backgroundBlur: 24 })).toMatchObject({
+      backgroundDim: 90,
+      backgroundBlur: 24,
+    });
+    expect(() => decodeClientSettings({ backgroundDim: 10 })).toThrow();
+    expect(() => decodeClientSettings({ backgroundBlur: 40 })).toThrow();
+    expect(decodeClientSettingsPatch({ backgroundEnabled: true, backgroundDim: 45 })).toEqual({
+      backgroundEnabled: true,
+      backgroundDim: 45,
+    });
+  });
+});
+
 describe("ClientSettings launch page (Polaris)", () => {
   it("opens on the dashboard by default and accepts only known pages", () => {
     expect(decodeClientSettings({}).launchPage).toBe("dashboard");

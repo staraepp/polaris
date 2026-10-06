@@ -15,6 +15,7 @@ import {
   ORBIE_STATE_TEXT,
   ORBIE_TYPE,
 } from "./orbie";
+import { useThemeEpoch } from "../theme/useThemeEpoch";
 
 // The canvas renderer loads with the first Orbie on screen.
 const BotAvatar = lazy(() =>
@@ -38,25 +39,6 @@ function usePageVisible(): boolean {
  * Bumps whenever the theme changes (the root's class, theme id or inline
  * tokens), so canvas colors read from CSS are read again.
  */
-function useThemeEpoch(): number {
-  const [epoch, setEpoch] = useState(0);
-  useEffect(() => {
-    if (typeof MutationObserver === "undefined" || typeof document === "undefined") return;
-    const observer = new MutationObserver(() => setEpoch((value) => value + 1));
-    try {
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["class", "data-theme-id", "style"],
-      });
-    } catch {
-      // A stubbed document (some test renderers) has no real root to watch.
-      return;
-    }
-    return () => observer.disconnect();
-  }, []);
-  return epoch;
-}
-
 /** high is the rainbow tier: the bot cycles its hue instead of taking one color. */
 const RAINBOW_TIER: EffortTier = "high";
 

@@ -102,6 +102,18 @@ export const QuotaLowThresholdPercent = Schema.Int.check(
   Schema.isBetween({ minimum: 0, maximum: 50 }),
 );
 export type QuotaLowThresholdPercent = typeof QuotaLowThresholdPercent.Type;
+/** Polaris: the app background's scrim (page color over the picture), in percent. */
+export const MIN_BACKGROUND_DIM = 30;
+export const MAX_BACKGROUND_DIM = 90;
+export const DEFAULT_BACKGROUND_DIM = 60;
+export const BackgroundDim = Schema.Int.check(
+  Schema.isBetween({ minimum: MIN_BACKGROUND_DIM, maximum: MAX_BACKGROUND_DIM }),
+);
+/** Polaris: blur on the app background, in pixels. */
+export const MAX_BACKGROUND_BLUR = 24;
+export const BackgroundBlur = Schema.Int.check(
+  Schema.isBetween({ minimum: 0, maximum: MAX_BACKGROUND_BLUR }),
+);
 /** Polaris: body shapes of the `bot-avatars` package, for the per-provider bot. */
 export const BOT_AVATAR_TYPES = [
   "clover",
@@ -457,6 +469,15 @@ export const ClientSettingsSchema = Schema.Struct({
    * projects without an icon of their own). On by default since V 4.0.0.
    */
   botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /**
+   * Polaris: your own image or video behind the app (V 4.1.0). The file stays
+   * in this device's browser storage; only these knobs are settings.
+   */
+  backgroundEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  backgroundDim: BackgroundDim.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_BACKGROUND_DIM)),
+  ),
+  backgroundBlur: BackgroundBlur.pipe(Schema.withDecodingDefault(Effect.succeed(0))),
   /** Polaris: where the app opens; the dashboard since V 4.0.0. */
   launchPage: LaunchPage.pipe(Schema.withDecodingDefault(Effect.succeed("dashboard" as const))),
   /** Polaris: what Orbie wears; none by default. */
@@ -1852,6 +1873,9 @@ export const ClientSettingsPatch = Schema.Struct({
   botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
   botAccessory: Schema.optionalKey(BotAccessory),
   launchPage: Schema.optionalKey(LaunchPage),
+  backgroundEnabled: Schema.optionalKey(Schema.Boolean),
+  backgroundDim: Schema.optionalKey(BackgroundDim),
+  backgroundBlur: Schema.optionalKey(BackgroundBlur),
   gooeyComposerMenuEnabled: Schema.optionalKey(Schema.Boolean),
   voiceInputEnabled: Schema.optionalKey(Schema.Boolean),
   themeFonts: Schema.optionalKey(Schema.Record(Schema.String, ThemeFontOverrides)),
