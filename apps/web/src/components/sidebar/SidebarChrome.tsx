@@ -30,6 +30,7 @@ import { SidebarProviderUpdatePill } from "./SidebarProviderUpdatePill";
 import { SidebarUpdateArchitectureWarning, SidebarUpdatePill } from "./SidebarUpdatePill";
 import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { DashboardGlyph } from "~/polaris/dashboard/DashboardGlyph";
+import { SkillsGlyph } from "~/polaris/skills/SkillsGlyph";
 
 export const SidebarChromeHeader = memo(function SidebarChromeHeader({
   isElectron,
@@ -206,6 +207,11 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
     void navigate({ to: "/dashboard" });
   }, [closeMobileSidebar, navigate]);
 
+  const handleSkillsClick = useCallback(() => {
+    closeMobileSidebar();
+    void navigate({ to: "/skills" });
+  }, [closeMobileSidebar, navigate]);
+
   const handleBackClick = useCallback(() => {
     closeMobileSidebar();
     void navigateToMainApp();
@@ -232,6 +238,7 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
             label="Dashboard"
             onClick={handleDashboardClick}
           />
+          <SidebarUtilityItem icon={<SkillsGlyph />} label="Skills" onClick={handleSkillsClick} />
           {pullRequestsSupported ? (
             <SidebarUtilityItem
               icon={<PullRequestGlyph.pullRequest />}

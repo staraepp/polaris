@@ -214,6 +214,14 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — v3 items 2–3: skill studio and frontend skills
+
+- Done (item 2): `/skills`, opened from a new icon in the sidebar footer. Project and provider pickers; a side panel of every skill the provider reports for that workspace, grouped This project / Repository / Personal / Plugins / Built into the provider, with a filter; a detail pane with badges (off, you start it, agent only), "Copy /name", and the SKILL.md. Files inside the workspace are editable (Save, Cmd/Ctrl+S, Revert; optimistic write through the existing `projects.writeFile` RPC); everything else is read-only with the home folder shown as `~`. **New skill** writes `<.claude|.agents>/skills/<slug>/SKILL.md` with frontmatter both Claude Code and Codex read, blank or from a template, refuses an existing path, then rescans. The page asks the provider for a workspace snapshot once (the same refresh the composer makes); **Rescan** forces one. No contract change.
+- Done (item 3): four frontend skills Polaris ships as templates in the studio: `frontend-design-review`, `accessible-components`, `motion-polish`, `ui-states` (`apps/web/src/polaris/skills/templates/*.md`, bundled with `?raw`). "Add to project" installs one as an ordinary SKILL.md. Interpretation: "built-in skills content" = curated content offered in the studio, not skills injected into agents behind the user's back.
+- Smoke: created a skill from the UI states template in the dev project, edited and saved it (verified on disk), then deleted it and rescanned. Committed as one change because the studio hosts the templates.
+- Files: `apps/web/src/polaris/skills/*`, `apps/web/src/routes/skills.tsx` (+ `routeTree.gen.ts`), sidebar footer and `mainAppLocation.ts`.
+- Tests: 3 studio logic (paths, grouping, documents).
+
 ### 2026-10-05 — Claude (session 8) — v3 item 1: bento dashboard
 
 - Done: `/dashboard`, opened from a new bento icon in the sidebar footer (beside Settings; the footer shows "Back" there like the other utility pages). Five translucent tiles: **Start** (new thread in the latest project, plus the next three; the new-thread shortcut), **Threads** (threads with a status, the ones that need you first, then the most recent), **Today** (today's spend and tokens, then each provider's limit windows on one aligned grid; amber only at the low-quota threshold), **Pull requests** (newest open ones across connected servers, 3 per repo; a row opens it on the Pull Requests page) and **activity** (14 or 30 days of spend as bars, with an sr-only table). Two shapes so every row is filled in the default order: a long thread list runs two rows beside Start and Today; a short one stays one row, pull requests widen and activity takes the bottom row with a month of data. **Edit layout** makes tiles draggable and adds earlier/later buttons for keyboard users; the order lives in localStorage (`polaris:dashboard-layout:v1`), unknown ids are dropped and new tiles appended; Reset layout and Esc (leaves edit mode first) work. Fixed layout by default, drag only in edit mode, so no setting.
@@ -239,14 +247,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Files: `apps/web/src/polaris/voice/*`, `packages/shared/src/polarisVoiceHttp.ts` (+ export), `packages/shared/src/polarisBridge.ts` (`voice` on the bridge, optional), `apps/desktop/src/polaris/voice/*`, `apps/desktop/src/ipc/methods/polarisVoice.ts`, channels, preload, `main.ts` layer, `ChatComposer.tsx`, `ComposerFx.tsx`, `components/settings/polaris/VoiceSettings.tsx`.
 - Tests: 2 contract, 5 HTTP/SSE, 1 watcher, 2 WAV, 2 dispatcher, 4 hook, 3 button. Not exercised: a real Clide (none installed here), a real microphone, and the packaged app's mic prompt.
 
-### 2026-10-05 — Claude (session 8) — v2 item 3: liquid "+" composer menu
-
-- Done: behind `gooeyComposerMenuEnabled` (default off, Settings → General → Effects), the composer's paperclip becomes a "+" whose actions pop upward as liquid chips that split off and merge back (`apps/web/src/polaris/gooey/`, `liquid-gooey` MIT, lazy-loaded): Attach files (the same file input), Commands & skills (inserts `/`, opening upstream's command menu), Mention a file (inserts `@`). Real buttons in a `role="menu"`: focus moves to the first chip, ArrowUp/ArrowDown walk them, Escape closes and refocuses "+", outside clicks close; chips leave the tab order when closed. Reduced motion: instant moves. The "+" glyph is our own SVG; chip icons are upstream's lucide ones.
-- Tests: 1 contract, 3 jsdom (library mocked).
-- Left over: no effort chip yet (the traits picker is not reachable as a plain action); WebKit SVG-filter performance not measured (Electron is Chromium).
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v2 item 3: liquid "+" composer menu. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 2: bot avatars. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 1: usage meter in the composer. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`. Rolled up; see `git log`.
