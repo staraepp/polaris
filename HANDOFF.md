@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — polish 014: Customize fits narrow windows
+
+- Status: done
+- What changed: `DashboardTile.tsx`: below `lg` the size picker is hidden (sizes only shape the six-column grid) and the move arrows sit in the header beside ×; from `lg` up the second row (size picker, arrows) is unchanged. The Customize hint now says "pick a size on wide windows". Branch `polish-2` (patch level, V 4.1.x).
+- How verified: `vp test run apps/web/src/polaris/dashboard` 16 passed; typecheck and lint clean. Isolated Playwright contexts at 400 px and 1280 px, light and dark: 0 visible size pickers narrow, 5 wide; exactly 2 visible move buttons per widget at both widths; "Move Threads earlier" moved it first at both widths. Shots `.playwright-mcp/polish/014-*`.
+- Risks: None known; the hidden copy of the arrows is `display: none`, so assistive tech sees one set.
+- Next action: next polish cycle (015).
+- Open questions: None.
+
 ### 2026-10-05 — Claude (session 8) — V 4.1.0 gate: passed, merged, tagged `v4.1.0`
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.1.0 item 3, First steps on the dashboard, and item 4, Review next in the greeting.
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds
-
-- Status: done
-- What changed: Settings → Appearance → Background: pick an image (PNG, JPEG, WebP, AVIF, GIF, up to 25 MB) or a video (MP4, WebM, MOV, up to 200 MB); it is kept in this device's IndexedDB and never sent anywhere. Dim (30–90%) and Blur (0–24 px) sliders, Replace, Remove. A fixed layer behind the app (`apps/web/src/polaris/background/`) with the page color as a scrim; the inset, page wrappers and chat columns turn transparent and the sidebar becomes glass while it shows. A **contrast floor** samples the picture (or a video's first frame) at 32×32 and never lets the scrim drop below what keeps body text at 4.5:1 and muted labels at 3:1 in the current theme; Settings says so when it applies. Video is muted and looped and holds still under Reduce motion, on a hidden page, in an unfocused window and on battery below 20%. `useThemeEpoch` moved to `apps/web/src/polaris/theme/` (shared with Orbie). Contract: `backgroundEnabled`, `backgroundDim`, `backgroundBlur`.
-- How verified: `vp test run apps/web/src/polaris packages/contracts/src/settings.test.ts apps/desktop/src/settings apps/web/src/components/settings` (background rules 4, contrast 6, plus the touched suites) passed; typecheck web/contracts/desktop exit 0; lint clean on the new files. Isolated Playwright contexts with a generated worst-case image (bright sky over a dark textured ground) and an ffmpeg test video: the layer shows on the dashboard, a thread and settings in light and dark; the floor came out at 80% (light) and 85% (dark) for that image; the video advanced 1.2 s in 1.2 s normally and stayed paused with reduced motion. Shots: `.playwright-mcp/v4.1/background-*`.
-- Risks: the Battery API path and the unfocused-window pause were not exercised in the browser (pure logic is tested). The floor samples a video's first frame only. Mermaid diagrams read the body color for their background and get a transparent one while a background shows.
-- Next action: V 4.1.0 item 2, chat icons (per-thread icon from the project icon picker, kept per device).
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 gate: passed, merged, tagged `v4.0.0`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 6: secrets scan. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 item 5: guards. Rolled up; see `git log`.

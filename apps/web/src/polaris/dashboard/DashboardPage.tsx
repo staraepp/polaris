@@ -329,8 +329,8 @@ export function DashboardPage() {
           <WorkspacePageContainer width="wide">
             {editing ? (
               <p className="text-xs text-muted-foreground" aria-live="polite">
-                Drag widgets to reorder them (or use their arrows), pick a size, remove what you do
-                not need and add notes or links of your own. Kept on this device.
+                Drag widgets to reorder them (or use their arrows), pick a size on wide windows,
+                remove what you do not need and add notes or links of your own. Kept on this device.
               </p>
             ) : (
               <>
