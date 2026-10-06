@@ -15,12 +15,14 @@ function Row({
   detail,
   selected,
   muted,
+  unsaved = false,
   onSelect,
 }: {
   readonly label: string;
   readonly detail: string | undefined;
   readonly selected: boolean;
   readonly muted?: boolean;
+  readonly unsaved?: boolean;
   readonly onSelect: () => void;
 }) {
   return (
@@ -34,10 +36,18 @@ function Row({
           selected && "bg-accent text-accent-foreground hover:bg-accent",
         )}
       >
-        <span
-          className={cn("truncate text-sm", muted ? "text-muted-foreground" : "text-foreground")}
-        >
-          {label}
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span
+            className={cn("truncate text-sm", muted ? "text-muted-foreground" : "text-foreground")}
+          >
+            {label}
+          </span>
+          {unsaved ? (
+            <>
+              <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-primary" />
+              <span className="sr-only">, unsaved changes</span>
+            </>
+          ) : null}
         </span>
         {detail ? <span className="truncate text-xs text-muted-foreground">{detail}</span> : null}
       </button>
@@ -111,6 +121,7 @@ export function SkillList({
   selection,
   onSelect,
   pending,
+  unsavedKeys,
 }: {
   readonly groups: readonly StudioSkillGroup[];
   readonly templates: readonly SkillTemplate[];
@@ -119,6 +130,8 @@ export function SkillList({
   readonly selection: StudioSelection | null;
   readonly onSelect: (selection: StudioSelection) => void;
   readonly pending: boolean;
+  /** Skills with edits not yet saved, keyed like the entries. */
+  readonly unsavedKeys: Readonly<Record<string, string>>;
 }) {
   // A group the user folded or unfolded keeps that choice; otherwise long ones
   // start folded unless a filter is on or the selection lives inside.
@@ -166,6 +179,7 @@ export function SkillList({
                     label={entry.label}
                     detail={entry.skill.shortDescription ?? entry.skill.description}
                     muted={!entry.skill.enabled}
+                    unsaved={unsavedKeys[entry.key] !== undefined}
                     selected={isSelectedSkill(selection, entry)}
                     onSelect={() => onSelect({ type: "skill", key: entry.key })}
                   />

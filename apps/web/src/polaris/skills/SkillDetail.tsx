@@ -50,15 +50,19 @@ export function SkillDetail({
   environmentId,
   cwd,
   groupLabel,
+  draft,
+  onDraftChange,
 }: {
   readonly entry: StudioSkill;
   readonly environmentId: EnvironmentId;
   readonly cwd: string;
   readonly groupLabel: string;
+  /** Unsaved text, kept by the page so switching skills does not lose it. */
+  readonly draft: string | null;
+  readonly onDraftChange: (draft: string | null) => void;
 }) {
   const file = useProjectFileQuery(environmentId, cwd, entry.readPath);
   const writeFile = useAtomCommand(projectEnvironment.writeFile, { reportFailure: false });
-  const [draft, setDraft] = useState<string | null>(null);
   const [status, setStatus] = useState<{ readonly kind: "saving" | "saved" | "failed" } | null>(
     null,
   );
@@ -79,7 +83,7 @@ export function SkillDetail({
     });
     if (result._tag === "Success") {
       confirmProjectFileQueryData(environmentId, cwd, relativeFile, value);
-      setDraft(null);
+      onDraftChange(null);
       setStatus({ kind: "saved" });
     } else {
       clearProjectFileQueryData(environmentId, cwd, relativeFile);
@@ -114,7 +118,7 @@ export function SkillDetail({
             {editable ? (
               <>
                 {dirty ? (
-                  <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
+                  <Button size="sm" variant="ghost" onClick={() => onDraftChange(null)}>
                     Revert
                   </Button>
                 ) : null}
@@ -149,7 +153,7 @@ export function SkillDetail({
           value={value}
           disabled={file.isPending && file.data === null}
           onChange={(event) => {
-            setDraft(event.target.value);
+            onDraftChange(event.target.value);
             if (status?.kind !== "saving") setStatus(null);
           }}
           onKeyDown={(event) => {

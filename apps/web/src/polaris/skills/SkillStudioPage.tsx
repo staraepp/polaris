@@ -109,6 +109,13 @@ export function SkillStudioPage() {
   );
   const allSkills = useMemo(() => allGroups.flatMap((group) => group.skills), [allGroups]);
   const [selection, setSelection] = useState<StudioSelection | null>(null);
+  // Unsaved SKILL.md edits by skill key, so moving between skills keeps them.
+  const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
+  const setDraft = (key: string, draft: string | null) =>
+    setDrafts((current) => {
+      const { [key]: _dropped, ...rest } = current;
+      return draft === null ? rest : { ...rest, [key]: draft };
+    });
   const selectedSkill =
     selection?.type === "skill"
       ? allSkills.find((entry) => entry.key === selection.key)
@@ -242,6 +249,7 @@ export function SkillStudioPage() {
                     selection={shown}
                     onSelect={setSelection}
                     pending={scanning && allSkills.length === 0}
+                    unsavedKeys={drafts}
                   />
                 </div>
               </ScrollArea>
@@ -255,6 +263,8 @@ export function SkillStudioPage() {
                     environmentId={project.environmentId}
                     cwd={cwd}
                     groupLabel={groupLabelOf(shownSkill.key)}
+                    draft={drafts[shownSkill.key] ?? null}
+                    onDraftChange={(draft) => setDraft(shownSkill.key, draft)}
                   />
                 ) : shownTemplate ? (
                   <TemplateDetail
