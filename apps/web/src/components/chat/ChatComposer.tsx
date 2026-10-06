@@ -154,6 +154,7 @@ import {
 import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
 import { ComposerUsageMeter } from "~/polaris/quota/ComposerUsageMeter";
 import { composerPlusActions, LazyGooeyPlusMenu } from "~/polaris/gooey/gooeyPlusActions";
+import { useCalmMode } from "~/polaris/calm/useCalmMode";
 import { useVoiceInput } from "~/polaris/voice/useVoiceInput";
 import { VoiceButton } from "~/polaris/voice/VoiceButton";
 import type { UsageMeterModel } from "~/polaris/quota/usageMeterModel";
@@ -2358,6 +2359,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     polarisFxWithVoice,
     composerProviderState.composerFrameClassName !== undefined,
   );
+  // Polaris: Calm mode keeps the plain paperclip instead of the liquid menu.
+  const polarisCalm = useCalmMode();
   // Upstream's keyword ring is the idle indicator only; any Polaris layer replaces it.
   const composerFrameClassName =
     polarisFxState.layer === "ring" ? composerProviderState.composerFrameClassName : undefined;
@@ -7566,7 +7569,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                           });
                         }}
                       />
-                      {settings.gooeyComposerMenuEnabled ? (
+                      {settings.gooeyComposerMenuEnabled && !polarisCalm ? (
                         <LazyGooeyPlusMenu
                           actions={composerPlusActions({
                             onAttach: () => attachmentInputRef.current?.click(),

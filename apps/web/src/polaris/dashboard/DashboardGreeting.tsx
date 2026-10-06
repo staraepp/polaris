@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 
+import { PolarisStar } from "~/components/T3Wordmark";
 import { Button } from "~/components/ui/button";
 
 import { ORBIE_NAME } from "../bots/orbie";
 import { OrbieAvatar } from "../bots/OrbieAvatar";
+import { useCalmMode } from "../calm/useCalmMode";
 import type { DashboardThread } from "./dashboardThreads";
 
 const NEEDS_YOU = new Set(["Pending Approval", "Awaiting Input", "Plan Ready"]);
@@ -63,14 +65,20 @@ export function DashboardGreeting({
 }) {
   const pulse = dashboardPulse(active);
   const next = nextForReview(active);
+  // Calm mode: the still Polaris star instead of Orbie.
+  const calm = useCalmMode();
   return (
     <div className="flex items-center gap-3.5 pb-1">
-      <OrbieAvatar
-        size={44}
-        live
-        state={pulse.working > 0 ? "working" : "default"}
-        label={ORBIE_NAME}
-      />
+      {calm ? (
+        <PolarisStar aria-hidden className="size-8 shrink-0 text-ring" />
+      ) : (
+        <OrbieAvatar
+          size={44}
+          live
+          state={pulse.working > 0 ? "working" : "default"}
+          label={ORBIE_NAME}
+        />
+      )}
       <div className="min-w-0">
         <p className="text-lg font-semibold tracking-tight text-foreground">
           {greetingFor((now ?? new Date()).getHours())}

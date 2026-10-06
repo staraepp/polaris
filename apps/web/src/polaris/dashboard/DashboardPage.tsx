@@ -116,6 +116,7 @@ export function DashboardPage() {
     (settings) =>
       settings.botAccessory !== "none" ||
       settings.backgroundEnabled ||
+      settings.calmMode ||
       Object.keys(settings.themeFonts).length > 0,
   );
   // Esc leaves edit mode first, then the page.

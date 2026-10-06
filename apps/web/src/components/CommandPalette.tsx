@@ -58,6 +58,7 @@ import {
   LinkIcon,
   MessageSquareIcon,
   MonitorIcon,
+  LeafIcon,
   MoonIcon,
   NotebookTabsIcon,
   PaletteIcon,
@@ -89,7 +90,7 @@ import { useDesktopLocalBootstraps } from "../connection/useDesktopLocalBootstra
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
 import { useOpenPanelPullRequestUrl } from "../hooks/useOpenPanelPullRequestUrl";
 import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
-import { useClientSettings } from "../hooks/useSettings";
+import { useClientSettings, useUpdateClientSettings } from "../hooks/useSettings";
 import { useTheme } from "../hooks/useTheme";
 import { useCustomThemes } from "../hooks/useCustomThemes";
 import { useEnvironmentThemeDefinitions } from "../hooks/useEnvironmentTheme";
@@ -717,6 +718,7 @@ function OpenCommandPaletteDialog(props: {
     setHighlightedItemValue(null);
   }
   const clientSettings = useClientSettings();
+  const updateClientSettings = useUpdateClientSettings();
   const createProject = useAtomCommand(projectEnvironment.create, {
     reportFailure: false,
   });
@@ -2189,6 +2191,18 @@ function OpenCommandPaletteDialog(props: {
     ],
   };
   actionItems.push(changeAppearanceItem);
+
+  // Polaris (V 5.1.0): Calm mode, one step from anywhere.
+  actionItems.push({
+    kind: "action",
+    value: "action:calm-mode",
+    searchTerms: ["calm", "quiet", "focus", "minimal", "plain", "effects", "claude", "distraction"],
+    title: clientSettings.calmMode ? "Turn calm mode off" : "Turn calm mode on",
+    icon: <LeafIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await updateClientSettings({ calmMode: !clientSettings.calmMode });
+    },
+  });
 
   useLayoutEffect(() => {
     if (openIntent?.kind !== "change-theme") return;

@@ -1513,6 +1513,21 @@ export function applyThemeColorPreview(colors: ThemeColors, appearance: ThemeApp
   }
 }
 
+/**
+ * Polaris: paint a palette that is not in the theme library (Calm mode's),
+ * keeping the stored theme choice untouched; `applyThemePalette` restores it.
+ */
+export function applyPolarisPalette(id: string, colors: ThemeColors): void {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (!root?.style) return;
+  setThemePreviewSidebarArtwork(null);
+  root.dataset.themeId = id;
+  for (const [role, value] of Object.entries(colors) as Array<[ThemeColorRole, string]>) {
+    root.style.setProperty(APP_THEME_VARIABLES[role], value);
+  }
+}
+
 export function applyThemePalette(theme: ThemePreference, appearance?: ThemeAppearance): void {
   if (typeof document === "undefined") return;
 

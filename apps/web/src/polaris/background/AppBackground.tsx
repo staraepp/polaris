@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { useClientSettings } from "../../hooks/useSettings";
+import { useCalmMode } from "../calm/useCalmMode";
 import { usePrefersReducedMotion } from "../fx/usePrefersReducedMotion";
 import { AA_TEXT_CONTRAST, contrastFloorPercent, UI_TEXT_CONTRAST } from "./backgroundContrast";
 import { type PlaybackDecision, videoPlayback } from "./backgroundRules";
@@ -204,7 +205,9 @@ function useThemeTextColors(): ThemeTextColors | null {
  * sidebar turns to glass only while a background is showing (`background.css`).
  */
 export function AppBackground() {
-  const enabled = useClientSettings((settings) => settings.backgroundEnabled);
+  // Calm mode pauses the background; the picture and its setting are kept.
+  const calm = useCalmMode();
+  const enabled = useClientSettings((settings) => settings.backgroundEnabled) && !calm;
   const dim = useClientSettings((settings) => settings.backgroundDim);
   const blur = useClientSettings((settings) => settings.backgroundBlur);
   const media = useStoredBackground(enabled);

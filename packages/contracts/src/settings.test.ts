@@ -1261,6 +1261,14 @@ describe("ClientSettings sidebar artwork (Polaris, V 4.7.1)", () => {
   });
 });
 
+describe("ClientSettings calm mode (Polaris, V 5.1.0)", () => {
+  it("is off by default and can be turned on", () => {
+    expect(decodeClientSettings({}).calmMode).toBe(false);
+    expect(decodeClientSettings({ calmMode: true }).calmMode).toBe(true);
+    expect(decodeClientSettingsPatch({ calmMode: true })).toEqual({ calmMode: true });
+  });
+});
+
 describe("ClientSettings composer usage meter (Polaris)", () => {
   it("is on by default and can be turned off", () => {
     expect(decodeClientSettings({}).composerUsageMeterEnabled).toBe(true);

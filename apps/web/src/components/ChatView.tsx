@@ -42,7 +42,7 @@ import { resolveRunEffort } from "../polaris/fx/effortTier";
 import { useQuotaLowSignal } from "../polaris/quota/useQuotaLowSignal";
 import { usageMeterModelOf } from "../polaris/quota/usageMeterModel";
 import { ThreadBot } from "../polaris/bots/ThreadBot";
-import { OrbieRunContext } from "../polaris/bots/OrbieRunContext";
+import { OrbieRunContext, useOrbieEnabled } from "../polaris/bots/OrbieRunContext";
 import { readDevFxOverride } from "../polaris/fx/devFxOverride";
 import { useThreadUsage } from "../polaris/threadUsage/useThreadUsage";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
@@ -3219,7 +3219,7 @@ export default function ChatView(props: ChatViewProps) {
   // Polaris: signals for the composer FX slot (quota-low flash, effort beam).
   const polarisQuotaThreshold = useClientSettings((settings) => settings.quotaLowThresholdPercent);
   const polarisQuota = useQuotaLowSignal(activeProviderStatus, polarisQuotaThreshold);
-  const polarisBotsEnabled = useClientSettings((settings) => settings.botAvatarsEnabled);
+  const polarisBotsEnabled = useOrbieEnabled();
   const polarisUsageMeterEnabled = useClientSettings(
     (settings) => settings.composerUsageMeterEnabled,
   );

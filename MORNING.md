@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.0.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.1.0**. Start with "Look at these first" at the bottom.
+
+## V 5.1.0 (Calm mode: quieter, like the Claude app), tag `v5.1.0`
+
+- **Settings → Appearance → Calm mode** (or "Turn calm mode on" in the command palette, ⌘K): warm off-white or charcoal surfaces, flat panels, neutral buttons, and one soft clay color only for focus, links and the star.
+- **Everything busy pauses:** Orbie and the project bots, thinking orbs, composer beams and flashes, the liquid "+" menu, the sidebar artwork and your background. Nothing is lost: turn it off and your theme and effects come back as they were.
+- Your screenshot of the Claude app didn't reach me, so this follows the Claude app from memory. Send it again and I'll tune the colors to match.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,018 (6,011 + 7 new), contracts 539, web production build passes. Checked in the browser in light and dark (dashboard, a thread, Settings, Workspace).
 
 ## V 5.0.0 (the Workspace: whiteboards and docs), tag `v5.0.0`
 

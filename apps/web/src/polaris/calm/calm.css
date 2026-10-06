@@ -1,0 +1,7 @@
+/* Polaris (V 5.1.0): Calm mode. Themes take their link and "done" text color
+   from the blue info role; Calm uses its clay text instead, so the only hue on
+   screen is the one accent. The `:not` marker matches the specificity of the
+   theme block in index.css, and this file loads after it. */
+html[data-theme-id="polaris-calm"]:not([data-theme-id=""]) {
+  --primary-text: var(--app-theme-update-foreground);
+}

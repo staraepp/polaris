@@ -215,6 +215,14 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["wallpaper image picture photo video backdrop customize dim blur"],
   },
   {
+    id: "calm-mode",
+    title: "Calm mode",
+    to: "/settings/appearance",
+    searchTerms: [
+      "calm quiet focus minimal simple plain claude less overstimulating no effects animations",
+    ],
+  },
+  {
     id: "sidebar-artwork",
     title: "Sidebar artwork",
     to: "/settings/appearance",

@@ -4,6 +4,8 @@ import {
 } from "~/components/SidebarStageBackdrop";
 import { useClientSettings, useEnvironmentIdentificationMode } from "~/hooks/useSettings";
 
+import { useCalmMode } from "../calm/useCalmMode";
+
 /**
  * Sidebar artwork (Polaris, V 4.7.1). Upstream draws header art only on Dev
  * and Nightly builds, to tell them apart; Polaris keeps that and shows the
@@ -23,5 +25,7 @@ export function useSidebarArtworkVariant(): SidebarStageBackdropVariant | null {
     useEnvironmentIdentificationMode() === "artwork",
   );
   const artworkEnabled = useClientSettings((settings) => settings.sidebarArtworkEnabled);
-  return resolveSidebarArtworkVariant(stageVariant, artworkEnabled);
+  // Calm mode draws no header art at all, Dev and Nightly markers included.
+  const calm = useCalmMode();
+  return calm ? null : resolveSidebarArtworkVariant(stageVariant, artworkEnabled);
 }

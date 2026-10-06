@@ -17,6 +17,8 @@ export interface ComposerFxInput {
    */
   readonly idleBeam: boolean;
   readonly reducedMotion: boolean;
+  /** Calm mode (Polaris, V 5.1.0): no beams, flashes or idle decoration; voice is a still ring. */
+  readonly calm: boolean;
 }
 
 export interface ComposerFxState {
@@ -33,9 +35,15 @@ export interface ComposerFxState {
  * usage meter (`ComposerUsageMeter`).
  */
 export function resolveComposerFx(input: ComposerFxInput): ComposerFxState {
-  const animated = !input.reducedMotion;
+  const animated = !input.reducedMotion && !input.calm;
   const base = { tier: input.tier } as const;
   if (input.voiceListening) return { ...base, layer: "voice", animated };
+  // Calm mode: listening still shows (it is feedback, not decoration), the
+  // idle keyword ring stays static, and nothing else draws an outline.
+  if (input.calm) {
+    if (input.keywordIdle) return { ...base, layer: "ring", animated: false };
+    return { ...base, layer: "none", animated: false };
+  }
   if (input.quotaFlashing && animated) return { ...base, layer: "flash", animated };
   if (input.running && input.tier !== "none") return { ...base, layer: "beam", animated };
   if (input.keywordIdle) return { ...base, layer: "ring", animated: false };

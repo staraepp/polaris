@@ -168,6 +168,7 @@ import { searchableSetting } from "./settingsSearch";
 import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BackgroundSetting } from "./polaris/BackgroundSetting";
+import { CalmModeSetting, CalmPausedNote } from "./polaris/CalmModeSetting";
 import { SidebarArtworkSetting } from "./polaris/SidebarArtworkSetting";
 import { ActivityOrbsSetting } from "./polaris/ActivityOrbsSetting";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
@@ -575,6 +576,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       ...(settings.sidebarArtworkEnabled !== DEFAULT_UNIFIED_SETTINGS.sidebarArtworkEnabled
         ? ["Sidebar artwork"]
         : []),
+      ...(settings.calmMode !== DEFAULT_UNIFIED_SETTINGS.calmMode ? ["Calm mode"] : []),
       ...(settings.gooeyComposerMenuEnabled !== DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled
         ? ["Liquid composer menu"]
         : []),
@@ -749,6 +751,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.activityOrbsEnabled,
       settings.composerIdleBeamEnabled,
       settings.sidebarArtworkEnabled,
+      settings.calmMode,
       settings.botAvatarByDriver,
       settings.gooeyComposerMenuEnabled,
       settings.voiceInputEnabled,
@@ -869,6 +872,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       activityOrbsEnabled: DEFAULT_UNIFIED_SETTINGS.activityOrbsEnabled,
       composerIdleBeamEnabled: DEFAULT_UNIFIED_SETTINGS.composerIdleBeamEnabled,
       sidebarArtworkEnabled: DEFAULT_UNIFIED_SETTINGS.sidebarArtworkEnabled,
+      calmMode: DEFAULT_UNIFIED_SETTINGS.calmMode,
       botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
       gooeyComposerMenuEnabled: DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled,
       voiceInputEnabled: DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled,
@@ -1250,6 +1254,10 @@ export function AppearanceSettingsPanel() {
 
   return (
     <SettingsPageContainer>
+      <SettingsSection id="calm" title="Calm">
+        <CalmModeSetting />
+      </SettingsSection>
+
       <SettingsSection id="appearance" title="Colors & themes" variant="plain" hideTitle>
         <div id={searchableSetting("theme").id}>
           <ThemeLibrary
@@ -1362,6 +1370,8 @@ export function AppearanceSettingsPanel() {
             </div>
           }
         />
+
+        <CalmPausedNote />
 
         <BackgroundSetting />
 
@@ -3411,6 +3421,7 @@ export function GeneralSettingsPanel() {
         <QuotaLowThresholdSetting />
       </SettingsSection>
       <SettingsSection id="effects" title="Effects">
+        <CalmPausedNote />
         <ComposerEffectsSetting />
         <ActivityOrbsSetting />
         <BotAvatarsSetting />
