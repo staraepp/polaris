@@ -204,6 +204,11 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — v1 item 5: per-thread usage
+
+- Done: the composer's context window popover gains a "This thread" block (`apps/web/src/polaris/threadUsage/`): run count, tokens in / out, tool calls, and a strip of the last 24 runs sized by tokens (runs that called tools in the brand green). Client-only from the thread projection: tokens from each provider turn's `turnTokenUsage` (main agent, mapped to runs through `nodes`), tool calls from tool-shaped turn items per run (`command_execution`, `file_change`, `file_search`, `web_search`, `dynamic_tool`, `subagent`). `useThreadUsage` keeps one object while the figures are unchanged, so streaming deltas don't re-render the memoised composer. Plumbing: `ChatView` → `ChatComposer.polarisThreadUsage` → `ComposerFooterPrimaryActions.threadUsage` → `ContextWindowMeter.threadUsage`. Tests: 4 logic, 2 jsdom.
+- Left over: it shows only when the context meter does (setting on, and the provider reports context); the figures cover the loaded part of the thread; a multi-file edit counts one tool call per changed file.
+
 ### 2026-10-05 — Claude (session 8) — v1 item 4: tool calls over time
 
 - Done: usage buckets carry an optional `toolCalls` count (contract change below). Claude: `tool_use` and `server_tool_use` blocks per record. Claude writes one record per content block, so `dedupeWithinFile` now hands a dropped repeat's count to the record it keeps; the cross-file dedupe still drops copied messages whole. Codex: `response_item` tool-call payloads (`function_call`, `custom_tool_call`, `local_shell_call`, `web_search_call`) ride on the next `token_count` (`CodexScanState.pendingToolCalls`); copies in a fork's opening burst are dropped like copied usage. The reader's Codex gate also admits `_call"` lines, and the streaming selector keeps Claude `message.content[*].type` (`"*"` matches array indexes). Merge: `MergedUsage.toolCalls` and `DailyModelTotals.toolCalls`. UI: a "Tool calls over time" chart on Usage (the models chart with `metric="toolCalls"`), shown when anything was counted.
@@ -226,17 +231,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Done: `quotaLowThresholdPercent` client setting (contract, default 20, 0 = off) with a Select row in Settings → General → Usage (`apps/web/src/components/settings/polaris/QuotaLowThresholdSetting.tsx`, searchable as "Low quota warning"). `useQuotaLowSignal(provider, threshold)` follows it; a flash in progress stops if the warning is turned off. Tests: 3 contract cases, 1 new hook case.
 - Left over: nothing for this item.
 
-### 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 4: composer FX slot (effort beam, quota flash and accent)
-
-- Status: done and committed locally. Verified visually by forcing each state on the real composer in the dev app (`.playwright-mcp/p7-fx-*-{light,dark}.png`: beam low/medium/max, flash, accent, beam over accent); a live turn was not run, so the derive-on-read path is covered by unit tests only.
-- What: `apps/web/src/polaris/fx/`. `effortTier.ts` maps a level to a tier (explicit names win, any `ultra…` level is max, unknown names fall back by position with the integer formula from `blueprint.md`) and `resolveRunEffort` derives the running turn's effort **on read** from the run's stored `modelSelection` plus the keyword in the user message it was sent with (no stored field, no contract change). `composerFxState.ts` is the priority resolver: voice listening, then the quota flash, then the beam, then upstream's idle keyword ring; the amber accent is static and sits under any layer; reduced motion drops the flash and freezes the beam. `ComposerFx.tsx` renders two layers inside `ComposerSurface.Main`: a 2 px masked ring (conic-gradient spun through a registered `@property` angle; low breathes instead of spinning; max is the full spectrum) and an unmasked amber halo. Styles in `composerFx.css` (imported from `index.css`), keyed on data attributes, with per-tier colors as `--polaris-beam-*` variables; durations follow the blueprint (2.3, 1.96, 1.5, 1.3, 1.1, neutral 2.0 s); the beam pauses with upstream's `--visible-animation-state`.
-- Wiring: `ChatView.tsx` builds the signals (quota hook on the active provider; the active run from `serverProjection.runs` by `activeActivityRun.runId`; its user message text from `serverProjection.messages`) and passes `polarisFx` to `ChatComposer`, which hides upstream's `ultrathink-frame` whenever a Polaris layer owns the outline and otherwise leaves the ring exactly as it was.
-- Tests: 9 for tiers and derive-on-read, 5 for the priority resolver, 4 jsdom tests for the component. Web typecheck, lint and fmt pass.
-- Decisions: no dependency (the `border-beam` candidate has no custom colors and the own-CSS route was already on the table); the flash uses `--destructive` and the accent `--warning` so themes can retune both; with the accent on, the "high" beam (sunset) sits close to amber, which is how the blueprint's palette reads and can be tuned in the CSS variables.
-- Left over: the voice layer is a placeholder (the web composer has no voice capture in v1); the flash was captured mid-pulse in the dark screenshot and reads orange next to the accent, so judge it live.
-
 ## History
 
+- 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 4: composer FX slot (effort beam, quota flash and accent). Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 3: quota-low signal. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 2: Discord Rich Presence. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 0: known issues, and Phase 1: Usage activity heatmap. Rolled up; see `git log`.
