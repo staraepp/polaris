@@ -293,14 +293,16 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 | `packages/contracts/src/settings.ts`                   | `ClientSettings.backgroundEnabled` (default `false`), `backgroundDim` (int 30–90, default 60), `backgroundBlur` (int 0–24, default 0); all optional in the patch                                                                                                                                                                                                 | V 4.1.0: your own image or video background; the file itself stays in browser storage |
 | `packages/contracts/src/polarisT3History.ts`, `rpc.ts` | new RPCs `polaris.t3History.scan` (→ available projects or an unavailable reason) and `polaris.t3History.import` (`{sourceProjectId, projectId, expectedWorkspaceRoot}` → `{importedCount, skippedCount}`), error `PolarisT3HistoryError`                                                                                                                        | V 4.4.0: import T3 Code threads (read-only source)                                    |
 | `packages/contracts/src/settings.ts`                   | `ClientSettings.collabUsername` (`""` or 2–24 of `A-Za-z0-9._-`, default `""`; optional in the patch) and `COLLAB_USERNAME_PATTERN`                                                                                                                                                                                                                              | V 4.4.0: the username onboarding asks for collaboration                               |
+| `packages/contracts/src/settings.ts`                   | `ClientSettings.botShape` (`"mixed"` or one of the 18 `BOT_AVATAR_TYPES`, default `"mixed"`), `botColors` (`"varied"` \| `"brand"`, default `"varied"`), `activityOrbsEnabled` (default `true`), `composerIdleBeamEnabled` (default `false`); all optional in the patch; `BOT_SHAPES`, `BOT_COLOR_MODES`                                                         | V 4.5.0: a bot per project, thinking orbs, the optional idle beam                     |
 
 ## New dependencies
 
-| Package        | Version | License | Where      | Why                                                                                   |
-| -------------- | ------- | ------- | ---------- | ------------------------------------------------------------------------------------- |
-| `bot-avatars`  | 0.2.2   | MIT     | `apps/web` | Thread-header bot (v2 item 2); no dependencies, React peer; loaded lazily             |
-| `liquid-gooey` | 0.2.2   | MIT     | `apps/web` | Liquid "+" composer menu (v2 item 3); no dependencies, React peers; loaded lazily     |
-| `voice-glow`   | 0.3.0   | MIT     | `apps/web` | Voice-reactive composer glow (v2 item 4); no dependencies, React peers; loaded lazily |
+| Package         | Version | License | Where      | Why                                                                                                                     |
+| --------------- | ------- | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `bot-avatars`   | 0.2.2   | MIT     | `apps/web` | Thread-header bot (v2 item 2); no dependencies, React peer; loaded lazily                                               |
+| `liquid-gooey`  | 0.2.2   | MIT     | `apps/web` | Liquid "+" composer menu (v2 item 3); no dependencies, React peers; loaded lazily                                       |
+| `voice-glow`    | 0.3.0   | MIT     | `apps/web` | Voice-reactive composer glow (v2 item 4); no dependencies, React peers; loaded lazily                                   |
+| `thinking-orbs` | 0.3.2   | MIT     | `apps/web` | Working and thinking orbs in the timeline (V 4.5.0, Star's pick); no dependencies, React peer, 2D canvas; loaded lazily |
 
 ## Needs Star's approval
 
@@ -315,6 +317,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-06 — Claude Code — V 4.5.0: bots in every shape, thinking orbs, a visible beam and voice
+
+- Status: done
+- What changed: each project gets its own bot (shape from a hash of the project name, color = the project's generated color), the same in the sidebar, the thread header, each answer and the empty thread; Orbie itself stays a ball (`apps/web/src/polaris/bots/botLook.ts`, `OrbieAvatar` `project` prop, `OrbieRunContext.project`). The working and thinking rows use `thinking-orbs` (`apps/web/src/polaris/orbs/`, states in `orbStates.ts`), tinted with the run's effort color. Settings → Effects: "Composer effects" (live preview of every tier, the idle beam and voice, plus the idle-beam switch), "Thinking orbs", and Orbie's new Shape and Colors pickers with sample bots. Optional idle beam: a new `idle` composer layer, lowest priority, only while the window is focused and never under reduced motion (`IDLE_BEAM_LOOK`, `--polaris-beam-idle`, `useWindowActive`). Bug fix: the `voice-glow` element collapsed to 0×0 (the library's own `position: relative` beat our classes), so the voice glow never showed; it is now positioned inline in `VoiceGlow.tsx`.
+- How verified: web and contracts typecheck; `vp test run` on bots, fx, settings and contracts (new `botLook.test.ts`, idle-layer and settings tests, `ThreadBot` project test); full gate (see MORNING V 4.5.0); dev stack screenshots in `.playwright-mcp/v4.5.0/` (Settings → Effects, orbs at 2×, voice and idle previews, a forced running thread) in light and dark, no page errors.
+- Risks: the orbs and the voice glow were checked in the browser, not in the packaged app. The voice glow fix also changes real dictation; it was seen only in the preview (no microphone run). Project bots key on the project title, so renaming a project changes its bot.
+- Next action: V 4.6.0 navigation: 4 hubs (Home, Workspace, Tools, Settings) with subpages, reusing `polaris/hub/HubTabs.tsx`.
+- Open questions: None.
 
 ### 2026-10-06 — Claude Code — V 4.4.1: Windows x64 installer cross-built on the Mac
 
@@ -352,17 +363,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: Star opens the dmg, right-click → Open, allows the keychain entry, and checks the dashboard loads.
 - Open questions: rename the app from "Polaris (Alpha)" to "Polaris"? Set a Polaris version string (for example 4.2.0) in `apps/desktop/package.json`?
 
-### 2026-10-06 — Claude (session 8) — V 4.1.1 gate: passed, merged, tagged `v4.1.1`
-
-- Status: done
-- What changed: polish cycles 014 to 023 (branch `polish-2`) merged into `main` with `--no-ff` and tagged `v4.1.1` (patch: polish only, no contract changes, no new dependencies). MORNING has a V 4.1.1 section; polishing stopped at 23 of 25 because the last scans found nothing clearly better.
-- How verified: `vp fmt --check` clean; `vp lint --report-unused-disable-directives` exit 0, 0 errors, 867 warnings (same as V 4.1.0). Suites: contracts 531, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,968, scripts 341 + the 1 known failure, server 8 known failures / 6,430 passed / 21 skipped. Screenshots light and dark in `.playwright-mcp/v4.1.1/` (dashboard, skills, appearance) and `v4.1.1-sheet.png`. Smoke: `scripts/polaris-dev.mjs start` (pgid 9018, ports 13774/5734) → paired → landed on `/dashboard`, sidebar utility row present, no page errors (`v4.1.1-smoke.png`); stopped with `polaris-dev.mjs stop 9018`.
-- Risks: Same as the cycle entries; nothing new.
-- Next action: wait for Star. The desktop app still needs the identity decision in MORNING "Needs Star's approval".
-- Open questions: Desktop identity (app id, profile, home dir, URL scheme).
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — V 4.1.1 gate: passed, merged, tagged `v4.1.1`. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 023: first steps in any order. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 022: skills fit narrow windows. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 021: the note says it saved. Rolled up; see `git log`.

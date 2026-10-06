@@ -17,7 +17,10 @@ export default function VoiceGlow({
   return (
     <VoiceBeam
       aria-hidden
-      className="pointer-events-none absolute inset-0 z-20 rounded-[inherit]"
+      className="pointer-events-none z-20 rounded-[inherit]"
+      // Inline, because the library sets its own `position: relative`, which
+      // beat the classes and collapsed the glow to nothing (fixed in V 4.5.0).
+      style={{ position: "absolute", inset: 0 }}
       level={processing ? () => 0.22 + 0.12 * Math.sin(performance.now() / 420) : level}
       colorVariant="forest"
       theme={theme}

@@ -3,9 +3,9 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
+const settings = { botAccessory: "bowTie", botShape: "mixed", botColors: "varied" };
 vi.mock("~/hooks/useSettings", () => ({
-  useClientSettings: (select: (settings: { botAccessory: string }) => unknown) =>
-    select({ botAccessory: "bowTie" }),
+  useClientSettings: (select: (value: typeof settings) => unknown) => select(settings),
 }));
 
 vi.mock("bot-avatars", () => ({
@@ -27,6 +27,7 @@ vi.mock("bot-avatars", () => ({
 }));
 
 const { ThreadBot } = await import("./ThreadBot");
+const { botTypeFor } = await import("./botLook");
 
 describe("ThreadBot (Orbie)", () => {
   let renderer: Root;
@@ -54,6 +55,7 @@ describe("ThreadBot (Orbie)", () => {
     running: boolean;
     waitingOnUser?: boolean;
     lastActivityAt?: number | null;
+    project?: string | null;
   }) => {
     await act(async () => {
       renderer.render(
@@ -62,6 +64,7 @@ describe("ThreadBot (Orbie)", () => {
           waitingOnUser={props.waitingOnUser ?? false}
           lastActivityAt={props.lastActivityAt ?? null}
           tier="medium"
+          project={props.project ?? null}
         />,
       );
     });
@@ -79,6 +82,11 @@ describe("ThreadBot (Orbie)", () => {
     expect(canvas?.getAttribute("aria-label")).toBe("Orbie is working");
     expect(canvas?.dataset.paused).toBe("false");
     expect(canvas?.dataset.bowTie).toBe("true");
+  });
+
+  it("is the project's own bot in a project's thread (V 4.5.0)", async () => {
+    const canvas = await render({ running: false, project: "Website" });
+    expect(canvas?.dataset.type).toBe(botTypeFor("Website", "mixed"));
   });
 
   it("sleeps while the thread waits on you or has gone quiet", async () => {

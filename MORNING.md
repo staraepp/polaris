@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.4.1**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.5.0**. Start with "Look at these first" at the bottom.
+
+## V 4.5.0 (bots in every shape, thinking orbs, a visible beam and voice), tag `v4.5.0`
+
+- **Every project has its own bot.** Ghosts, flowers, cats, stars, droids and the rest of the library's 18 shapes, each in its project's color. A project's bot is the same in the sidebar, the thread header, each answer and the empty thread. Orbie itself (dashboard, welcome) stays the green ball. Settings → Effects → Orbie: **Shape** (mixed, or one shape for every bot) and **Colors** (varied, or brand green), with sample bots so you see the result.
+- **Thinking orbs.** "Working" and "Thinking" now each have their own `thinking-orbs` animation (the library you suggested): orbiting particles while working, and scrambling bands while thinking. Both take the turn's effort color and stay visible for as long as the row is there. They can be switched off under Settings → Effects → Thinking orbs.
+- **Seeing the beam and voice.** Why you never saw them: the beam only runs while an agent turn runs, and voice is off by default. **Voice also had a real bug:** its glow was collapsing to nothing, so it would not have shown even with voice on. That is fixed. Settings → Effects → **Composer effects** now has a live preview: pick Low, Medium, High, Extra high, Max, Idle or Voice and watch the composer outline. The same row has a new switch for a subtle **idle beam**, a faint green line circling the composer when nothing is running. It is off by default, and it pauses when the window is in the background or with reduced motion on.
+- Gate: GATE_LINE
 
 ## V 4.4.1 (a Windows installer), tag `v4.4.1`
 

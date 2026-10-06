@@ -8,10 +8,25 @@ const idle: ComposerFxInput = {
   running: false,
   tier: "neutral",
   keywordIdle: false,
+  idleBeam: false,
   reducedMotion: false,
 };
 
 describe("resolveComposerFx", () => {
+  it("draws the idle beam only when nothing else owns the outline (Polaris)", () => {
+    expect(resolveComposerFx({ ...idle, idleBeam: true })).toEqual({
+      layer: "idle",
+      tier: "neutral",
+      animated: true,
+    });
+    expect(resolveComposerFx({ ...idle, idleBeam: true, keywordIdle: true }).layer).toBe("ring");
+    expect(resolveComposerFx({ ...idle, idleBeam: true, running: true, tier: "low" }).layer).toBe(
+      "beam",
+    );
+    // Decorative: reduced motion drops it instead of drawing it still.
+    expect(resolveComposerFx({ ...idle, idleBeam: true, reducedMotion: true }).layer).toBe("none");
+  });
+
   it("draws nothing while idle", () => {
     expect(resolveComposerFx(idle)).toEqual({
       layer: "none",
