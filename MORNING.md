@@ -1,6 +1,12 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.7.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.7.1**. Start with "Look at these first" at the bottom.
+
+## V 4.7.1 (your T3 Code threads), tag `v4.7.1`
+
+- **Why your T3 threads never came over:** you set Polaris up on 4.3.0, before the T3 Code import existed, so setup never offered it. On 4.7.0 the T3 import sits on the second tab of Tools → Import, and the first tab ("Claude Code & Codex") imports something else: the CLIs' session files. Your T3 Code data is fine and was never touched (64 threads in 14 projects).
+- **Now you can't miss it:** the dashboard says "64 T3 Code threads aren't in Polaris yet" with a **Bring them over** button, the Claude Code & Codex tab shows the same hint, and the T3 Code tab shows "64 new". One click on Import copies them all (tested with your real T3 Code data in a throwaway copy of Polaris: all 64 came over and showed up in the sidebar).
+- Gate: see below.
 
 ## V 4.7.0 (private updates for your friends), tag `v4.7.0`
 

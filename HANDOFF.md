@@ -318,6 +318,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude Code — V 4.7.1: T3 Code threads are impossible to miss
+
+- Status: done
+- What changed: Star's T3 Code threads were never imported. Not an importer bug: the logs showed onboarding ran on V 4.3.0 (before the T3 import existed), and on V 4.7.0 Star opened Import, which lands on the "Claude Code & Codex" tab, and ran that import six times; the T3 import (second tab) was never requested. Now: a dashboard notice "N T3 Code threads aren't in Polaris yet" with "Bring them over" (`apps/web/src/polaris/dashboard/T3ImportNotice.tsx`; "Not now" hides it until the count grows, `localStorage["polaris:t3-import-notice:v1"]`), the same hint at the top of the Claude Code & Codex tab, and an "N new" badge on the T3 Code tab (`HubTab.badge`). Shared pieces: `T3ImportHint.tsx`, `t3NewThreadCount` in `t3HistoryImport.ts` (+ tests).
+- How verified: read-only checks of the real databases (T3 Code: 64 threads in 14 projects, migration 54, no V2 tables; Polaris: none of those 64 ids); dev stack (temp home, real T3 Code read-only): dashboard notice → T3 tab → "Imported 64 threads from 14 projects.", the threads appear in the sidebar, then the badge and the notice disappear; screenshots `.playwright-mcp/v4.7.1-*` light and dark; full gate (MORNING V 4.7.1).
+- Risks: the dashboard runs the T3 scan on each visit (5 ms on Star's 1.7 GB database, cached 30 s).
+- Next action: V 5.0.0 Workspace: whiteboards and docs (Star asked for them next), then the VPS sync service.
+- Open questions: None.
+
 ### 2026-10-06 — Claude Code — V 4.7.0: private updates from the VPS, invite code, username out of builds
 
 - Status: done
@@ -354,17 +363,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.5.0 bots and motion (thinking-orbs for the working and thinking rows, bot shapes and colors, beam and voice preview in Settings).
 - Open questions: None.
 
-### 2026-10-06 — Claude (session 8) — V 4.4.0: T3 Code import, Polaris welcome, dashboard landing
-
-- Status: done; gate passed (see MORNING V 4.4.0); merged into `main` and tagged `v4.4.0`
-- What changed: branch `import-t3-history`. (1) T3 Code threads: new RPCs `polaris.t3History.scan` / `polaris.t3History.import` (`packages/contracts/src/polarisT3History.ts`), server `apps/server/src/polaris/t3History/T3HistoryImporter.ts` (reads `~/.t3/userdata/state.sqlite` read-only with `node:sqlite`, copies one project's V1 `projection_threads`, `projection_thread_messages`, `projection_thread_pull_requests` rows into Polaris under the chosen project, only shared columns, skips threads Polaris has, then runs the legacy V1 importer; refuses when the source is Polaris's own database or a V2 T3 database), wired in `runtimeLayer.ts`, `ws.ts`, `RpcAuthorization.ts`. `/import` now has tabs (new reusable `polaris/hub/HubTabs.tsx`, Base UI Tabs; `?source=t3`), shared `useImportRun`, `SessionsPanel`, `T3HistoryPanel`. (2) Onboarding: `polaris/onboarding/WelcomeShell.tsx` (full-screen aurora, Orbie, vertical steps) replaces the wizard popup in `WelcomeWizard.tsx`; new first step `YouStep` asks for `ClientSettings.collabUsername` (also Settings > General > Username); optional `T3Step` after Projects when T3 Code has new threads. (3) Landing: `/` and the end of setup go to `/dashboard` (launch page "dashboard") even with no projects. Version 4.4.0.
-- How verified: server tests build a real V1 database (migrations to 54) and a Polaris database, import, open the transcript, re-import (0 new), refuse a moved project, detect missing/same database; contract, web logic and wizard tests (T3 offer). Dev stack (temp home): T3 tab listed Star's 14 T3 Code projects; imported one (1 thread) into the temp database, opened it with its full transcript, re-import said "Nothing new". Onboarding light/dark/narrow screenshots in `.playwright-mcp/v4.4.0/` (Agents step not captured: it shows the signed-in account email).
-- Risks: activities, approvals, checkpoints and attachments from T3 Code are not copied (upstream's legacy importer reads only threads, messages and pull requests). The scan reads every thread id of T3 Code's database (fast for Star's 1.6 GB file in practice). A T3 Code that has upgraded to V2 is reported as unsupported.
-- Next action: V 4.5.0 bots and motion (Star: bot shapes and colors, thinking orbs via `thinking-orbs`, beam and voice visibility), then the four hubs, then Workspace (VPS collaboration).
-- Open questions: none new.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — V 4.4.0: T3 Code import, Polaris welcome, dashboard landing. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.3.0: import sessions any time; app version = V number. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.2.0: Polaris as its own desktop app. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.1.1 gate: passed, merged, tagged `v4.1.1`. Rolled up; see `git log`.

@@ -17,15 +17,13 @@ import { usePrimaryEnvironmentId } from "~/state/environments";
 import { HubTabPanel, HubTabs, type HubTab } from "../hub/HubTabs";
 import { SessionsPanel } from "./SessionsPanel";
 import { T3HistoryPanel } from "./T3HistoryPanel";
+import { t3NewThreadCount } from "./t3HistoryImport";
+import { T3ImportHint } from "./T3ImportHint";
 import { useT3HistoryScan } from "./useT3HistoryScan";
 
 const NO_ENVIRONMENTS: readonly EnvironmentId[] = [];
 
 type ImportSource = "sessions" | "t3";
-const SOURCES: readonly HubTab<ImportSource>[] = [
-  { id: "sessions", label: "Claude Code & Codex" },
-  { id: "t3", label: "T3 Code" },
-];
 
 /**
  * Import any time (Polaris): bring threads in from the agent CLIs' session
@@ -45,6 +43,17 @@ export function ImportSessionsPage() {
   const scan = useProjectScans(environmentIds)[0] ?? null;
   const t3Scan = useT3HistoryScan(environmentId);
   const scanning = source === "t3" ? t3Scan.isPending : scan !== null && scan.isPending;
+  const t3New = t3NewThreadCount(t3Scan.data);
+  const sources: readonly HubTab<ImportSource>[] = [
+    { id: "sessions", label: "Claude Code & Codex" },
+    { id: "t3", label: "T3 Code", badge: t3New > 0 ? `${t3New} new` : undefined },
+  ];
+  const showSource = (next: ImportSource) =>
+    void navigate({
+      to: "/import",
+      search: next === "t3" ? { source: "t3" } : {},
+      replace: true,
+    });
 
   return (
     <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none isolate">
@@ -67,19 +76,23 @@ export function ImportSessionsPage() {
         <ScrollArea scrollFade className="min-h-0 flex-1">
           <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-8">
             <HubTabs
-              tabs={SOURCES}
+              tabs={sources}
               value={source}
-              onValueChange={(next) =>
-                void navigate({
-                  to: "/import",
-                  search: next === "t3" ? { source: "t3" } : {},
-                  replace: true,
-                })
-              }
+              onValueChange={showSource}
               ariaLabel="Import from"
               className="gap-6"
             >
-              <HubTabPanel value="sessions">
+              <HubTabPanel value="sessions" className="flex flex-col gap-6">
+                {t3New > 0 ? (
+                  <T3ImportHint
+                    newCount={t3New}
+                    action={
+                      <Button size="xs" onClick={() => showSource("t3")}>
+                        Import from T3 Code
+                      </Button>
+                    }
+                  />
+                ) : null}
                 <SessionsPanel environmentId={environmentId} scan={scan} />
               </HubTabPanel>
               <HubTabPanel value="t3">
