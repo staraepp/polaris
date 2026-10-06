@@ -52,6 +52,7 @@ export function SkillDetail({
   groupLabel,
   draft,
   onDraftChange,
+  onRescan,
 }: {
   readonly entry: StudioSkill;
   readonly environmentId: EnvironmentId;
@@ -60,6 +61,8 @@ export function SkillDetail({
   /** Unsaved text, kept by the page so switching skills does not lose it. */
   readonly draft: string | null;
   readonly onDraftChange: (draft: string | null) => void;
+  /** Asks the provider to list skills again, for a file that has gone. */
+  readonly onRescan: () => void;
 }) {
   const file = useProjectFileQuery(environmentId, cwd, entry.readPath);
   const writeFile = useAtomCommand(projectEnvironment.writeFile, { reportFailure: false });
@@ -70,7 +73,8 @@ export function SkillDetail({
   const loaded = file.data?.contents ?? "";
   const value = draft ?? loaded;
   const dirty = draft !== null && draft !== loaded;
-  const editable = entry.relativeFile !== null;
+  const unreadable = file.error !== null && file.data === null;
+  const editable = entry.relativeFile !== null && !unreadable;
   const relativeFile = entry.relativeFile;
 
   const save = async () => {
@@ -141,10 +145,17 @@ export function SkillDetail({
           The file could not be saved. Your edits are still here.
         </p>
       ) : null}
-      {file.error && file.data === null ? (
-        <p className="text-sm text-muted-foreground">
-          This skill's file could not be read ({file.error}).
-        </p>
+      {unreadable ? (
+        // The raw error names full host paths; say what happened instead.
+        <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border p-4">
+          <p className="text-sm text-foreground">This SKILL.md could not be read.</p>
+          <p className="text-sm text-muted-foreground">
+            It may have been moved or deleted since the provider last listed its skills.
+          </p>
+          <Button size="sm" variant="outline" onClick={onRescan}>
+            Rescan skills
+          </Button>
+        </div>
       ) : editable ? (
         <textarea
           aria-label={`${entry.label} SKILL.md`}

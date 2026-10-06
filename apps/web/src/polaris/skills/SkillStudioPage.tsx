@@ -268,6 +268,7 @@ export function SkillStudioPage() {
                     groupLabel={groupLabelOf(shownSkill.key)}
                     draft={drafts[shownSkill.key] ?? null}
                     onDraftChange={(draft) => setDraft(shownSkill.key, draft)}
+                    onRescan={() => void scan(true)}
                   />
                 ) : shownTemplate ? (
                   <TemplateDetail
