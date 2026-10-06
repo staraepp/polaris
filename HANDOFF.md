@@ -26,7 +26,7 @@ Copy the template below. Every field is required. "None" is a valid answer; a bl
 - Known failing (pre-existing, not fixed): `scripts/build-desktop-artifact.test.ts` > `build-desktop-artifact` > `skips the primary native probe for cross-architecture Windows payloads`. Fails identically on the pristine snapshot. Not in CI. Details in `AGENTS.md`.
 - Node: `.nvmrc` is `24.13.1` (the lower bound of `engines.node`); change both together.
 - Rebrand (session 6): the user-facing name is **Polaris** and the accent is emerald green (tokens in `apps/web/src/index.css`). Internal identifiers are still upstream's on purpose; see the session 6 entry for the list. The logo is a placeholder (a "P" with a north star in its counter); the same entry lists every file to swap for final art.
-- Test status on this Mac (session 8, v2 gate): contracts 527, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,920, scripts 337 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. v1 gate: contracts 520, shared 1,107, desktop 1,413, web 5,890; server 9 failed (the 8 known + 1 flaky watcher test). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
+- Test status on this Mac (session 8, v3 gate): contracts 527, shared 1,112, client-runtime 1,998, desktop 1,414 (+44 skipped), web 5,928, scripts 337 (+ the 1 known failure); server 8 failed / 6,430 passed / 21 skipped, exactly the 8 known. (v2 gate: web 5,920, the rest the same.) v1 gate: contracts 520, shared 1,107, desktop 1,413, web 5,890; server 9 failed (the 8 known + 1 flaky watcher test). Session 7, final tree: contracts 510, shared 1,105, client-runtime 1,998, desktop 1,413 (+44 skipped) and web 5,871 all pass; server: 8 failed / 6,422 passed / 21 skipped, the same 8 names as the pre-rebrand baseline (symlinked temp paths, `/var` vs `/private/var`, darwin-environment checks), so no server failure is ours. Session 6 numbers for comparison: desktop 1,399 and web 5,805. The server suites have 8 failures in files the rebrand did not touch (symlinked temp paths, `/var` vs `/private/var`, and darwin-environment checks); see the session 6 entry. The scripts suite has only the known failure above.
 
 ### Effective effort: where it is resolved today
 
@@ -214,6 +214,27 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — v3 gate: passed, merged, tagged `v3-done`
+
+- Gate: `vp fmt` clean, `vp lint` 0 errors (855 warnings, upstream's). Suites in "Test status" (server: exactly the 8 known; scripts: the 1 known). Smoke on `scripts/polaris-dev.mjs`: dashboard loaded with real local data, tiles reordered by buttons and by drag, order survived a reload, Reset and Esc worked; skill studio listed 342 skills, a skill was created from a template, edited, saved (checked on disk), deleted and rescanned away.
+- Screenshots: `.playwright-mcp/v3-01-dashboard-*`, `v3-01-dashboard-editing-*`, `v3-01-sidebar-footer-*`, `v3-02-skill-studio-*`, `v3-02-skill-studio-new-skill-*`, `v3-02-skill-studio-editing-*`, `v3-03-frontend-skill-template-*` (light and dark).
+- Skipped, as planned: v3 items 4–6 (multi-user chat, planning suite, plugin API), see "Needs Star's approval".
+- Next: polish mode on branch `polish`, log in `MORNING.md`.
+
+### 2026-10-05 — Claude (session 8) — v3 items 2–3: skill studio and frontend skills
+
+- Done (item 2): `/skills`, opened from a new icon in the sidebar footer. Project and provider pickers; a side panel of every skill the provider reports for that workspace, grouped This project / Repository / Personal / Plugins / Built into the provider, with a filter; a detail pane with badges (off, you start it, agent only), "Copy /name", and the SKILL.md. Files inside the workspace are editable (Save, Cmd/Ctrl+S, Revert; optimistic write through the existing `projects.writeFile` RPC); everything else is read-only with the home folder shown as `~`. **New skill** writes `<.claude|.agents>/skills/<slug>/SKILL.md` with frontmatter both Claude Code and Codex read, blank or from a template, refuses an existing path, then rescans. The page asks the provider for a workspace snapshot once (the same refresh the composer makes); **Rescan** forces one. No contract change.
+- Done (item 3): four frontend skills Polaris ships as templates in the studio: `frontend-design-review`, `accessible-components`, `motion-polish`, `ui-states` (`apps/web/src/polaris/skills/templates/*.md`, bundled with `?raw`). "Add to project" installs one as an ordinary SKILL.md. Interpretation: "built-in skills content" = curated content offered in the studio, not skills injected into agents behind the user's back.
+- Smoke: created a skill from the UI states template in the dev project, edited and saved it (verified on disk), then deleted it and rescanned. Committed as one change because the studio hosts the templates.
+- Files: `apps/web/src/polaris/skills/*`, `apps/web/src/routes/skills.tsx` (+ `routeTree.gen.ts`), sidebar footer and `mainAppLocation.ts`.
+- Tests: 3 studio logic (paths, grouping, documents).
+
+### 2026-10-05 — Claude (session 8) — v3 item 1: bento dashboard
+
+- Done: `/dashboard`, opened from a new bento icon in the sidebar footer (beside Settings; the footer shows "Back" there like the other utility pages). Five translucent tiles: **Start** (new thread in the latest project, plus the next three; the new-thread shortcut), **Threads** (threads with a status, the ones that need you first, then the most recent), **Today** (today's spend and tokens, then each provider's limit windows on one aligned grid; amber only at the low-quota threshold), **Pull requests** (newest open ones across connected servers, 3 per repo; a row opens it on the Pull Requests page) and **activity** (14 or 30 days of spend as bars, with an sr-only table). Two shapes so every row is filled in the default order: a long thread list runs two rows beside Start and Today; a short one stays one row, pull requests widen and activity takes the bottom row with a month of data. **Edit layout** makes tiles draggable and adds earlier/later buttons for keyboard users; the order lives in localStorage (`polaris:dashboard-layout:v1`), unknown ids are dropped and new tiles appended; Reset layout and Esc (leaves edit mode first) work. Fixed layout by default, drag only in edit mode, so no setting.
+- Files: `apps/web/src/polaris/dashboard/*`, `apps/web/src/routes/dashboard.tsx` (+ regenerated `routeTree.gen.ts`), `components/sidebar/SidebarChrome.tsx`, `components/sidebar/mainAppLocation.ts`.
+- Tests: 3 layout, 1 thread selection, 1 pull-request rows. Note: PR times are not shown; on this Mac the local clock is behind GitHub's timestamps, so every row read "just now".
+
 ### 2026-10-05 — Claude (session 8) — v2 gate: passed, merged, tagged `v2-done`
 
 - Gate: `vp fmt` clean, `vp lint` 0 errors (855 warnings, upstream's). Suites: see "Test status" in Current state (server: exactly the 8 known failures; scripts: the 1 known). Smoke on `scripts/polaris-dev.mjs`: paired, toggled every v2 setting, opened the meter popover and the liquid menu, recorded with a synthetic microphone stream (no real mic, no network), cancelled with Esc, saw the browser's "Clide works through the Polaris desktop app" error, set and cleared theme fonts.
@@ -227,26 +248,11 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Files: `packages/contracts/src/settings.ts`, `apps/web/src/polaris/themeFonts/*`, `apps/web/src/routes/__root.tsx`, `components/settings/polaris/{ThemeFontsSetting,CommitInput}.tsx`, `SettingsPanels.tsx`, `settingsSearch.ts`.
 - Tests: 1 contract, 3 helper. Next: the v2 gate.
 
-### 2026-10-05 — Claude (session 8) — v2 item 4: voice input
-
-- Done: push-to-talk in the composer (Settings → General → Voice, off by default). Hold the mic to talk and release to transcribe, or click to start and again to stop; Esc cancels; Enter/Space toggle. The text lands at the cursor. Capture: 16 kHz mono via an AudioWorklet served as a same-origin asset (the packaged CSP has no `blob:` in `script-src`), ScriptProcessor fallback, WAV encoded in the renderer, nothing kept afterwards. Backends: **Clide** (desktop only: the main process posts to `127.0.0.1:<port>` with the token from `safeStorage`, and follows `/v1/events` with 1–30 s backoff so the composer glows while Clide's own dictation listens and the window is focused; Clide's transcripts are not re-inserted, Clide types them itself) and **OpenAI-compatible** (the no-Clide path: user-set URL, optional key in `safeStorage`; in a browser it posts directly with no stored key). Errors keep their code (`not_running`, `unsupported_format`, `not_configured`…) and show on the button. Voice owns the composer FX slot (priority 1): the CSS breathing ring plus `voice-glow`'s reactive beam in the `forest` palette (lazy, motion only). Added `NSMicrophoneUsageDescription` to the mac build config (`scripts/build-desktop-artifact.ts`).
-- Files: `apps/web/src/polaris/voice/*`, `packages/shared/src/polarisVoiceHttp.ts` (+ export), `packages/shared/src/polarisBridge.ts` (`voice` on the bridge, optional), `apps/desktop/src/polaris/voice/*`, `apps/desktop/src/ipc/methods/polarisVoice.ts`, channels, preload, `main.ts` layer, `ChatComposer.tsx`, `ComposerFx.tsx`, `components/settings/polaris/VoiceSettings.tsx`.
-- Tests: 2 contract, 5 HTTP/SSE, 1 watcher, 2 WAV, 2 dispatcher, 4 hook, 3 button. Not exercised: a real Clide (none installed here), a real microphone, and the packaged app's mic prompt.
-
-### 2026-10-05 — Claude (session 8) — v2 item 3: liquid "+" composer menu
-
-- Done: behind `gooeyComposerMenuEnabled` (default off, Settings → General → Effects), the composer's paperclip becomes a "+" whose actions pop upward as liquid chips that split off and merge back (`apps/web/src/polaris/gooey/`, `liquid-gooey` MIT, lazy-loaded): Attach files (the same file input), Commands & skills (inserts `/`, opening upstream's command menu), Mention a file (inserts `@`). Real buttons in a `role="menu"`: focus moves to the first chip, ArrowUp/ArrowDown walk them, Escape closes and refocuses "+", outside clicks close; chips leave the tab order when closed. Reduced motion: instant moves. The "+" glyph is our own SVG; chip icons are upstream's lucide ones.
-- Tests: 1 contract, 3 jsdom (library mocked).
-- Left over: no effort chip yet (the traits picker is not reachable as a plain action); WebKit SVG-filter performance not measured (Electron is Chromium).
-
-### 2026-10-05 — Claude (session 8) — v2 item 2: bot avatars
-
-- Done: a 24 px bot beside the thread title (`apps/web/src/polaris/bots/ThreadBot.tsx`), from `bot-avatars` (lazy-loaded, so nothing ships to the main bundle while the setting is off). Shape and color per provider driver (`botConfig.ts`: Codex droid, Claude star, Cursor square, Grok mech, OpenCode pill, Antigravity alien, others clover; colors are the providers' Usage colors, Codex and Grok neutral per theme). State (`botState.ts`): working during a run, awake while waiting on an approval or input or busy in the last 30 minutes, sleeping after that. Pauses while the page is hidden; the library pauses offscreen and honors reduced motion. Settings → General → Bots: switch (default off) plus a shape picker with a still preview per provider. New client settings `botAvatarsEnabled` and `botAvatarByDriver`.
-- Tests: 2 contract, 3 state/look, 2 jsdom (library mocked).
-- Left over: bots appear in the thread header only (not the sidebar), to keep canvases to one per window.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v2 item 4: voice input. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — v2 item 3: liquid "+" composer menu. Rolled up; see `git log`.
+- 2026-10-05 — Claude (session 8) — v2 item 2: bot avatars. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 1: usage meter in the composer. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 5: per-thread usage. Rolled up; see `git log`.

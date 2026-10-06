@@ -1,0 +1,204 @@
+import type { EnvironmentId } from "@t3tools/contracts";
+import { useState } from "react";
+
+import {
+  clearProjectFileQueryData,
+  confirmProjectFileQueryData,
+  setProjectFileQueryData,
+  useProjectFileQuery,
+} from "~/components/files/projectFilesQueryState";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
+import { projectEnvironment } from "~/state/projects";
+import { useAtomCommand } from "~/state/use-atom-command";
+
+import { displaySkillPath, type StudioSkill } from "./skillStudio";
+import type { SkillTemplate } from "./skillTemplates";
+
+const editorClassName =
+  "min-h-[28rem] w-full flex-1 resize-none rounded-xl border border-input bg-background/60 p-4 font-mono text-xs leading-relaxed text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/24";
+
+function DetailHeader({
+  title,
+  subtitle,
+  badges,
+  actions,
+}: {
+  readonly title: string;
+  readonly subtitle: string;
+  readonly badges?: React.ReactNode;
+  readonly actions: React.ReactNode;
+}) {
+  return (
+    <header className="flex flex-wrap items-start gap-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="truncate text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+          {badges}
+        </div>
+        <p className="truncate font-mono text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">{actions}</div>
+    </header>
+  );
+}
+
+/** One skill's SKILL.md: editable inside the workspace, read-only elsewhere. */
+export function SkillDetail({
+  entry,
+  environmentId,
+  cwd,
+  groupLabel,
+}: {
+  readonly entry: StudioSkill;
+  readonly environmentId: EnvironmentId;
+  readonly cwd: string;
+  readonly groupLabel: string;
+}) {
+  const file = useProjectFileQuery(environmentId, cwd, entry.readPath);
+  const writeFile = useAtomCommand(projectEnvironment.writeFile, { reportFailure: false });
+  const [draft, setDraft] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ readonly kind: "saving" | "saved" | "failed" } | null>(
+    null,
+  );
+  const { copyToClipboard, isCopied } = useCopyToClipboard({ target: "skill" });
+  const loaded = file.data?.contents ?? "";
+  const value = draft ?? loaded;
+  const dirty = draft !== null && draft !== loaded;
+  const editable = entry.relativeFile !== null;
+  const relativeFile = entry.relativeFile;
+
+  const save = async () => {
+    if (relativeFile === null || !dirty) return;
+    setStatus({ kind: "saving" });
+    setProjectFileQueryData(environmentId, cwd, relativeFile, value);
+    const result = await writeFile({
+      environmentId,
+      input: { cwd, relativePath: relativeFile, contents: value },
+    });
+    if (result._tag === "Success") {
+      confirmProjectFileQueryData(environmentId, cwd, relativeFile, value);
+      setDraft(null);
+      setStatus({ kind: "saved" });
+    } else {
+      clearProjectFileQueryData(environmentId, cwd, relativeFile);
+      setStatus({ kind: "failed" });
+    }
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <DetailHeader
+        title={entry.label}
+        subtitle={entry.relativeFile ?? displaySkillPath(entry.readPath)}
+        badges={
+          <>
+            <Badge variant="outline">{groupLabel}</Badge>
+            {entry.skill.enabled ? null : <Badge variant="outline">Off</Badge>}
+            {entry.skill.userInvocationOnly ? <Badge variant="outline">You start it</Badge> : null}
+            {entry.skill.userInvocable === false ? (
+              <Badge variant="outline">Agent only</Badge>
+            ) : null}
+          </>
+        }
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyToClipboard(`/${entry.skill.name}`, undefined)}
+            >
+              {isCopied ? "Copied" : `Copy /${entry.skill.name}`}
+            </Button>
+            {editable ? (
+              <>
+                {dirty ? (
+                  <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
+                    Revert
+                  </Button>
+                ) : null}
+                <Button size="sm" disabled={!dirty || status?.kind === "saving"} onClick={save}>
+                  {status?.kind === "saving" ? "Saving…" : "Save"}
+                </Button>
+              </>
+            ) : null}
+          </>
+        }
+      />
+      {entry.skill.description ? (
+        <p className="max-w-prose text-sm text-muted-foreground">{entry.skill.description}</p>
+      ) : null}
+      <p className="sr-only" aria-live="polite">
+        {status?.kind === "saved" ? "Saved." : status?.kind === "failed" ? "Save failed." : ""}
+      </p>
+      {status?.kind === "failed" ? (
+        <p role="alert" className="text-sm text-destructive">
+          The file could not be saved. Your edits are still here.
+        </p>
+      ) : null}
+      {file.error && file.data === null ? (
+        <p className="text-sm text-muted-foreground">
+          This skill's file could not be read ({file.error}).
+        </p>
+      ) : editable ? (
+        <textarea
+          aria-label={`${entry.label} SKILL.md`}
+          spellCheck={false}
+          className={editorClassName}
+          value={value}
+          disabled={file.isPending && file.data === null}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            if (status?.kind !== "saving") setStatus(null);
+          }}
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === "s") {
+              event.preventDefault();
+              void save();
+            }
+          }}
+        />
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground">
+            Outside this project, so it is shown read-only.
+          </p>
+          <pre className={`${editorClassName} overflow-auto whitespace-pre-wrap`}>
+            {file.isPending && file.data === null ? "Reading…" : loaded}
+          </pre>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** A Polaris template, read-only, with a way to add it to the project. */
+export function TemplateDetail({
+  template,
+  onAdd,
+  canAdd,
+}: {
+  readonly template: SkillTemplate;
+  readonly onAdd: () => void;
+  readonly canAdd: boolean;
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <DetailHeader
+        title={template.title}
+        subtitle={template.id}
+        badges={<Badge variant="outline">Template</Badge>}
+        actions={
+          <Button size="sm" disabled={!canAdd} onClick={onAdd}>
+            Add to project
+          </Button>
+        }
+      />
+      <p className="max-w-prose text-sm text-muted-foreground">{template.description}</p>
+      <pre className={`${editorClassName} overflow-auto whitespace-pre-wrap`}>
+        {template.document}
+      </pre>
+    </div>
+  );
+}
