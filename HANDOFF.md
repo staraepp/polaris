@@ -323,6 +323,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude Code — V 5.2.0: Calm mode says less, more warmly
+
+- Status: done
+- What changed: Star asked Calm mode to "trim some of the text and make it feel less overwhelming and more friendly". With Calm on: the dashboard greets by the onboarding username when there is one ("Good afternoon, Star") and says "What would you like to work on?" when nothing is running; First steps lists only the steps left, on one line each without hints; the T3 Code notice is one line ("You have 64 threads in T3 Code"); the Start tile drops the shortcut tip; a new thread asks "What's next in <project>?" with "or just chat"; the composer says "How can I help?" on a new thread and "Reply…" in an existing one (instead of the long @/$// hint). The Calm setting's own description and the paused note are shorter (for everyone). Wording lives in `apps/web/src/polaris/calm/calmCopy.ts` (+ test); used in `DashboardGreeting`, `FirstSteps`, `StartTile`, `T3ImportHint`, `DraftHeroHeadline` and `ChatComposer`. Calm off is unchanged. Version 5.2.0.
+- How verified: web typecheck exit 0; full web suite 480 files / 6,021 tests pass (+3 in `calmCopy.test.ts`); fmt clean; lint 0 errors / 868 warnings (unchanged); `vp build` passes; `providerCompatibility.test.ts` 11 pass after the bump. Dev stack in Playwright: the dashboard (light) and a new thread (light and dark) with Calm on, placeholder read back as "How can I help?". Screenshots `../.playwright-mcp/v5.2.0/` (not committed).
+- Risks: the Settings pages keep their full descriptions (the most text-heavy place left). The "Working" status in the sidebar keeps its blue. The dev stack was left running because a live thread was active on it (Star may be using it).
+- Next action: tune Calm against Star's Claude-app screenshot when it is re-sent; then the VPS sync service for the Workspace.
+- Open questions: should Calm also shorten or hide the descriptions on the Settings pages?
+
 ### 2026-10-06 — Claude Code — V 5.1.0: Calm mode (a quieter look, like the Claude app)
 
 - Status: done
@@ -359,17 +368,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 5.0.0 collaboration on the same VPS service (sync server, Excalidraw, Tiptap docs, chat) in a Workspace hub.
 - Open questions: None.
 
-### 2026-10-06 — Claude Code — V 4.6.0: one Tools hub instead of four sidebar buttons
-
-- Status: done
-- What changed: the sidebar footer is Settings, Home (the dashboard) and Tools. Tools opens the tool used last (Skills by default; `localStorage["polaris:tools-last:v1"]`), and every tool page's header starts with "Tools / <tool> ▾", a menu that switches between Skills, Import, Usage and Pull requests (pull requests only where supported). Code: `apps/web/src/polaris/hub/toolsHub.ts` (+ test), `ToolsHubCrumbs.tsx`, `SidebarChrome.tsx`, and the headers of `SkillStudioPage`, `ImportSessionsPage`, `UsagePage` and `_chat.pull-requests.tsx`. The routes are unchanged, so links, the command palette and the dashboard keep working. The Workspace hub (whiteboards, docs, chat) joins with V 5.0.0, when it has content.
-- How verified: web typecheck; `vp test run apps/web/src/polaris/hub apps/web/src/components/sidebar` (267 pass); full gate (see MORNING V 4.6.0); dev stack screenshots in `.playwright-mcp/v4.6.0/` (footer, menu, each tool, narrow) in light and dark, no page errors.
-- Risks: on narrow windows "Tools /" hides and only the switcher shows. With a pull-request search expanded on a narrow window the switcher hides (the search needs the room).
-- Next action: V 5.0.0 collaboration: VPS sync service, then Excalidraw whiteboards, Tiptap docs and chat in a Workspace hub.
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — V 4.6.0: one Tools hub instead of four sidebar buttons. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.5.0: bots in every shape, thinking orbs, a visible beam and voice. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.4.1: Windows x64 installer cross-built on the Mac. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.4.0: T3 Code import, Polaris welcome, dashboard landing. Rolled up; see `git log`.

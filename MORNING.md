@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.1.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.2.0**. Start with "Look at these first" at the bottom.
+
+## V 5.2.0 (Calm mode says less, more warmly), tag `v5.2.0`
+
+- With Calm on, the dashboard says "What would you like to work on?" (and greets you by your username if you set one), First steps shows only what's left, the T3 Code notice is one line, and the shortcut tip is gone.
+- A new thread asks "What's next in server?" with "or just chat", and the message box says "How can I help?" (then "Reply…" in a conversation) instead of the long hint.
+- Calm off looks exactly as before.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,021 (6,018 + 3 new), web production build passes.
 
 ## V 5.1.0 (Calm mode: quieter, like the Claude app), tag `v5.1.0`
 

@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 
 import { Button } from "~/components/ui/button";
 
+import { calmT3ImportTitle } from "../calm/calmCopy";
+import { useCalmMode } from "../calm/useCalmMode";
+
 /**
  * "Your T3 Code threads are not here yet" (Polaris, V 4.7.1). Shown on the
  * dashboard and on the Import page's Claude Code & Codex tab, because the T3
@@ -18,6 +21,8 @@ export function T3ImportHint({
   readonly action: ReactNode;
   readonly onDismiss?: () => void;
 }) {
+  // Calm mode: one line, without the explanation.
+  const calm = useCalmMode();
   return (
     <section
       aria-label="T3 Code threads"
@@ -25,12 +30,16 @@ export function T3ImportHint({
     >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p className="text-sm font-medium text-foreground">
-          {newCount} T3 Code {newCount === 1 ? "thread isn't" : "threads aren't"} in Polaris yet
+          {calm
+            ? calmT3ImportTitle(newCount)
+            : `${newCount} T3 Code ${newCount === 1 ? "thread isn't" : "threads aren't"} in Polaris yet`}
         </p>
-        <p className="text-xs text-muted-foreground">
-          They live in the T3 Code app, not in the Claude Code and Codex session files, so they are
-          imported separately. T3 Code is only read, never changed.
-        </p>
+        {calm ? null : (
+          <p className="text-xs text-muted-foreground">
+            They live in the T3 Code app, not in the Claude Code and Codex session files, so they
+            are imported separately. T3 Code is only read, never changed.
+          </p>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {action}

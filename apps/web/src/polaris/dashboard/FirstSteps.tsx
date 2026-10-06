@@ -13,6 +13,8 @@ import { shortcutLabelForCommand } from "~/keybindings";
 import { cn } from "~/lib/utils";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 
+import { useCalmMode } from "../calm/useCalmMode";
+
 import {
   FIRST_STEP_IDS,
   FIRST_STEP_TEXT,
@@ -82,6 +84,8 @@ export function FirstSteps({
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const paletteShortcut = shortcutLabelForCommand(keybindings, "commandPalette.toggle");
   const progress = firstStepsProgress({ ...signals, paletteOpened: memory.paletteOpened });
+  // Calm mode lists only the steps left, without their hints.
+  const calm = useCalmMode();
 
   // The palette counts however it was opened: by key, by click or from here.
   useEffect(() => {
@@ -179,16 +183,27 @@ export function FirstSteps({
           Hide
         </Button>
       </div>
-      <ol className="mt-2.5 grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">
+      <ol
+        className={cn(
+          "mt-2.5",
+          calm
+            ? "flex flex-wrap gap-x-6 gap-y-2"
+            : "grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5",
+        )}
+      >
         {FIRST_STEP_IDS.map((id) => {
           const done = progress.done.has(id);
+          if (calm && done) return null;
           const current = progress.next === id;
           return (
-            <li key={id} className="flex min-w-0 items-start gap-2">
-              <span className="pt-0.5">
+            <li
+              key={id}
+              className={cn("flex min-w-0 gap-2", calm ? "items-center" : "items-start")}
+            >
+              <span className={calm ? undefined : "pt-0.5"}>
                 <StepMark done={done} current={current} />
               </span>
-              <div className="flex min-w-0 flex-col gap-1">
+              <div className={cn("flex min-w-0 gap-1", calm ? "items-center gap-2.5" : "flex-col")}>
                 <span
                   className={cn(
                     "text-sm",
@@ -198,10 +213,12 @@ export function FirstSteps({
                   {FIRST_STEP_TEXT[id].title}
                   <span className="sr-only">{done ? ", done" : current ? ", next" : ""}</span>
                 </span>
-                {done ? null : (
+                {done || calm ? null : (
                   <span className="text-xs text-muted-foreground">{FIRST_STEP_TEXT[id].hint}</span>
                 )}
-                {done ? null : <span className="pt-0.5">{action(id, current)}</span>}
+                {done ? null : (
+                  <span className={calm ? undefined : "pt-0.5"}>{action(id, current)}</span>
+                )}
               </div>
             </li>
           );
