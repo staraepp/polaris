@@ -21,6 +21,7 @@ import { useProjects, useThreadShells } from "~/state/entities";
 import { primaryServerProvidersAtom } from "~/state/server";
 import { useUsage } from "~/state/usage";
 
+import { useCalmMode } from "../calm/useCalmMode";
 import { type ActivityDay, ActivityTileBody } from "./ActivityTile";
 import {
   Menu,
@@ -112,6 +113,8 @@ export function DashboardPage() {
   );
   const layout = useMemo(() => normalizeLayout(storedLayout), [storedLayout]);
   const [editing, setEditing] = useState(false);
+  // Calm mode hides the activity chart (shown again while customizing).
+  const calm = useCalmMode();
   const lookChanged = useClientSettings(
     (settings) =>
       settings.botAccessory !== "none" ||
@@ -356,6 +359,7 @@ export function DashboardPage() {
             ) : null}
             <div className="grid grid-flow-dense grid-cols-1 lg:auto-rows-[minmax(11rem,auto)] gap-4 lg:grid-cols-6">
               {layout.widgets.map((widget, index) => {
+                if (calm && !editing && widget.kind === "activity") return null;
                 const content = widgetContent(widget);
                 return (
                   <DashboardTile

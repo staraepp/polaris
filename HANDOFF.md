@@ -323,6 +323,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude Code — V 5.2.2: Calm mode hides the dashboard activity chart
+
+- Status: done
+- What changed: Star said yes to hiding the "Last 30 days" chart in Calm. `DashboardPage.tsx` skips the `activity` widget while Calm is on, except in Customize mode (so it can still be moved or removed). Its layout entry is kept. Version 5.2.2.
+- How verified: web typecheck exit 0; full web suite 481 files / 6,023 tests pass; lint 0 errors / 868 warnings; `vp build` passes; `providerCompatibility.test.ts` 11 pass. Dev stack with Calm on: the chart is absent on the dashboard (which now fits one screen) and present in Customize. Screenshot `../.playwright-mcp/v5.2.2/`.
+- Risks: None known.
+- Next action: Star asked for a fire animation for the keyword level of the composer: pitch 2–3 directions, then build the chosen one.
+- Open questions: which fire direction (see the chat).
+
 ### 2026-10-06 — Claude Code — V 5.2.1: Calm mode trims Usage and Pull requests
 
 - Status: done
@@ -359,17 +368,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: the calm mode Star asked for next: a Settings switch for a "less overstimulating, looks like the Claude app" look (flat dark surface, no beams, orbs or bots, muted accents, quieter motion), modelled on Star's screenshot.
 - Open questions: when the VPS sync comes, should Workspace docs and boards be shared with friends (collaboration) or only synced between your own devices? Should the Workspace get a dashboard tile (recent docs and boards)?
 
-### 2026-10-06 — Claude Code — V 4.7.1: T3 Code threads are impossible to miss; sidebar art in the desktop app
-
-- Status: done
-- What changed: Star's T3 Code threads were never imported. Not an importer bug: the logs showed onboarding ran on V 4.3.0 (before the T3 import existed), and on V 4.7.0 Star opened Import, which lands on the "Claude Code & Codex" tab, and ran that import six times; the T3 import (second tab) was never requested. Now: a dashboard notice "N T3 Code threads aren't in Polaris yet" with "Bring them over" (`apps/web/src/polaris/dashboard/T3ImportNotice.tsx`; "Not now" hides it until the count grows, `localStorage["polaris:t3-import-notice:v1"]`), the same hint at the top of the Claude Code & Codex tab, and an "N new" badge on the T3 Code tab (`HubTab.badge`). Shared pieces: `T3ImportHint.tsx`, `t3NewThreadCount` in `t3HistoryImport.ts` (+ tests). Also (Star asked): the green sidebar header art, upstream's Dev-only blueprint, now shows in regular builds too, behind a new client setting `sidebarArtworkEnabled` (on; Settings → Appearance → Sidebar artwork). `apps/web/src/polaris/brand/sidebarArtwork.ts` (+ test) feeds `SidebarChrome` and the collapsed toggle in `AppSidebarLayout`; the composer send button keeps upstream's Dev/Nightly-only rule.
-- How verified: read-only checks of the real databases (T3 Code: 64 threads in 14 projects, migration 54, no V2 tables; Polaris: none of those 64 ids); dev stack (temp home, real T3 Code read-only): dashboard notice → T3 tab → "Imported 64 threads from 14 projects.", the threads appear in the sidebar, then the badge and the notice disappear; screenshots `.playwright-mcp/v4.7.1-*` light and dark (the art checked on the regular-build path by setting environment identification to None in dev; the switch removes it); full gate (MORNING V 4.7.1).
-- Risks: `src/components/chat/MessagesTimeline.test.tsx` failed to load in 2 of 4 full web runs (passes alone and in the other runs; untouched by this change), so treat it as flaky. The dashboard runs the T3 scan on each visit (5 ms on Star's 1.7 GB database, cached 30 s).
-- Next action: V 5.0.0 Workspace: whiteboards and docs (Star asked for them next), then the VPS sync service.
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — V 4.7.1: T3 Code threads impossible to miss; sidebar art in the desktop app. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.7.0: private updates from the VPS, invite code, username out of builds. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.6.0: one Tools hub instead of four sidebar buttons. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.5.0: bots in every shape, thinking orbs, a visible beam and voice. Rolled up; see `git log`.
