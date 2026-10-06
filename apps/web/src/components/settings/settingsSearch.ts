@@ -614,6 +614,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["quota limit usage threshold low warning flash amber five hour weekly"],
   },
   {
+    id: "theme-fonts",
+    title: "Theme fonts",
+    to: "/settings/appearance",
+    searchTerms: ["typography family per theme font interface monospace"],
+  },
+  {
     id: "composer-usage-meter",
     title: "Usage meter in the composer",
     to: "/settings/general",

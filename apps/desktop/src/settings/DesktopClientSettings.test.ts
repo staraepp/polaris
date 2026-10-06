@@ -56,6 +56,7 @@ const clientSettings: ClientSettings = {
   botAvatarsEnabled: false,
   gooeyComposerMenuEnabled: false,
   voiceInputEnabled: false,
+  themeFonts: {},
   voiceBackend: "clide",
   voiceClidePort: 0,
   voiceOpenAiBaseUrl: "",

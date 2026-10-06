@@ -60,7 +60,8 @@ import {
   selectProjectGroupingSettings,
 } from "../logicalProject";
 import { useUiStateStore } from "../uiStateStore";
-import { syncBrowserChromeTheme } from "../hooks/useTheme";
+import { syncBrowserChromeTheme, useTheme } from "../hooks/useTheme";
+import { activeThemeFontKey, fontsForTheme } from "../polaris/themeFonts/themeFonts";
 import { configureClientTracing } from "../observability/clientTracing";
 import { resolveInitialServerAuthGateState } from "../environments/primary";
 import { hasHostedPairingRequest, isHostedStaticApp } from "../hostedPairing";
@@ -310,11 +311,19 @@ function FontAppearanceSync() {
   const fontSizePrompt = useClientSettings((settings) => settings.fontSizePrompt);
   const fontSizeCode = useClientSettings((settings) => settings.fontSizeCode);
   const fontSmoothing = useClientSettings((settings) => settings.fontSmoothing);
+  // Polaris: the active theme may wear its own families over the global ones.
+  const themeFonts = useClientSettings((settings) => settings.themeFonts);
+  const { theme, themeHalves, resolvedTheme } = useTheme();
+  const { sans, code } = fontsForTheme(
+    { sans: fontFamilySans, code: fontFamilyCode },
+    themeFonts,
+    activeThemeFontKey(theme, themeHalves, resolvedTheme),
+  );
 
   useEffect(() => {
     applyAppearanceFontVariables(document.documentElement, {
-      sans: fontFamilySans,
-      code: fontFamilyCode,
+      sans,
+      code,
       composer: fontFamilyComposer,
       sizeInterface: fontSizeInterface,
       sizePrompt: fontSizePrompt,
@@ -322,9 +331,9 @@ function FontAppearanceSync() {
       smoothing: fontSmoothing,
     });
   }, [
-    fontFamilyCode,
+    code,
     fontFamilyComposer,
-    fontFamilySans,
+    sans,
     fontSizeCode,
     fontSizeInterface,
     fontSizePrompt,

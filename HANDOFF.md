@@ -190,6 +190,7 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 | `packages/contracts/src/settings.ts`    | `ClientSettings.botAvatarsEnabled` (Boolean, default false), `ClientSettings.botAvatarByDriver` (record of driver → one of the 18 `BOT_AVATAR_TYPES`, default `{}`); both optional in the patch                                                                                                                                                                  | v2: bot avatars                                                        |
 | `packages/contracts/src/settings.ts`    | `ClientSettings.gooeyComposerMenuEnabled` (Boolean, default false; optional in the patch)                                                                                                                                                                                                                                                                        | v2: liquid "+" composer menu                                           |
 | `packages/contracts/src/settings.ts`    | `ClientSettings.voiceInputEnabled` (default false), `voiceBackend` (`"clide" \| "openaiCompatible"`, default `"clide"`), `voiceClidePort` (Int 0..65535, 0 = unset), `voiceOpenAiBaseUrl`, `voiceOpenAiModel`, `voiceLanguage` (strings, default `""`); all optional in the patch. Secrets are not settings: they live in the desktop shell's `safeStorage` file | v2: voice input                                                        |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.themeFonts`: record of theme id → `{ sans?, code? }` (default `{}`), optional in the patch                                                                                                                                                                                                                                                       | v2: per-theme fonts                                                    |
 
 ## New dependencies
 
@@ -212,6 +213,12 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — v2 item 5: per-theme fonts
+
+- Done: Settings → Appearance → Typography has a "Fonts for <theme>" row. It edits the interface and monospace families for the theme painting the window right now (the light/dark half in automatic mode; the bare modes count as "the default theme"). `FontAppearanceSync` lays that theme's pair over the global fonts; empty fields fall through to the global choice, and a family the machine lacks falls back through the normal stack. Reset clears the theme's pair; Restore defaults clears all of them. `CommitInput` (save on blur/Enter) moved out of `VoiceSettings.tsx` so both rows share it. Also committed pnpm's `minimumReleaseAgeExclude` line for `voice-glow@0.3.0`, missed by the voice commit.
+- Files: `packages/contracts/src/settings.ts`, `apps/web/src/polaris/themeFonts/*`, `apps/web/src/routes/__root.tsx`, `components/settings/polaris/{ThemeFontsSetting,CommitInput}.tsx`, `SettingsPanels.tsx`, `settingsSearch.ts`.
+- Tests: 1 contract, 3 helper. Next: the v2 gate.
 
 ### 2026-10-05 — Claude (session 8) — v2 item 4: voice input
 
@@ -237,15 +244,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Tests: 1 contract, 3 model, 2 jsdom.
 - Left over: on by default (it is the requested feature and quiet until low); flip the default in `settings.ts` if you'd rather opt in (logged under Questions).
 
-### 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`
-
-- Gate: `vp fmt --check` clean; lint exit 0 (0 errors, 855 warnings); contracts 520, shared 1,107, client-runtime 1,998, desktop 1,413 (+44 skipped), web 5,890 pass; scripts 337 pass + the 1 known failure; server 6,429 pass, 9 failed = the 8 known (invocation ×2, entrypoint, ServerEnvironment, AntigravityAdapterV2 ×2, externalLauncher, AgentSessionScanner) + `serverSettings.test.ts` "reloads when a dangling settings link gets its destination", a file-watcher timing test that passed 3 of 3 runs on its own (flaky under full-suite load; v1 touched no server file outside `src/usage`).
-- Screenshots (not committed): `../.playwright-mcp/v1-01-models-over-time-{light,dark}.png`, `v1-02-tool-calls-over-time-*`, `v1-03-one-year-period-*`, `v1-04-quota-threshold-setting-*`, `v1-05-thread-usage-*` (the popover mounted with forced data; no agent turn). Smoke via `scripts/polaris-dev.mjs`: home composer and Usage load with no console errors.
-- Found by the smoke and fixed: choosing "1 year" failed to save the Usage preference (its schema only knew 1/7/30/90 days).
-- Note: upstream's context window indicator (where the per-thread block lives) is a "legacy" setting, off by default; v2's composer usage meter also carries the per-thread block so it is visible by default.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 5: per-thread usage. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 4: tool calls over time. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 3: models over time. Rolled up; see `git log`.

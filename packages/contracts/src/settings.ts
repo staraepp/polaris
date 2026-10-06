@@ -131,6 +131,13 @@ export const VoiceBackendSetting = Schema.Literals(["clide", "openaiCompatible"]
 export type VoiceBackendSetting = typeof VoiceBackendSetting.Type;
 export const VoiceClidePort = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 65_535 }));
 
+/** Polaris: fonts a theme wears while it is active; empty or missing means the global font. */
+export const ThemeFontOverrides = Schema.Struct({
+  sans: Schema.optional(Schema.String),
+  code: Schema.optional(Schema.String),
+});
+export type ThemeFontOverrides = typeof ThemeFontOverrides.Type;
+
 export const DEFAULT_QUOTA_LOW_THRESHOLD_PERCENT: QuotaLowThresholdPercent = 20;
 
 export const MIN_APPEARANCE_CONTRAST = 50;
@@ -432,6 +439,10 @@ export const ClientSettingsSchema = Schema.Struct({
   voiceOpenAiModel: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
   /** ISO language hint for transcription; empty means detect. */
   voiceLanguage: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+  /** Polaris: per-theme fonts, keyed by theme id (`default` for the stock look). */
+  themeFonts: Schema.Record(Schema.String, ThemeFontOverrides).pipe(
+    Schema.withDecodingDefault(Effect.succeed({})),
+  ),
   /** Polaris: a small animated bot in the thread header that mirrors the run. */
   botAvatarsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   /** Polaris: bot shape per provider driver; missing drivers use the built-in pick. */
@@ -1825,6 +1836,7 @@ export const ClientSettingsPatch = Schema.Struct({
   botAvatarsEnabled: Schema.optionalKey(Schema.Boolean),
   gooeyComposerMenuEnabled: Schema.optionalKey(Schema.Boolean),
   voiceInputEnabled: Schema.optionalKey(Schema.Boolean),
+  themeFonts: Schema.optionalKey(Schema.Record(Schema.String, ThemeFontOverrides)),
   voiceBackend: Schema.optionalKey(VoiceBackendSetting),
   voiceClidePort: Schema.optionalKey(VoiceClidePort),
   voiceOpenAiBaseUrl: Schema.optionalKey(Schema.String),

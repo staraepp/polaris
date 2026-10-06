@@ -169,6 +169,7 @@ import { ProjectFavicon } from "../ProjectFavicon";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
 import { BotAvatarsSetting } from "./polaris/BotAvatarsSetting";
 import { GooeyComposerMenuSetting } from "./polaris/GooeyComposerMenuSetting";
+import { ThemeFontsSetting } from "./polaris/ThemeFontsSetting";
 import { VoiceSettings } from "./polaris/VoiceSettings";
 import { ComposerUsageMeterSetting } from "./polaris/ComposerUsageMeterSetting";
 import { QuotaLowThresholdSetting } from "./polaris/QuotaLowThresholdSetting";
@@ -560,6 +561,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       ...(settings.voiceInputEnabled !== DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled
         ? ["Voice input"]
         : []),
+      ...(Object.keys(settings.themeFonts).length > 0 ? ["Theme fonts"] : []),
       ...(settings.diffColorScheme !== DEFAULT_UNIFIED_SETTINGS.diffColorScheme
         ? ["Diff colors"]
         : []),
@@ -724,6 +726,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.botAvatarByDriver,
       settings.gooeyComposerMenuEnabled,
       settings.voiceInputEnabled,
+      settings.themeFonts,
       settings.panelAnimationDurationMs,
       settings.responseStreamingMode,
       settings.persistComposerContextStrip,
@@ -837,6 +840,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       botAvatarByDriver: DEFAULT_UNIFIED_SETTINGS.botAvatarByDriver,
       gooeyComposerMenuEnabled: DEFAULT_UNIFIED_SETTINGS.gooeyComposerMenuEnabled,
       voiceInputEnabled: DEFAULT_UNIFIED_SETTINGS.voiceInputEnabled,
+      themeFonts: DEFAULT_UNIFIED_SETTINGS.themeFonts,
       panelAnimationDurationMs: DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs,
       sidebarThreadPreviewCount: DEFAULT_UNIFIED_SETTINGS.sidebarThreadPreviewCount,
       sidebarProjectGroupingMode: DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
@@ -1857,6 +1861,7 @@ function TypographySection() {
       }
     >
       {advanced ? <FontSettingsGroup /> : <SimpleFontRows />}
+      <ThemeFontsSetting />
       <WordWrapRow />
     </SettingsSection>
   );

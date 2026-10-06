@@ -1106,6 +1106,16 @@ describe("branch naming settings", () => {
   );
 });
 
+describe("ClientSettings theme fonts (Polaris)", () => {
+  it("defaults to no per-theme fonts and keeps partial overrides", () => {
+    expect(decodeClientSettings({}).themeFonts).toEqual({});
+    expect(decodeClientSettings({ themeFonts: { grove: { sans: "Inter" } } }).themeFonts).toEqual({
+      grove: { sans: "Inter" },
+    });
+    expect(() => decodeClientSettings({ themeFonts: { grove: { sans: 4 } } })).toThrow();
+  });
+});
+
 describe("ClientSettings voice input (Polaris)", () => {
   it("is off and unconfigured by default", () => {
     expect(decodeClientSettings({})).toMatchObject({
