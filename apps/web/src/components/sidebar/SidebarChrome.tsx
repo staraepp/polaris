@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, ChartNoAxesColumnIcon, SettingsIcon } from "lucide-react";
+import { ArrowLeftIcon, SettingsIcon, WrenchIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { memo, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
@@ -23,14 +23,13 @@ import {
   useSidebar,
 } from "../ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
-import { readPullRequestListPreferences } from "../pullRequest/pullRequestListPreferences";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
 import { SidebarThreadUndoNotice } from "./SidebarThreadUndoNotice";
 import { SidebarProviderUpdatePill } from "./SidebarProviderUpdatePill";
 import { SidebarUpdateArchitectureWarning, SidebarUpdatePill } from "./SidebarUpdatePill";
-import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { DashboardGlyph } from "~/polaris/dashboard/DashboardGlyph";
-import { SkillsGlyph } from "~/polaris/skills/SkillsGlyph";
+import { lastTool } from "~/polaris/hub/toolsHub";
+import { useOpenTool } from "~/polaris/hub/ToolsHubCrumbs";
 
 export const SidebarChromeHeader = memo(function SidebarChromeHeader({
   isElectron,
@@ -178,38 +177,26 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
     select: (location) => isSidebarUtilityPage(location.pathname),
   });
   const pullRequestsSupported = usePullRequestsSupported();
+  const openTool = useOpenTool();
   const closeMobileSidebar = useCallback(() => {
     if (isMobile) {
       setOpenMobile(false);
     }
   }, [isMobile, setOpenMobile]);
-  const handlePullRequestsClick = useCallback(() => {
+  // Polaris (V 4.6.0): one Tools button for Skills, Import, Usage and Pull
+  // requests; it reopens the tool used last, and the page header switches.
+  const handleToolsClick = useCallback(() => {
     closeMobileSidebar();
-    void navigate({
-      to: "/pull-requests",
-      search: readPullRequestListPreferences(),
-    });
-  }, [closeMobileSidebar, navigate]);
+    openTool(lastTool((tool) => tool !== "pull-requests" || pullRequestsSupported));
+  }, [closeMobileSidebar, openTool, pullRequestsSupported]);
   const handleSettingsClick = useCallback(() => {
     closeMobileSidebar();
     void navigate({ to: "/settings" });
   }, [closeMobileSidebar, navigate]);
 
-  const handleUsageClick = useCallback(() => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
-    void navigate({ to: "/usage" });
-  }, [isMobile, navigate, setOpenMobile]);
-
   const handleDashboardClick = useCallback(() => {
     closeMobileSidebar();
     void navigate({ to: "/dashboard" });
-  }, [closeMobileSidebar, navigate]);
-
-  const handleSkillsClick = useCallback(() => {
-    closeMobileSidebar();
-    void navigate({ to: "/skills" });
   }, [closeMobileSidebar, navigate]);
 
   const handleBackClick = useCallback(() => {
@@ -235,21 +222,13 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
           />
           <SidebarUtilityItem
             icon={<DashboardGlyph />}
-            label="Dashboard"
+            label="Home"
             onClick={handleDashboardClick}
           />
-          <SidebarUtilityItem icon={<SkillsGlyph />} label="Skills" onClick={handleSkillsClick} />
-          {pullRequestsSupported ? (
-            <SidebarUtilityItem
-              icon={<PullRequestGlyph.pullRequest />}
-              label="Pull Requests"
-              onClick={handlePullRequestsClick}
-            />
-          ) : null}
           <SidebarUtilityItem
-            icon={<ChartNoAxesColumnIcon />}
-            label="Usage"
-            onClick={handleUsageClick}
+            icon={<WrenchIcon />}
+            label="Tools: skills, import, usage, pull requests"
+            onClick={handleToolsClick}
           />
         </>
       )}

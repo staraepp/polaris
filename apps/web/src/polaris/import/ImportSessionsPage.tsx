@@ -8,6 +8,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { SidebarInset } from "~/components/ui/sidebar";
 import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "~/components/WorkspaceBreadcrumb";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
+import { ToolsHubCrumbs } from "~/polaris/hub/ToolsHubCrumbs";
 import { isElectron } from "~/env";
 import { useEscapeToGoBack } from "~/hooks/useNavigateBack";
 import { useProjectScans } from "~/onboarding/useProjectScans";
@@ -50,9 +51,7 @@ export function ImportSessionsPage() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground">
         <WorkspacePageHeader electron={isElectron}>
           <WorkspaceBreadcrumb ariaLabel="Import breadcrumb" className="min-w-0 flex-1">
-            <WorkspaceBreadcrumbItem current>
-              <h1>Import</h1>
-            </WorkspaceBreadcrumbItem>
+            <ToolsHubCrumbs current="import" />
           </WorkspaceBreadcrumb>
           <Button
             size="icon-sm"

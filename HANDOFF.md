@@ -318,6 +318,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude Code — V 4.6.0: one Tools hub instead of four sidebar buttons
+
+- Status: done
+- What changed: the sidebar footer is Settings, Home (the dashboard) and Tools. Tools opens the tool used last (Skills by default; `localStorage["polaris:tools-last:v1"]`), and every tool page's header starts with "Tools / <tool> ▾", a menu that switches between Skills, Import, Usage and Pull requests (pull requests only where supported). Code: `apps/web/src/polaris/hub/toolsHub.ts` (+ test), `ToolsHubCrumbs.tsx`, `SidebarChrome.tsx`, and the headers of `SkillStudioPage`, `ImportSessionsPage`, `UsagePage` and `_chat.pull-requests.tsx`. The routes are unchanged, so links, the command palette and the dashboard keep working. The Workspace hub (whiteboards, docs, chat) joins with V 5.0.0, when it has content.
+- How verified: web typecheck; `vp test run apps/web/src/polaris/hub apps/web/src/components/sidebar` (267 pass); full gate (see MORNING V 4.6.0); dev stack screenshots in `.playwright-mcp/v4.6.0/` (footer, menu, each tool, narrow) in light and dark, no page errors.
+- Risks: on narrow windows "Tools /" hides and only the switcher shows. With a pull-request search expanded on a narrow window the switcher hides (the search needs the room).
+- Next action: V 5.0.0 collaboration: VPS sync service, then Excalidraw whiteboards, Tiptap docs and chat in a Workspace hub.
+- Open questions: None.
+
 ### 2026-10-06 — Claude Code — V 4.5.0: bots in every shape, thinking orbs, a visible beam and voice
 
 - Status: done
@@ -354,17 +363,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: Star tries `/import` in the dev app and the rebuilt dmg.
 - Open questions: does "import threads" also mean bringing in T3 Code's own threads from `~/.t3`? (Not built: it reads another app's database.)
 
-### 2026-10-06 — Claude (session 8) — V 4.2.0: Polaris as its own desktop app
-
-- Status: done; gate passed (contracts 531, shared 1,115, client-runtime 1,998, desktop 1,414+1 = 1,415 (+44 skipped), web 5,968, scripts 341 + the 1 known failure, server the 8 known failures / 6,430 passed); merged into `main` and tagged `v4.2.0`
-- What changed: branch `desktop-identity`, approved by Star ("Sure, do that", 2026-10-06). New `packages/shared/src/polarisDesktopIdentity.ts` (app id `app.polaris.desktop`, schemes `polaris`/`polaris-dev`, profiles `polaris`/`polaris-dev`, home `.polaris`, backend start port 3783). Used by `ElectronProtocol.ts` (renderer scheme), `DesktopEnvironment.ts` (AppUserModelID), `DesktopUserData.ts` (profile; T3 Code migration removed), `DesktopLegacyLocalStorage.ts` (imports from no T3 profile), `DesktopStatePaths.ts` (`~/.polaris`), `DesktopApp.ts` (port), `apps/server/src/http.ts` (allowed origins: Polaris plus upstream), `providerAuthReturnUrl.ts` and `codexAuthHandoff.ts` (Polaris schemes only), `scripts/build-desktop-artifact.ts` (app id, URL schemes, artifact name `Polaris-<version>-<arch>`). AGENTS.md ground rules record the exception. Built `release/Polaris-0.0.45-arm64.dmg` and `.zip` (gitignored).
-- How verified: desktop suite 1,415 passed (+44 skipped); shared, server auth/http and scripts build tests pass (scripts: only the known failure); typecheck clean for shared, desktop, server, web, scripts; lint 0 errors, 867 warnings. Built app Info.plist: `CFBundleIdentifier` `app.polaris.desktop`, name "Polaris (Alpha)", URL schemes `polaris`, `polaris-dev`; no `app-update.yml`. Launched once from `/tmp` with a temp `T3CODE_HOME` (after removing the inherited `ELECTRON_RUN_AS_NODE`, which made it run as plain Node): it created only its own `polaris` profile, then blocked on the macOS keychain prompt for "Polaris (Alpha) Safe Storage"; stopped it (SIGKILL on my own pgid after SIGTERM was ignored while blocked), removed the empty profile; no keychain item was created.
-- Risks: the window/pairing inside the packaged app were not seen (keychain prompt needs Star). Build needs `RUSTUP_TOOLCHAIN=1.95.0` and `~/.cargo/bin` on PATH (default stable is 1.94; `sysinfo` needs 1.95). Hosted T3 cloud sign-in (Clerk) may still be configured for `t3code://` callbacks; Polaris does not use the hosted service. Version string is upstream's `0.0.45`.
-- Next action: Star opens the dmg, right-click → Open, allows the keychain entry, and checks the dashboard loads.
-- Open questions: rename the app from "Polaris (Alpha)" to "Polaris"? Set a Polaris version string (for example 4.2.0) in `apps/desktop/package.json`?
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — V 4.2.0: Polaris as its own desktop app. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — V 4.1.1 gate: passed, merged, tagged `v4.1.1`. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 023: first steps in any order. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 022: skills fit narrow windows. Rolled up; see `git log`.
