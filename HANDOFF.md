@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude (session 8) — polish 016: skills read as documents
+
+- Status: done
+- What changed: `polaris/skills/SkillDetail.tsx`: a Preview / Source segmented switch. Preview renders the SKILL.md through the existing `ChatMarkdown`, without the frontmatter (new `skillBody` in `skillStudio.ts`, now also used by `newSkillDocument`), with relative links resolved beside the file. Read-only skills and templates default to Preview; editable skills default to Source, and Preview there shows the unsaved draft. The note beside the switch says which case you are in.
+- How verified: `vp test run apps/web/src/polaris/skills` 4 passed (new `skillBody` test: LF, CRLF, a body `---` rule kept); web typecheck and lint clean. Isolated Playwright contexts, light and dark: a repository skill showed 6 rendered headings, Source showed the raw file; a Polaris template rendered with no page errors. Shots `.playwright-mcp/polish/016-*`.
+- Risks: Clicking a file chip in a read-only skill uses ChatMarkdown's normal file-link handling without a thread; not clicked here.
+- Next action: next polish cycle (017).
+- Open questions: None.
+
 ### 2026-10-05 — Claude (session 8) — polish 015: background row fits narrow windows
 
 - Status: done
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: V 4.1.0 gate (full fmt, lint, all suites, screenshots, smoke), merge, tag `v4.1.0`.
 - Open questions: None.
 
-### 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next
-
-- Status: done
-- What changed: The dashboard greeting shows a "Review next" button whenever a thread waits on you (pending approval, awaiting input, plan ready); it opens the top-ranked one, so the dashboard doubles as the review queue (the habit seen in the Codex app and Cursor's Agents window). `nextForReview` in `DashboardGreeting.tsx`; the button's accessible name includes the thread title.
-- How verified: `vp test run apps/web/src/polaris/dashboard` (new: picks the first waiting thread, none when nothing waits); typecheck and lint clean. Not seen live: no thread in the dev stack was waiting on input, and starting a real turn to make one would spend quota.
-- Risks: the button appears only with a waiting thread, so it has no screenshot.
-- Next action: V 4.1.0 item 3 commit (First steps), then the V 4.1.0 gate.
-- Open questions: None.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — V 4.1.0 item 4: Review next. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 2: chat icons. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.1.0 item 1: image and video backgrounds. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — V 4.0.0 gate: passed, merged, tagged `v4.0.0`. Rolled up; see `git log`.

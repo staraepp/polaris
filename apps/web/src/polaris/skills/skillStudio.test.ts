@@ -7,6 +7,7 @@ import {
   newSkillDocument,
   newSkillRelativePath,
   readSkillFrontmatter,
+  skillBody,
   skillFilePath,
   slugifySkillName,
   workspaceRelativePath,
@@ -67,5 +68,15 @@ describe("skill studio", () => {
       name: "my-skill",
       description: "Use it well",
     });
+  });
+
+  it("drops the frontmatter for the preview, and only the frontmatter", () => {
+    expect(skillBody("---\nname: a\ndescription: b\n---\n\n# Title\n\nText\n")).toBe(
+      "# Title\n\nText",
+    );
+    expect(skillBody("---\r\nname: a\r\n---\r\n# Title")).toBe("# Title");
+    expect(skillBody("# No frontmatter\n\n---\n\nA rule above.")).toBe(
+      "# No frontmatter\n\n---\n\nA rule above.",
+    );
   });
 });
