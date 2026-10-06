@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 
@@ -51,6 +53,52 @@ function GroupHeading({ children }: { readonly children: string }) {
   );
 }
 
+/** Groups longer than this start folded, so one big folder does not bury the rest. */
+const COLLAPSE_FROM = 12;
+
+function GroupToggle({
+  label,
+  count,
+  open,
+  onToggle,
+}: {
+  readonly label: string;
+  readonly count: number;
+  readonly open: boolean;
+  readonly onToggle: () => void;
+}) {
+  return (
+    <h3>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className="flex w-full items-center gap-1.5 rounded-md px-2.5 pb-1 text-2xs font-medium tracking-wide text-muted-foreground/80 uppercase outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <svg
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+          className={cn(
+            "size-3 transition-transform duration-150 motion-reduce:transition-none",
+            open && "rotate-90",
+          )}
+        >
+          <path
+            d="M6 4l4 4-4 4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+        <span className="tabular-nums normal-case tracking-normal">{count}</span>
+      </button>
+    </h3>
+  );
+}
+
 const isSelectedSkill = (selection: StudioSelection | null, skill: StudioSkill) =>
   selection?.type === "skill" && selection.key === skill.key;
 
@@ -72,6 +120,15 @@ export function SkillList({
   readonly onSelect: (selection: StudioSelection) => void;
   readonly pending: boolean;
 }) {
+  // A group the user folded or unfolded keeps that choice; otherwise long ones
+  // start folded unless a filter is on or the selection lives inside.
+  const [toggled, setToggled] = useState<Partial<Record<string, boolean>>>({});
+  const filtering = query.trim().length > 0;
+  const isOpen = (group: StudioSkillGroup) =>
+    toggled[group.kind] ??
+    (filtering ||
+      group.skills.length <= COLLAPSE_FROM ||
+      group.skills.some((entry) => isSelectedSkill(selection, entry)));
   return (
     <nav aria-label="Skills" className="flex min-h-0 flex-col gap-3">
       <Input
@@ -94,8 +151,15 @@ export function SkillList({
         ) : (
           groups.map((group) => (
             <section key={group.kind} aria-label={group.label} className="mt-3 first:mt-0">
-              <GroupHeading>{group.label}</GroupHeading>
-              <ul className="flex flex-col">
+              <GroupToggle
+                label={group.label}
+                count={group.skills.length}
+                open={isOpen(group)}
+                onToggle={() =>
+                  setToggled((current) => ({ ...current, [group.kind]: !isOpen(group) }))
+                }
+              />
+              <ul className={cn("flex flex-col", !isOpen(group) && "hidden")}>
                 {group.skills.map((entry) => (
                   <Row
                     key={entry.key}

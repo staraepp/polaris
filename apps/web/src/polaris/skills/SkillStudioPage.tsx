@@ -117,11 +117,16 @@ export function SkillStudioPage() {
     selection?.type === "template"
       ? SKILL_TEMPLATES.find((template) => template.id === selection.id)
       : undefined;
+  // With nothing picked, open on the project's own first skill, else on a
+  // Polaris template, so a huge personal folder does not take over the page.
+  const firstProjectSkill = allGroups.find(
+    (group) => group.kind === "project" || group.kind === "repo",
+  )?.skills[0];
   const shown: StudioSelection | null =
     selectedSkill || selectedTemplate
       ? selection
-      : allSkills[0]
-        ? { type: "skill", key: allSkills[0].key }
+      : firstProjectSkill
+        ? { type: "skill", key: firstProjectSkill.key }
         : SKILL_TEMPLATES[0]
           ? { type: "template", id: SKILL_TEMPLATES[0].id }
           : null;
