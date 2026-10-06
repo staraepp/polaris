@@ -7,6 +7,7 @@ import type { ServerProvider } from "@t3tools/contracts";
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Select,
@@ -16,6 +17,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { SidebarInset } from "~/components/ui/sidebar";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
 import { sortScopedProjectsForSidebar } from "~/components/Sidebar.logic";
 import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "~/components/WorkspaceBreadcrumb";
 import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
@@ -179,54 +181,22 @@ export function SkillStudioPage() {
               <h1>Skills</h1>
             </WorkspaceBreadcrumbItem>
           </WorkspaceBreadcrumb>
-          {sortedProjects.length > 0 ? (
-            <Select
-              value={project ? projectKey(project) : ""}
-              onValueChange={(value) => {
-                setProjectChoice(String(value));
-                setSelection(null);
-              }}
-            >
-              <SelectTrigger size="sm" className="w-auto min-w-0 max-w-48" aria-label="Project">
-                <SelectValue>{project?.title ?? "Project"}</SelectValue>
-              </SelectTrigger>
-              <SelectPopup align="end" alignItemWithTrigger={false}>
-                {sortedProjects.map((entry) => (
-                  <SelectItem key={projectKey(entry)} hideIndicator value={projectKey(entry)}>
-                    {entry.title}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
-          ) : null}
-          {providers.length > 0 ? (
-            <Select
-              value={provider?.instanceId ?? ""}
-              onValueChange={(value) => {
-                setProviderChoice(String(value));
-                setSelection(null);
-              }}
-            >
-              <SelectTrigger size="sm" className="w-auto min-w-0 max-w-40" aria-label="Provider">
-                <SelectValue>{provider ? providerLabel(provider) : "Provider"}</SelectValue>
-              </SelectTrigger>
-              <SelectPopup align="end" alignItemWithTrigger={false}>
-                {providers.map((entry) => (
-                  <SelectItem key={entry.instanceId} hideIndicator value={entry.instanceId}>
-                    {providerLabel(entry)}
-                  </SelectItem>
-                ))}
-              </SelectPopup>
-            </Select>
-          ) : null}
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={provider === null || scanning}
-            onClick={() => void scan(true)}
-          >
-            {scanning ? "Scanning…" : "Rescan"}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label={scanning ? "Scanning for skills" : "Rescan skills"}
+                  disabled={provider === null || scanning}
+                  onClick={() => void scan(true)}
+                >
+                  <RefreshIcon refreshing={scanning} />
+                </Button>
+              }
+            />
+            <TooltipPopup side="bottom">Rescan skills</TooltipPopup>
+          </Tooltip>
           <Button
             size="sm"
             disabled={project === null}
@@ -243,7 +213,60 @@ export function SkillStudioPage() {
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 md:grid-cols-[18rem_minmax(0,1fr)]">
             <aside className="surface-glass min-h-0 border-border/60 md:border-r">
               <ScrollArea className="h-full">
-                <div className="p-3">
+                <div className="flex flex-col gap-3 p-3">
+                  {/* Which project and provider the list describes. */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {sortedProjects.length > 0 ? (
+                      <Select
+                        value={project ? projectKey(project) : ""}
+                        onValueChange={(value) => {
+                          setProjectChoice(String(value));
+                          setSelection(null);
+                        }}
+                      >
+                        <SelectTrigger size="sm" className="w-full min-w-0" aria-label="Project">
+                          <SelectValue>{project?.title ?? "Project"}</SelectValue>
+                        </SelectTrigger>
+                        <SelectPopup align="start" alignItemWithTrigger={false}>
+                          {sortedProjects.map((entry) => (
+                            <SelectItem
+                              key={projectKey(entry)}
+                              hideIndicator
+                              value={projectKey(entry)}
+                            >
+                              {entry.title}
+                            </SelectItem>
+                          ))}
+                        </SelectPopup>
+                      </Select>
+                    ) : null}
+                    {providers.length > 0 ? (
+                      <Select
+                        value={provider?.instanceId ?? ""}
+                        onValueChange={(value) => {
+                          setProviderChoice(String(value));
+                          setSelection(null);
+                        }}
+                      >
+                        <SelectTrigger size="sm" className="w-full min-w-0" aria-label="Provider">
+                          <SelectValue>
+                            {provider ? providerLabel(provider) : "Provider"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectPopup align="start" alignItemWithTrigger={false}>
+                          {providers.map((entry) => (
+                            <SelectItem
+                              key={entry.instanceId}
+                              hideIndicator
+                              value={entry.instanceId}
+                            >
+                              {providerLabel(entry)}
+                            </SelectItem>
+                          ))}
+                        </SelectPopup>
+                      </Select>
+                    ) : null}
+                  </div>
                   <SkillList
                     groups={groups}
                     templates={SKILL_TEMPLATES}
