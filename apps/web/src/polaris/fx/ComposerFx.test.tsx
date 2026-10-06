@@ -26,7 +26,6 @@ describe("ComposerFx", () => {
     await act(() => import("./EffortBeam").then(() => undefined));
   };
   const ring = () => container.querySelector<HTMLElement>("[data-polaris-fx-ring]")!;
-  const accent = () => container.querySelector<HTMLElement>("[data-polaris-fx-accent]")!;
   const beam = () => container.querySelector<HTMLElement>("[data-polaris-effort-beam]")!;
   const beamOn = () => beam().hasAttribute("data-active");
 
@@ -52,7 +51,6 @@ describe("ComposerFx", () => {
   it("renders both layers off while idle and never touches the page's accessibility tree", async () => {
     await render(IDLE_COMPOSER_FX_SIGNALS);
     expect(ring().dataset.layer).toBe("none");
-    expect(accent().dataset.active).toBe("false");
     expect(beamOn()).toBe(false);
     expect(ring().getAttribute("aria-hidden")).toBe("true");
     expect(beam().getAttribute("aria-hidden")).toBe("true");
@@ -65,21 +63,19 @@ describe("ComposerFx", () => {
     expect(ring().dataset.layer).toBe("none");
   });
 
-  it("lets the flash cover the beam and keeps the accent underneath", async () => {
+  it("lets the flash cover the beam for its burst, and draws no quota outline after it", async () => {
     await render({
       ...IDLE_COMPOSER_FX_SIGNALS,
       running: true,
       tier: "max",
       quotaFlashing: true,
-      quotaLow: true,
     });
     expect(ring().dataset.layer).toBe("flash");
     expect(beamOn()).toBe(false);
-    expect(accent().dataset.active).toBe("true");
-    await render({ ...IDLE_COMPOSER_FX_SIGNALS, running: true, tier: "max", quotaLow: true });
+    await render({ ...IDLE_COMPOSER_FX_SIGNALS, running: true, tier: "max" });
     expect(ring().dataset.layer).toBe("none");
     expect(beamOn()).toBe(true);
-    expect(accent().dataset.active).toBe("true");
+    expect(container.querySelector("[data-polaris-fx-accent]")).toBeNull();
   });
 
   it("leaves the ring layer to upstream's keyword frame and holds the beam still under reduced motion", async () => {

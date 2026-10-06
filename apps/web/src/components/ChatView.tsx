@@ -3215,7 +3215,7 @@ export default function ChatView(props: ChatViewProps) {
     conversationProviderStatus !== null &&
     conversationProviderStatus.supportsConversationRollback !== false;
   const phase = derivePhase(activeRuntime);
-  // Polaris: signals for the composer FX slot (quota-low flash and accent, effort beam).
+  // Polaris: signals for the composer FX slot (quota-low flash, effort beam).
   const polarisQuotaThreshold = useClientSettings((settings) => settings.quotaLowThresholdPercent);
   const polarisQuota = useQuotaLowSignal(activeProviderStatus, polarisQuotaThreshold);
   const polarisBotsEnabled = useClientSettings((settings) => settings.botAvatarsEnabled);
@@ -3252,11 +3252,10 @@ export default function ChatView(props: ChatViewProps) {
     () => ({
       voiceListening: false,
       quotaFlashing: polarisQuota.flashing,
-      quotaLow: polarisQuota.low,
       running: phase === "running",
       tier: polarisRunEffort.tier,
     }),
-    [polarisQuota.flashing, polarisQuota.low, phase, polarisRunEffort.tier],
+    [polarisQuota.flashing, phase, polarisRunEffort.tier],
   );
   const polarisLastActivityAt = useMemo(() => {
     const stamp =

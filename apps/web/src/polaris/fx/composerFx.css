@@ -1,5 +1,5 @@
-/* Polaris composer FX: the effort beam's palettes, the quota-low flash, the voice
-   ring and the quota accent. One animated layer at a time (see composerFxState.ts).
+/* Polaris composer FX: the effort beam's palettes, the quota-low flash and badge
+   colors, and the voice ring. One animated layer at a time (see composerFxState.ts).
    The beam itself is the vendored border-beam (EffortBeam.tsx, beamLooks.ts); its
    per-tier colors are these tokens, comma-separated hex, light on :root and dark
    on .dark, so a theme can retune them. high is the library's own rainbow.
@@ -16,7 +16,10 @@
   --polaris-beam-max: #4a90c8, #8fc4ea, #2f6fa3, #b8dcf5;
   --polaris-beam-width: 2px;
   --polaris-flash-color: var(--destructive);
-  --polaris-accent-color: var(--warning);
+  /* Quota low, after the flash: a red-coral badge beside the usage meter (never
+     amber, gold or orange: gold is the medium beam). AA on its own 12% surface. */
+  --polaris-quota-low: #b8352b;
+  --polaris-quota-low-surface: color-mix(in srgb, var(--polaris-quota-low) 12%, transparent);
 }
 
 .dark {
@@ -26,6 +29,7 @@
   --polaris-beam-xhigh: #2dd4bf, #22d3ee, #5eead4, #67e8f9;
   /* icy white-blue shimmer */
   --polaris-beam-max: #f0f9ff, #bae6fd, #e0f2fe, #7dd3fc;
+  --polaris-quota-low: #ff7a6b;
 }
 
 /* border-beam's own opacity hooks: its stock look is tuned for subtle cards (a
@@ -44,8 +48,7 @@
 }
 
 /* Doubled selectors outrank upstream's `.ultrathink-frame > *` position rule. */
-.polaris-composer-fx-ring[data-polaris-fx-ring],
-.polaris-composer-fx-accent[data-polaris-fx-accent] {
+.polaris-composer-fx-ring[data-polaris-fx-ring] {
   position: absolute;
   inset: 0;
   z-index: 25;
@@ -79,13 +82,6 @@
   opacity: 1;
   background: linear-gradient(var(--primary), var(--primary));
   animation: polaris-beam-breathe 1.6s ease-in-out infinite;
-}
-
-.polaris-composer-fx-accent[data-active="true"] {
-  opacity: 1;
-  box-shadow:
-    0 0 0 1.5px var(--polaris-accent-color),
-    0 0 14px -2px var(--polaris-accent-color);
 }
 
 @keyframes polaris-beam-breathe {

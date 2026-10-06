@@ -222,6 +222,9 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --color-warning-foreground: var(--warning-foreground);
   --color-warning: var(--warning);
   --color-warning-surface: var(--warning-surface);
+  /* Polaris: quota low (composerFx.css), deliberately not the amber warning. */
+  --color-quota-low: var(--polaris-quota-low);
+  --color-quota-low-surface: var(--polaris-quota-low-surface);
   --color-error-foreground: var(--error-foreground);
   --color-tool-error-icon: var(--tool-error-icon);
   --color-error: var(--error);

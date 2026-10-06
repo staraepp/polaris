@@ -5,7 +5,6 @@ import { resolveComposerFx, type ComposerFxInput } from "./composerFxState";
 const idle: ComposerFxInput = {
   voiceListening: false,
   quotaFlashing: false,
-  quotaLow: false,
   running: false,
   tier: "neutral",
   keywordIdle: false,
@@ -17,7 +16,6 @@ describe("resolveComposerFx", () => {
     expect(resolveComposerFx(idle)).toEqual({
       layer: "none",
       tier: "neutral",
-      accent: false,
       animated: false,
     });
   });
@@ -42,16 +40,6 @@ describe("resolveComposerFx", () => {
     ).toBe("ring");
   });
 
-  it("keeps the amber accent under any layer while quota is low", () => {
-    expect(resolveComposerFx({ ...idle, quotaLow: true }).accent).toBe(true);
-    expect(resolveComposerFx({ ...idle, quotaLow: true, running: true, tier: "max" })).toEqual({
-      layer: "beam",
-      tier: "max",
-      accent: true,
-      animated: true,
-    });
-  });
-
   it("shows no beam for a tier of none even while running", () => {
     expect(resolveComposerFx({ ...idle, running: true, tier: "none" }).layer).toBe("none");
     expect(
@@ -60,12 +48,9 @@ describe("resolveComposerFx", () => {
   });
 
   it("drops the flash and freezes the beam under reduced motion, keeping the ring", () => {
-    expect(
-      resolveComposerFx({ ...idle, reducedMotion: true, quotaFlashing: true, quotaLow: true }),
-    ).toEqual({
+    expect(resolveComposerFx({ ...idle, reducedMotion: true, quotaFlashing: true })).toEqual({
       layer: "none",
       tier: "neutral",
-      accent: true,
       animated: false,
     });
     expect(
@@ -73,7 +58,6 @@ describe("resolveComposerFx", () => {
     ).toEqual({
       layer: "beam",
       tier: "medium",
-      accent: false,
       animated: false,
     });
     expect(resolveComposerFx({ ...idle, reducedMotion: true, keywordIdle: true }).layer).toBe(

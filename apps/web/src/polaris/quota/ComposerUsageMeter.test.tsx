@@ -59,13 +59,18 @@ describe("ComposerUsageMeter", () => {
     const button = container.querySelector("button")!;
     expect(button.getAttribute("aria-label")).toBe("Usage limits: Weekly 45% left");
     expect(button.dataset.low).toBe("false");
-    expect(container.querySelectorAll('circle[data-low="true"]')).toHaveLength(0);
+    expect(container.querySelector("[data-polaris-quota-low-badge]")).toBeNull();
   });
 
-  it("turns only the low window's ring amber", async () => {
+  it("adds a red-coral badge with the remaining share and keeps the rings neutral", async () => {
     await render(model(12));
-    expect(container.querySelector("button")!.dataset.low).toBe("true");
+    const button = container.querySelector("button")!;
+    expect(button.dataset.low).toBe("true");
+    expect(button.getAttribute("aria-label")).toBe("Usage limits: Weekly 12% left, low");
+    const badge = container.querySelector<HTMLElement>("[data-polaris-quota-low-badge]")!;
+    expect(badge.textContent).toBe("12%");
+    expect(badge.className).toContain("text-quota-low");
+    expect(container.innerHTML).not.toMatch(/warning|amber/);
     expect(container.querySelectorAll('circle[data-low="true"]')).toHaveLength(1);
-    expect(container.querySelectorAll('circle[data-low="false"]')).toHaveLength(1);
   });
 });

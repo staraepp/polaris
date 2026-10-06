@@ -162,7 +162,7 @@ Contract changes are allowed when additive and tested, and are listed under "Con
 
 **v2 (composer and atmosphere)**
 
-1. Usage meter in the composer (quota windows; amber only when low).
+1. Usage meter in the composer (quota windows; amber only when low; since V 4.0.0 a red-coral badge instead).
 2. Bot avatars for run status (`bot-avatars`, MIT), per-provider bot, setting.
 3. Gooey "+" composer menu (`liquid-gooey`, MIT), behind a setting, default off.
 4. Voice input: provider interface, Clide provider in the desktop main process (spec in `clide-api-spec.md`, token in `safeStorage`), OpenAI-compatible server provider (opt-in, user-configured URL, off by default), `voice-glow` wiring and a push-to-talk button. Voice listening takes the composer FX slot's top priority.
@@ -184,7 +184,7 @@ Recorded in `blueprint.md` "Decisions" (session 8 amendment). Applied at the ite
 - **New rules.** Every deviation from `blueprint.md` goes under "Deviations" below with its reason; never silently replace a chosen library. A message that is only "continue" means: re-read this file, find the last completed item or polish cycle, resume under the same rules.
 - **Chat outline** = vendored `border-beam` with a `colors` prop and reduced-motion handling for its rotate types; the resolver (voice > quota flash > beam > idle ring) stays, one glowing element per view.
 - **Effort colors (final):** none static; low true blue; medium gold (`#F5C542` + warm white on dark, `#D99A00` on light); high rainbow; xhigh and max cool, distinct, not purple. Frozen per turn.
-- **Quota-low:** no amber, gold or orange. 4 s red flash, then a small red-coral badge with an icon beside the usage meter.
+- **Quota-low:** no amber, gold or orange. 4 s red flash, then a small red-coral badge with an icon beside the usage meter. The polish taste rule "amber is reserved for quota-low" (it lived only in the mission prompt) is removed.
 - **The bot "Orbie"** (`circle`, one constant): the assistant's avatar everywhere, states from config, effort color while working, optional accessory, only visible bots animate.
 - **Guards:** no plugin API; design notes for Slack-like chat and the planning suite; AFFiNE docs-only; voice against the spec with a stub provider; gooey keeps real buttons.
 - **When finished:** a secrets scan over the whole diff since the first commit, result in `MORNING.md`.
@@ -227,9 +227,10 @@ On branch `v4` from `main`, same gate as v1–v3, merged `--no-ff` and tagged `v
 
 1. Vendor `border-beam` with a `colors` prop and reduced-motion handling; replace the homemade beam; final effort colors and `--polaris-beam-*` tokens; forced-state screenshots for every tier.
 2. Quota-low: drop amber; red-coral badge with an icon beside the usage meter.
-3. Orbie: the assistant's avatar everywhere (message avatars, thinking, empty state), effort color while working, optional accessory, perf guards.
-4. Guards: design notes for Slack-like chat and the planning suite, AFFiNE docs-only findings and LICENSE check, a Clide stub provider for voice.
-5. Secrets scan over the whole diff since the first commit; result in `MORNING.md`.
+3. Orbie: the assistant's avatar everywhere (message avatars, thinking, empty state), effort color while working, optional accessory, perf guards. Star added during the run: Orbie replaces the initials badges (for example "SR" for the `server` project) as the profile picture, and Orbie is the thinking animation.
+4. Dashboard (Star, during the run): opening Polaris lands on the dashboard; it keeps Activity and New chat and supports custom widgets.
+5. Guards: design notes for Slack-like chat and the planning suite, AFFiNE docs-only findings and LICENSE check, a Clide stub provider for voice.
+6. Secrets scan over the whole diff since the first commit; result in `MORNING.md`.
 
 ## Contract changes
 
@@ -270,6 +271,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-05 — Claude (session 8) — V 4.0.0 item 2: quota-low without amber
+
+- Status: done
+- What changed: the composer's persistent amber accent halo is gone (`composerFxState` lost `accent`, `ComposerFx` its accent layer, `ChatView` stopped passing `quotaLow` to the FX). `ComposerUsageMeter`: rings stay neutral; when a window is at or below the threshold, a red-coral badge with a dial icon and the remaining share sits beside them, and the trigger's label ends in ", low". New token `--polaris-quota-low` (light `#b8352b`, dark `#ff7a6b`, AA on its 12% surface) exposed as the `quota-low` Tailwind color in `index.css`; the popover note and the dashboard Usage tile use it too. The 4 s red flash is unchanged. Dev-only `quotaLow` in `polaris:fx-force` forces the meter's low state. blueprint quota sections updated; the "amber reserved for quota-low" taste rule is removed.
+- How verified: `vp test run apps/web/src/polaris` (86 passed); web typecheck clean. Before/after, light and dark: `../.playwright-mcp/v4/quota-low-{before,after}-{light,dark}.png` (sheets `sheet-quota-low-{before,after}.png`).
+- Risks: the forced shots show the real 88% left (the low state was forced); real low values read the same way. While forcing it I briefly set the threshold to 90 in the shared browser profile, which is outside its 0–50 range and stopped client settings from loading in that browser until I restored 20; later shots use a throwaway browser context.
+- Next action: V 4.0.0 item 3, Orbie everywhere (message avatars, thinking state, project avatars, empty state).
+- Open questions: none new.
+
 ### 2026-10-05 — Claude (session 8) — V 4.0.0 item 1: vendored `border-beam` and the final effort colors
 
 - Status: done
@@ -300,15 +310,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Files: `apps/web/src/polaris/dashboard/*`, `apps/web/src/routes/dashboard.tsx` (+ regenerated `routeTree.gen.ts`), `components/sidebar/SidebarChrome.tsx`, `components/sidebar/mainAppLocation.ts`.
 - Tests: 3 layout, 1 thread selection, 1 pull-request rows. Note: PR times are not shown; on this Mac the local clock is behind GitHub's timestamps, so every row read "just now".
 
-### 2026-10-05 — Claude (session 8) — v2 gate: passed, merged, tagged `v2-done`
-
-- Gate: `vp fmt` clean, `vp lint` 0 errors (855 warnings, upstream's). Suites: see "Test status" in Current state (server: exactly the 8 known failures; scripts: the 1 known). Smoke on `scripts/polaris-dev.mjs`: paired, toggled every v2 setting, opened the meter popover and the liquid menu, recorded with a synthetic microphone stream (no real mic, no network), cancelled with Esc, saw the browser's "Clide works through the Polaris desktop app" error, set and cleared theme fonts.
-- Fixed during the gate (one commit): the liquid "+" floated above the action row and its chips were clipped (the goo filter's region is sized from the Liquid root, which had collapsed to 0×32; the root now spans the chips' travel and ignores the pointer except on open chips and the trigger); closed chips showed as a dark pill left of the "+" (they now collapse to the trigger's size); Esc never reached the mic while listening (a pointer press does not focus it; now a window listener); a failed transcription changed nothing visible (now a small dot on the mic until the next start; the tooltip has the message); `MicCapture.start` built a graph on a closed context when cancelled mid-await (now bails out). Also documented the v2 effect packages in AGENTS.md.
-- Screenshots: `.playwright-mcp/v2-01-usage-meter-{setting,popover}-*`, `v2-02-bot-avatar-header-*`, `v2-02-composer-meter-voice-*`, `v2-03-effects-settings-*`, `v2-03-liquid-menu-open-*`, `v2-04-voice-{settings,listening,error}-*`, `v2-05-theme-fonts-*` (light and dark each).
-- Not exercised: a real Clide, a real microphone, the packaged app's mic prompt, a bot in the working state (no real agent turn).
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v2 gate: passed, merged, tagged `v2-done`. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 5: per-theme fonts. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 4: voice input. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v2 item 3: liquid "+" composer menu. Rolled up; see `git log`.

@@ -7,13 +7,12 @@ import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 /** What ChatView knows about the turn and the quota; the composer adds the idle ring. */
 export type ComposerFxSignals = Pick<
   ComposerFxInput,
-  "voiceListening" | "quotaFlashing" | "quotaLow" | "running" | "tier"
+  "voiceListening" | "quotaFlashing" | "running" | "tier"
 >;
 
 export const IDLE_COMPOSER_FX_SIGNALS: ComposerFxSignals = {
   voiceListening: false,
   quotaFlashing: false,
-  quotaLow: false,
   running: false,
   tier: "neutral",
 };
@@ -32,9 +31,8 @@ export function useComposerFx(signals: ComposerFxSignals, keywordIdle: boolean):
 /**
  * The composer's one animated outline. The effort beam is the vendored
  * `border-beam` (`EffortBeam`); the quota flash and the voice ring are a 2 px
- * masked ring, and an unmasked halo carries the persistent quota accent, so it
- * stays visible under a running beam. Ring styles and the beam palettes live in
- * `composerFx.css`, so a theme can retune them.
+ * masked ring. Ring styles and the beam palettes live in `composerFx.css`, so a
+ * theme can retune them.
  */
 // `voice-glow` loads the first time voice takes the outline.
 const VoiceGlow = lazy(() => import("../voice/VoiceGlow"));
@@ -77,12 +75,6 @@ export function ComposerFx({
         data-tier={state.tier}
         data-animated={state.animated ? "true" : "false"}
         className="polaris-composer-fx-ring"
-      />
-      <div
-        aria-hidden
-        data-polaris-fx-accent
-        data-active={state.accent ? "true" : "false"}
-        className="polaris-composer-fx-accent"
       />
     </>
   );

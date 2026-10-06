@@ -44,14 +44,14 @@ function ProviderLimits({
             <span className="text-xs whitespace-nowrap text-muted-foreground">{window.label}</span>
             <span className="h-1.5 overflow-hidden rounded-full bg-muted">
               <span
-                className={cn("block h-full rounded-full", low && "bg-warning")}
+                className={cn("block h-full rounded-full", low && "bg-quota-low")}
                 style={{ width: `${left}%`, ...(low ? {} : { backgroundColor: color }) }}
               />
             </span>
             <span
               className={cn(
                 "text-right text-xs font-medium tabular-nums",
-                low ? "text-warning-foreground" : "text-foreground",
+                low ? "text-quota-low" : "text-foreground",
               )}
             >
               {left}%{resets ? <span className="sr-only">, {resets}</span> : null}

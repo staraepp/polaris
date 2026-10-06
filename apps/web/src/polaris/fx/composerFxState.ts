@@ -7,7 +7,6 @@ export interface ComposerFxInput {
   /** Voice input is listening or transcribing (ours, or Clide's own dictation). */
   readonly voiceListening: boolean;
   readonly quotaFlashing: boolean;
-  readonly quotaLow: boolean;
   readonly running: boolean;
   readonly tier: EffortTier;
   /** Upstream's static ring: the prompt text contains the keyword level while idle. */
@@ -18,8 +17,6 @@ export interface ComposerFxInput {
 export interface ComposerFxState {
   readonly layer: ComposerFxLayer;
   readonly tier: EffortTier;
-  /** The persistent amber quota accent, drawn under whatever layer is active. */
-  readonly accent: boolean;
   /** False under reduced motion: the layer is drawn static instead. */
   readonly animated: boolean;
 }
@@ -27,11 +24,12 @@ export interface ComposerFxState {
 /**
  * Priority, highest first: voice listening, the quota-low flash, the effort
  * beam of the running turn, then the idle keyword ring. Only one layer at a
- * time; the quota accent is static, so it may sit under any of them.
+ * time. Quota-low after the flash is not an outline: it is a badge beside the
+ * usage meter (`ComposerUsageMeter`).
  */
 export function resolveComposerFx(input: ComposerFxInput): ComposerFxState {
   const animated = !input.reducedMotion;
-  const base = { tier: input.tier, accent: input.quotaLow } as const;
+  const base = { tier: input.tier } as const;
   if (input.voiceListening) return { ...base, layer: "voice", animated };
   if (input.quotaFlashing && animated) return { ...base, layer: "flash", animated };
   if (input.running && input.tier !== "none") return { ...base, layer: "beam", animated };
