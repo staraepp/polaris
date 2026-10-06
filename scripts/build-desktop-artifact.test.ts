@@ -55,6 +55,7 @@ import {
   resolveDesktopUpdateChannel,
   resolveDesktopWebAssetBrand,
   resolveResourceMonitorRustTargets,
+  resourceMonitorCargoArgs,
   resolveWindowsServerAsarIgnoreGlobs,
   resourceMonitorExecutableName,
   resolveGitHubPublishConfig,
@@ -2055,6 +2056,35 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     ]);
     assert.equal(resourceMonitorExecutableName("mac"), "t3-resource-monitor");
     assert.equal(resourceMonitorExecutableName("win"), "t3-resource-monitor.exe");
+  });
+
+  it("cross-compiles the Windows resource monitor through cargo-xwin off Windows (Polaris)", () => {
+    const manifestPath = "native/resource-monitor/Cargo.toml";
+    const build = ["build", "--locked", "--release", "--manifest-path", manifestPath, "--target"];
+    assert.deepStrictEqual(
+      resourceMonitorCargoArgs({
+        rustTarget: "x86_64-pc-windows-msvc",
+        hostPlatform: "darwin",
+        manifestPath,
+      }),
+      ["xwin", ...build, "x86_64-pc-windows-msvc"],
+    );
+    assert.deepStrictEqual(
+      resourceMonitorCargoArgs({
+        rustTarget: "x86_64-pc-windows-msvc",
+        hostPlatform: "win32",
+        manifestPath,
+      }),
+      [...build, "x86_64-pc-windows-msvc"],
+    );
+    assert.deepStrictEqual(
+      resourceMonitorCargoArgs({
+        rustTarget: "aarch64-apple-darwin",
+        hostPlatform: "darwin",
+        manifestPath,
+      }),
+      [...build, "aarch64-apple-darwin"],
+    );
   });
 
   it("ships the Linux CLI release archive as the WSL runtime", () => {

@@ -1,6 +1,13 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.4.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 4.4.1**. Start with "Look at these first" at the bottom.
+
+## V 4.4.1 (a Windows installer), tag `v4.4.1`
+
+- **Polaris for your friends on Windows:** `release/Polaris-4.4.1-x64.exe`, built on this Mac (Intel/AMD 64-bit Windows 10 and 11). It is unsigned, so Windows SmartScreen shows "Windows protected your PC": click **More info → Run anyway**. It installs per user like T3 Code does.
+- **Not tested on Windows.** I have no Windows machine here, so I checked what I could from the Mac: the installer unpacks, the app inside is a Windows x64 program with the Polaris name, version and icon, and the bundled resource monitor is a Windows x64 binary. Whether it starts and works on a real Windows PC is unproven until someone opens it.
+- How it is built (for later releases): see "Packaging for Windows x64" in `AGENTS.md`. Two small build-script changes made it possible: the Windows resource monitor compiles through cargo-xwin, and a check that has to run the Windows app is skipped on the Mac.
+- No app changes; the Mac dmg is rebuilt as `release/Polaris-4.4.1-arm64.dmg` only because the version moved.
 
 ## V 4.4.0 (T3 Code import, a nicer welcome, the dashboard as home), tag `v4.4.0`
 
