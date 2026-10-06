@@ -387,6 +387,8 @@ export const ClientSettingsSchema = Schema.Struct({
   quotaLowThresholdPercent: QuotaLowThresholdPercent.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_QUOTA_LOW_THRESHOLD_PERCENT)),
   ),
+  /** Polaris: quota gauge next to the send button (amber only when low). */
+  composerUsageMeterEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
   ),
@@ -1770,6 +1772,7 @@ export const ClientSettingsPatch = Schema.Struct({
   environmentIdentificationMode: Schema.optionalKey(EnvironmentIdentificationMode),
   glassOpacity: Schema.optionalKey(GlassOpacity),
   quotaLowThresholdPercent: Schema.optionalKey(QuotaLowThresholdPercent),
+  composerUsageMeterEnabled: Schema.optionalKey(Schema.Boolean),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),

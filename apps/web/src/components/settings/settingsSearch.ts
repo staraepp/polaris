@@ -614,6 +614,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["quota limit usage threshold low warning flash amber five hour weekly"],
   },
   {
+    id: "composer-usage-meter",
+    title: "Usage meter in the composer",
+    to: "/settings/general",
+    searchTerms: ["quota limit usage meter gauge composer five hour weekly remaining"],
+  },
+  {
     id: "discord-presence",
     title: "Discord Rich Presence",
     to: "/settings/integrations",

@@ -40,6 +40,7 @@ import { usageLimitsBannerItem } from "./chat/ComposerUsageLimits";
 import type { ComposerFxSignals } from "../polaris/fx/ComposerFx";
 import { resolveRunEffort } from "../polaris/fx/effortTier";
 import { useQuotaLowSignal } from "../polaris/quota/useQuotaLowSignal";
+import { usageMeterModelOf } from "../polaris/quota/usageMeterModel";
 import { useThreadUsage } from "../polaris/threadUsage/useThreadUsage";
 import { getTerminalLabel } from "@t3tools/shared/terminalLabels";
 import * as Schema from "effect/Schema";
@@ -3215,6 +3216,16 @@ export default function ChatView(props: ChatViewProps) {
   // Polaris: signals for the composer FX slot (quota-low flash and accent, effort beam).
   const polarisQuotaThreshold = useClientSettings((settings) => settings.quotaLowThresholdPercent);
   const polarisQuota = useQuotaLowSignal(activeProviderStatus, polarisQuotaThreshold);
+  const polarisUsageMeterEnabled = useClientSettings(
+    (settings) => settings.composerUsageMeterEnabled,
+  );
+  const polarisUsageMeter = useMemo(
+    () =>
+      polarisUsageMeterEnabled
+        ? usageMeterModelOf(activeProviderStatus, polarisQuotaThreshold)
+        : null,
+    [activeProviderStatus, polarisQuotaThreshold, polarisUsageMeterEnabled],
+  );
   const polarisActiveRun = useMemo(
     () => serverProjection?.runs.find((run) => run.id === activeActivityRun?.runId) ?? null,
     [serverProjection, activeActivityRun?.runId],
@@ -11199,6 +11210,7 @@ export default function ChatView(props: ChatViewProps) {
                               phase={phase}
                               polarisFx={polarisFxSignals}
                               polarisThreadUsage={polarisThreadUsage}
+                              polarisUsageMeter={polarisUsageMeter}
                               canInterrupt={canInterruptRunningThread}
                               isConnecting={isConnecting}
                               isSendBusy={isSendBusy || isSavingQueuedEdit || isResuming}

@@ -186,6 +186,7 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 | `packages/contracts/src/settings.ts`    | `ClientSettings.quotaLowThresholdPercent` (Int 0..50, default 20; optional in the patch) and the exported option list                                                          | v1 leftover: the quota warning threshold as a setting (0 turns it off) |
 | `packages/contracts/src/keybindings.ts` | new command `usage.period.year` (default binding Mod+Shift+5 in `packages/shared/src/keybindings.ts`)                                                                          | v1 leftover: one-year Usage period                                     |
 | `packages/contracts/src/usage.ts`       | `UsageBucket.toolCalls` (optional non-negative Int; absent when zero or not counted). No contract version bump: the module's own rule says optional bucket fields are additive | v1 leftover: tool calls over time                                      |
+| `packages/contracts/src/settings.ts`    | `ClientSettings.composerUsageMeterEnabled` (Boolean, default true; optional in the patch)                                                                                      | v2: usage meter in the composer                                        |
 
 ## New dependencies
 
@@ -199,10 +200,17 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Questions for Star
 
+- **Usage meter default.** The composer usage meter ships on by default (quiet until a window is low). Upstream keeps its context indicator off by default; if you want the same, set `composerUsageMeterEnabled` to default `false` in `packages/contracts/src/settings.ts`.
 - **Discord Application ID.** Register an application at the Discord developer portal, paste its ID into `POLARIS_DISCORD_APPLICATION_ID` in `apps/desktop/src/polaris/discord/discordConfig.ts` (or export the env var of the same name for a dev run), and upload an asset named `polaris` for the large image. Until then the switch is disabled with an explanation.
 - **Pairing (your note during the run).** The packaged desktop app does not pair: the Electron shell holds the bootstrap token and signs the renderer in by itself (`apps/desktop/src/backend/DesktopLocalEnvironmentAuth.ts`). The pairing page is the **browser** dev flow (`vp run dev`, policy `loopback-browser`). I made that a one-time step: `scripts/polaris-dev.mjs` now writes a random dev token to the gitignored `.polaris/dev-auth-token` and passes it as `T3CODE_DEV_AUTH_TOKEN`, so the server seeds the same reusable session every run and the 30-day `localhost` cookie from the first pairing keeps working (upstream's own mechanism, `apps/server/src/auth/ReusableDevAuth.ts`). Upstream's caveat: that cookie goes to every port on `localhost`, so any local service you visit in that browser could read the token. If you want **zero** pairing in the browser (auto sign-in for loopback requests), that is a change to the server's auth policy with the same trade-off made permanent; I did not make it without you.
 
 ## Entries
+
+### 2026-10-05 — Claude (session 8) — v2 item 1: usage meter in the composer
+
+- Done: a quota gauge beside the send button (`apps/web/src/polaris/quota/ComposerUsageMeter.tsx`, model in `usageMeterModel.ts`): one thin bar per window (first two), filled by what is left, neutral until a window reaches the quota-low threshold, then that bar turns amber (`--warning`, the outline's signal). Hover or focus opens the windows with reset times (upstream's `LimitWindows`), an amber note when low, an "Open Usage" link, and the "This thread" block (so per-thread usage is visible without the legacy context indicator; the context popover drops its copy while the meter shows). Hidden when the account reports no windows or the probe failed. New client setting `composerUsageMeterEnabled` (default on) in Settings → General → Usage. Both Polaris settings now count in upstream's "restore defaults" lists.
+- Tests: 1 contract, 3 model, 2 jsdom.
+- Left over: on by default (it is the requested feature and quiet until low); flip the default in `settings.ts` if you'd rather opt in (logged under Questions).
 
 ### 2026-10-05 — Claude (session 8) — v1 gate passed, merged as `v1-done`
 
@@ -228,13 +236,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Done: `mergeUsage` now splits each day by model (`DailyTotals.byModel`, keyed like the model table; `packages/shared/src/usageMerge.ts`). A new "Models over time" chart on Usage (`apps/web/src/components/usage/UsageModelTrend.tsx`, logic in `usageModelSeries.ts`) stacks the top 5 models plus "Other" per day (per week past 45 days), for cost or tokens, hidden for Past 24h. Models take their provider's color in steps toward the background, so no new palette. Hover, tap or arrow keys read a column out; an sr-only table carries the data. Tests: 1 merge case, 7 series cases, 3 jsdom cases.
 - Left over: the logic file is named `usageModelSeries.ts` because `usageModelTrend.ts` clashes with the component on a case-insensitive disk.
 
-### 2026-10-05 — Claude (session 8) — v1 item 2: one-year Usage period
-
-- Done: a fifth period, "1 year", on the Usage page (`usageShortcuts.ts`), bound to Mod+Shift+5 while Usage is open. The server already accepts a 365-day daily window (the heatmap uses one). Tests: keybinding order test updated, a new binding test.
-- Left over: the Activity heatmap and the page now issue the same 365-day query when "1 year" is selected; harmless, not de-duplicated.
-
 ## History
 
+- 2026-10-05 — Claude (session 8) — v1 item 2: one-year Usage period. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 8) — v1 item 1: quota-low threshold setting. Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 4: composer FX slot (effort beam, quota flash and accent). Rolled up; see `git log`.
 - 2026-10-05 — Claude (session 7, unattended v1 run) — Phase 3: quota-low signal. Rolled up; see `git log`.

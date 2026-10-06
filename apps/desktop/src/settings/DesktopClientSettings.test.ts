@@ -52,6 +52,7 @@ const clientSettings: ClientSettings = {
   fontSmoothing: true,
   glassOpacity: 80,
   quotaLowThresholdPercent: 20,
+  composerUsageMeterEnabled: true,
   onboardingCompletedAt: null,
   panelAnimationDurationMs: 0,
   planModeEnabled: false,

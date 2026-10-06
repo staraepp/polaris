@@ -1106,6 +1106,18 @@ describe("branch naming settings", () => {
   );
 });
 
+describe("ClientSettings composer usage meter (Polaris)", () => {
+  it("is on by default and can be turned off", () => {
+    expect(decodeClientSettings({}).composerUsageMeterEnabled).toBe(true);
+    expect(
+      decodeClientSettings({ composerUsageMeterEnabled: false }).composerUsageMeterEnabled,
+    ).toBe(false);
+    expect(decodeClientSettingsPatch({ composerUsageMeterEnabled: false })).toEqual({
+      composerUsageMeterEnabled: false,
+    });
+  });
+});
+
 describe("ClientSettings quota-low threshold (Polaris)", () => {
   it("defaults to 20 percent remaining", () => {
     expect(decodeClientSettings({}).quotaLowThresholdPercent).toBe(20);

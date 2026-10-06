@@ -152,6 +152,8 @@ import {
   type ComposerFxSignals,
 } from "~/polaris/fx/ComposerFx";
 import type { ThreadUsage } from "~/polaris/threadUsage/threadUsage";
+import { ComposerUsageMeter } from "~/polaris/quota/ComposerUsageMeter";
+import type { UsageMeterModel } from "~/polaris/quota/usageMeterModel";
 import {
   ComposerBannerStack,
   type ComposerBannerStackContent,
@@ -1358,6 +1360,8 @@ const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(
   activeContextWindow: ContextWindowSnapshot | null;
   /** Polaris: per-thread usage for the context popover. */
   threadUsage?: ThreadUsage | null | undefined;
+  /** Polaris: quota gauge beside the send button; `null` hides it. */
+  usageMeter?: UsageMeterModel | null | undefined;
   reserveContextWindowMeter: boolean;
   activeThreadModelDisplayName: string | null;
   isPreparingWorktree: boolean;
@@ -1393,6 +1397,9 @@ const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(
 }) {
   return (
     <>
+      {props.usageMeter ? (
+        <ComposerUsageMeter model={props.usageMeter} threadUsage={props.threadUsage} />
+      ) : null}
       {props.activeContextWindow ? (
         <ContextWindowMeter
           usage={props.activeContextWindow}
@@ -1400,7 +1407,7 @@ const ComposerFooterPrimaryActions = memo(function ComposerFooterPrimaryActions(
           onCompact={props.onCompactContext}
           compactDisabled={props.compactDisabled}
           compactDisabledReason={props.compactDisabledReason}
-          threadUsage={props.threadUsage}
+          threadUsage={props.usageMeter ? null : props.threadUsage}
         />
       ) : props.reserveContextWindowMeter ? (
         <ContextWindowMeterPlaceholder />
@@ -1541,6 +1548,8 @@ export interface ChatComposerProps {
   polarisFx?: ComposerFxSignals;
   /** Polaris: per-thread usage shown in the context window popover. */
   polarisThreadUsage?: ThreadUsage | null | undefined;
+  /** Polaris: the selected provider's quota gauge; `null` hides it. */
+  polarisUsageMeter?: UsageMeterModel | null | undefined;
   /** Stop is offered: a run is preparing, starting, or running. */
   canInterrupt: boolean;
   isConnecting: boolean;
@@ -1720,6 +1729,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     phase,
     polarisFx = IDLE_COMPOSER_FX_SIGNALS,
     polarisThreadUsage,
+    polarisUsageMeter,
     canInterrupt,
     isConnecting,
     isSendBusy,
@@ -7533,6 +7543,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       settings.contextWindowMeterEnabled ? activeContextWindow : null
                     }
                     threadUsage={polarisThreadUsage}
+                    usageMeter={polarisUsageMeter}
                     reserveContextWindowMeter={reserveContextWindowMeter}
                     activeThreadModelDisplayName={activeThreadModelDisplayName}
                     pendingAction={pendingPrimaryAction}
