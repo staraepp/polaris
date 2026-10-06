@@ -2,6 +2,8 @@ import { lazy, Suspense, useMemo } from "react";
 
 import { useClientSettings } from "~/hooks/useSettings";
 
+import { useCalmMode } from "../calm/useCalmMode";
+
 import { resolveComposerFx, type ComposerFxInput, type ComposerFxState } from "./composerFxState";
 import { readDevFxOverride } from "./devFxOverride";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
@@ -26,13 +28,21 @@ export function useComposerFx(signals: ComposerFxSignals, keywordIdle: boolean):
   const idleBeamSetting = useClientSettings((settings) => settings.composerIdleBeamEnabled);
   const windowActive = useWindowActive();
   const idleBeam = idleBeamSetting && windowActive;
+  const calm = useCalmMode();
   // Dev builds only: forced states for screenshots (see devFxOverride.ts).
   const forced = readDevFxOverride();
   const forcedKey = forced === null ? "" : JSON.stringify(forced);
   return useMemo(() => {
     const override = forcedKey === "" ? {} : (readDevFxOverride() ?? {});
-    return resolveComposerFx({ ...signals, ...override, keywordIdle, idleBeam, reducedMotion });
-  }, [signals, keywordIdle, idleBeam, reducedMotion, forcedKey]);
+    return resolveComposerFx({
+      ...signals,
+      ...override,
+      keywordIdle,
+      idleBeam,
+      reducedMotion,
+      calm,
+    });
+  }, [signals, keywordIdle, idleBeam, reducedMotion, calm, forcedKey]);
 }
 
 /**

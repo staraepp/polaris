@@ -55,6 +55,7 @@ import { applyAppearanceFontVariables } from "~/appearanceFonts";
 import { applyAppearanceContrast } from "~/appearanceContrast";
 import { useClientSettings } from "../hooks/useSettings";
 import { AppBackground } from "../polaris/background/AppBackground";
+import { CalmModeSync } from "../polaris/calm/useCalmMode";
 import {
   deriveLogicalProjectKeyFromSettings,
   derivePhysicalProjectKeyFromPath,
@@ -223,6 +224,7 @@ function RootRouteView() {
         <EnvironmentThemeSync />
         <GlassAppearanceSync />
         <FontAppearanceSync />
+        <CalmModeSync />
         <AppBackground />
         <ProviderAuthCallbackCoordinator />
         <ChatGptWelcomeCoordinator />

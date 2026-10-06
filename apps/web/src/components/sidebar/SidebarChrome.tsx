@@ -31,6 +31,7 @@ import { DashboardGlyph } from "~/polaris/dashboard/DashboardGlyph";
 import { lastTool } from "~/polaris/hub/toolsHub";
 import { useOpenTool } from "~/polaris/hub/ToolsHubCrumbs";
 import { resolveSidebarArtworkVariant } from "~/polaris/brand/sidebarArtwork";
+import { useCalmMode } from "~/polaris/calm/useCalmMode";
 
 export const SidebarChromeHeader = memo(function SidebarChromeHeader({
   isElectron,
@@ -40,10 +41,14 @@ export const SidebarChromeHeader = memo(function SidebarChromeHeader({
   const stageLabel = useEnvironmentStageLabel();
   const environmentIdentificationMode = useEnvironmentIdentificationMode();
   const sidebarArtworkEnabled = useClientSettings((settings) => settings.sidebarArtworkEnabled);
-  const backdropVariant = resolveSidebarArtworkVariant(
-    resolveSidebarStageBackdropVariant(stageLabel, environmentIdentificationMode === "artwork"),
-    sidebarArtworkEnabled,
-  );
+  // Polaris: Calm mode draws no header art at all, Dev and Nightly markers included.
+  const calm = useCalmMode();
+  const backdropVariant = calm
+    ? null
+    : resolveSidebarArtworkVariant(
+        resolveSidebarStageBackdropVariant(stageLabel, environmentIdentificationMode === "artwork"),
+        sidebarArtworkEnabled,
+      );
   const pillLabel =
     environmentIdentificationMode === "pill"
       ? resolveEnvironmentIdentificationPillLabel(stageLabel)

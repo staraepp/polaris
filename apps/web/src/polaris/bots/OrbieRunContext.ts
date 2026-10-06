@@ -2,6 +2,8 @@ import { createContext, use } from "react";
 
 import { useClientSettings } from "~/hooks/useSettings";
 
+import { useCalmMode } from "../calm/useCalmMode";
+
 import type { EffortTier } from "../fx/effortTier";
 
 /** The open thread's running turn, for the Orbies and orbs inside its timeline. */
@@ -18,12 +20,16 @@ export function useOrbieRun(): OrbieRun {
   return use(OrbieRunContext);
 }
 
-/** Whether Orbie replaces the plain look (Settings → Effects → Orbie). */
+/** Whether Orbie replaces the plain look (Settings → Effects → Orbie; paused in Calm mode). */
 export function useOrbieEnabled(): boolean {
-  return useClientSettings((settings) => settings.botAvatarsEnabled);
+  const enabled = useClientSettings((settings) => settings.botAvatarsEnabled);
+  const calm = useCalmMode();
+  return enabled && !calm;
 }
 
 /** Whether the working and thinking rows show `thinking-orbs` (Settings → Effects). */
 export function useActivityOrbsEnabled(): boolean {
-  return useClientSettings((settings) => settings.activityOrbsEnabled);
+  const enabled = useClientSettings((settings) => settings.activityOrbsEnabled);
+  const calm = useCalmMode();
+  return enabled && !calm;
 }

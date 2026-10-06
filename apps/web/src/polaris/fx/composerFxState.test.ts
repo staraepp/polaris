@@ -10,6 +10,7 @@ const idle: ComposerFxInput = {
   keywordIdle: false,
   idleBeam: false,
   reducedMotion: false,
+  calm: false,
 };
 
 describe("resolveComposerFx", () => {
@@ -78,5 +79,23 @@ describe("resolveComposerFx", () => {
     expect(resolveComposerFx({ ...idle, reducedMotion: true, keywordIdle: true }).layer).toBe(
       "ring",
     );
+  });
+
+  it("draws no beam, flash or idle decoration in Calm mode (Polaris, V 5.1.0)", () => {
+    const calm = { ...idle, calm: true, idleBeam: true };
+    expect(resolveComposerFx({ ...calm, running: true, tier: "high" }).layer).toBe("none");
+    expect(resolveComposerFx({ ...calm, quotaFlashing: true }).layer).toBe("none");
+    expect(resolveComposerFx(calm).layer).toBe("none");
+    expect(resolveComposerFx({ ...calm, keywordIdle: true })).toEqual({
+      layer: "ring",
+      tier: "neutral",
+      animated: false,
+    });
+    // Listening is feedback, so it still shows, but holds still.
+    expect(resolveComposerFx({ ...calm, voiceListening: true })).toEqual({
+      layer: "voice",
+      tier: "neutral",
+      animated: false,
+    });
   });
 });

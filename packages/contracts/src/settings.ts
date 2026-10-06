@@ -513,6 +513,12 @@ export const ClientSettingsSchema = Schema.Struct({
   composerIdleBeamEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   /** Polaris (V 4.7.1): the green artwork behind "Polaris" in the sidebar header, in every build. */
   sidebarArtworkEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  /**
+   * Polaris (V 5.1.0): Calm mode, a quieter look modelled on the Claude app.
+   * Pauses bots, orbs, beams, the gooey menu, sidebar art and the background
+   * (their own settings are kept) and wears the warm Calm palette.
+   */
+  calmMode: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
   ),
@@ -1918,6 +1924,7 @@ export const ClientSettingsPatch = Schema.Struct({
   activityOrbsEnabled: Schema.optionalKey(Schema.Boolean),
   composerIdleBeamEnabled: Schema.optionalKey(Schema.Boolean),
   sidebarArtworkEnabled: Schema.optionalKey(Schema.Boolean),
+  calmMode: Schema.optionalKey(Schema.Boolean),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),

@@ -3,6 +3,7 @@ import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
 import * as Schema from "effect/Schema";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
+  applyPolarisPalette,
   applyThemePalette,
   CUSTOM_THEMES_STORAGE_KEY,
   invalidateCustomThemes,
@@ -22,6 +23,8 @@ import {
   type ThemeHalves,
   type ThemePreferenceMode,
 } from "../themePalette";
+import { CALM_DARK, CALM_LIGHT, CALM_THEME_ID } from "../polaris/calm/calmPalette";
+import { isCalmActive, subscribeCalm } from "../polaris/calm/calmStore";
 
 type Theme = ThemePreference;
 type ThemeSnapshot = {
@@ -136,7 +139,8 @@ let listeners: Array<() => void> = [];
 let lastSnapshot: ThemeSnapshot | null = null;
 let snapshotStale = true;
 let lastDesktopTheme: "light" | "dark" | "system" | null = null;
-let lastAppliedTheme: Omit<ThemeSnapshot, "resolvedTheme"> | null = null;
+// `calm`: Polaris Calm mode paints its own palette over the stored theme.
+let lastAppliedTheme: (Omit<ThemeSnapshot, "resolvedTheme"> & { calm: boolean }) | null = null;
 let themeStorageReadFailure: ThemeStorageError | null = null;
 
 function emitChange() {
@@ -330,8 +334,10 @@ function applyTheme(theme: Theme, { suppressTransitions = false, preservePreview
   const followSystem = appearanceMode === "system";
   const systemDark = followSystem ? getSystemDark() : false;
   const themeHalves = readStoredThemeHalves();
+  const calm = isCalmActive();
   if (
     lastAppliedTheme?.theme === theme &&
+    lastAppliedTheme.calm === calm &&
     lastAppliedTheme.systemDark === systemDark &&
     lastAppliedTheme.followSystem === followSystem &&
     lastAppliedTheme.appearanceMode === appearanceMode &&
@@ -351,9 +357,13 @@ function applyTheme(theme: Theme, { suppressTransitions = false, preservePreview
     appearanceMode,
     themeHalves,
   );
-  applyThemePalette(resolveThemeHalf(theme, themeHalves, resolvedAppearance), resolvedAppearance);
+  if (calm) {
+    applyPolarisPalette(CALM_THEME_ID, resolvedAppearance === "dark" ? CALM_DARK : CALM_LIGHT);
+  } else {
+    applyThemePalette(resolveThemeHalf(theme, themeHalves, resolvedAppearance), resolvedAppearance);
+  }
   document.documentElement.classList.toggle("dark", resolvedAppearance === "dark");
-  lastAppliedTheme = { theme, systemDark, followSystem, appearanceMode, themeHalves };
+  lastAppliedTheme = { theme, systemDark, followSystem, appearanceMode, themeHalves, calm };
   syncBrowserChromeTheme();
   syncDesktopTheme(theme, followSystem, appearanceMode);
   if (suppressTransitions) {
@@ -412,6 +422,11 @@ export function syncDesktopTheme(
 // Apply immediately on module load to prevent flash
 if (typeof document !== "undefined" && typeof window !== "undefined") {
   applyTheme(getStored());
+  // Polaris: Calm mode switching on or off repaints the palette.
+  subscribeCalm(() => {
+    applyTheme(getStored(), { suppressTransitions: true });
+    emitChange();
+  });
 }
 
 function getSnapshot(): ThemeSnapshot {
