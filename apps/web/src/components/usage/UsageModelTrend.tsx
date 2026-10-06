@@ -14,19 +14,25 @@ import {
 const VIEW_WIDTH = 960;
 const VIEW_HEIGHT = 180;
 const PLOT_TOP = 6;
-const SHADE_MIX = [100, 66, 44, 30, 22] as const;
+const SHADE_MIX = [100, 74, 54, 40, 32] as const;
 const OTHER_COLOR = "color-mix(in oklab, var(--muted-foreground) 28%, var(--background))";
 
 /** Models of one provider share its hue and step down in strength, so no new palette is needed. */
 export function seriesColor(series: Pick<ModelTrendSeries, "provider" | "shade">): string {
   const base = PROVIDER_PRESENTATION[series.provider].color;
-  const mix = SHADE_MIX[Math.min(series.shade, SHADE_MIX.length - 1)] ?? 22;
+  const mix = SHADE_MIX[Math.min(series.shade, SHADE_MIX.length - 1)] ?? 32;
   return mix === 100 ? base : `color-mix(in oklab, ${base} ${mix}%, var(--background))`;
 }
 
 function format(metric: ModelTrendMetric, value: number): string {
   if (metric === "cost") return formatUsd(value);
   return metric === "tokens" ? formatTokens(value) : formatCount(value);
+}
+
+/** Axis labels drop the cents: "$300", not "$300.00". */
+function formatTick(metric: ModelTrendMetric, value: number): string {
+  if (metric !== "cost") return format(metric, value);
+  return value >= 1000 ? `$${formatCount(value)}` : `$${Number(value.toFixed(2))}`;
 }
 
 const METRIC_LABEL: Record<ModelTrendMetric, string> = {
@@ -77,7 +83,7 @@ export function UsageModelTrend({
         </span>
       </div>
 
-      <div className="relative">
+      <div className="relative pr-12">
         <svg
           viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
           preserveAspectRatio="none"
@@ -163,20 +169,23 @@ export function UsageModelTrend({
             );
           })}
         </svg>
-        <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 flex flex-col">
+        <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-11">
           {ticks.map((tick) => (
             <span
               key={tick}
-              className="absolute right-0 -translate-y-full pb-0.5 text-2xs text-muted-foreground tabular-nums"
+              className="absolute right-0 -translate-y-1/2 text-2xs text-muted-foreground tabular-nums"
               style={{ top: `${(y(tick) / VIEW_HEIGHT) * 100}%` }}
             >
-              {format(metric, tick)}
+              {formatTick(metric, tick)}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="flex justify-between text-2xs text-muted-foreground tabular-nums" aria-hidden>
+      <div
+        className="flex justify-between pr-12 text-2xs text-muted-foreground tabular-nums"
+        aria-hidden
+      >
         <span>{formatDayShort(trend.columns[0]?.start ?? "")}</span>
         <span>{formatDayShort(trend.columns.at(-1)?.end ?? "")}</span>
       </div>
