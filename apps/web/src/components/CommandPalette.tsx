@@ -50,6 +50,7 @@ import {
   ChevronRightIcon,
   CornerLeftUpIcon,
   FileSearchIcon,
+  FileInputIcon,
   FolderGit2Icon,
   FolderIcon,
   FolderPlusIcon,
@@ -2265,6 +2266,17 @@ function OpenCommandPaletteDialog(props: {
     icon: <SkillsGlyph className={ITEM_ICON_CLASS} />,
     run: async () => {
       await navigate({ to: "/skills" });
+    },
+  });
+
+  actionItems.push({
+    kind: "action",
+    value: "action:import-sessions",
+    searchTerms: ["import", "claude code", "codex", "sessions", "history", "conversations"],
+    title: "Import Claude Code and Codex sessions",
+    icon: <FileInputIcon className={ITEM_ICON_CLASS} />,
+    run: async () => {
+      await navigate({ to: "/import" });
     },
   });
 

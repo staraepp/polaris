@@ -1460,7 +1460,8 @@ function ImportStep({
   );
 }
 
-type ImportCandidate = AgentSessionProjectCandidate & {
+/** Polaris: exported so the anytime Import page reuses the same picker. */
+export type ImportCandidate = AgentSessionProjectCandidate & {
   readonly environmentId: EnvironmentId;
   readonly key: string;
 };
@@ -1471,7 +1472,7 @@ type ImportCandidate = AgentSessionProjectCandidate & {
  * sit collapsed at the bottom so they stay reachable without adding noise.
  * Source icons appear only on repository rows so the columns stay still.
  */
-function ImportCandidateList({
+export function ImportCandidateList({
   candidates,
   selectedKeys,
   onSelectionChange,
