@@ -316,6 +316,15 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 
 ## Entries
 
+### 2026-10-06 — Claude Code — V 4.4.1: Windows x64 installer cross-built on the Mac
+
+- Status: done (built and inspected; not run on Windows)
+- What changed: `scripts/build-desktop-artifact.ts`: `resourceMonitorCargoArgs` builds a `*-pc-windows-msvc` resource monitor through cargo-xwin off Windows; `validateWindowsPackagedPayload` takes `skipBundleProbe`, set when the host is not win32 (the probe would run Windows natives). Test in `scripts/build-desktop-artifact.test.ts`. Windows recipe in `AGENTS.md`. Version 4.4.1.
+- How verified: `vp test run scripts/build-desktop-artifact.test.ts` (76 pass + the 1 known failure); scripts tsc exit 0; full gate (see MORNING V 4.4.1); `node scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64` produced `release/Polaris-4.4.1-x64.exe`; unpacked with electron-builder's 7zz and checked the PE type, product name, version and icon.
+- Risks: never launched on Windows. Unsigned (SmartScreen). The bundle self-containment probe does not run on cross builds, so a missing Windows-only module would only show on a real PC.
+- Next action: V 4.5.0 bots and motion (thinking-orbs for the working and thinking rows, bot shapes and colors, beam and voice preview in Settings).
+- Open questions: None.
+
 ### 2026-10-06 — Claude (session 8) — V 4.4.0: T3 Code import, Polaris welcome, dashboard landing
 
 - Status: done; gate passed (see MORNING V 4.4.0); merged into `main` and tagged `v4.4.0`
@@ -352,17 +361,9 @@ Additive only (new optional fields, new RPCs or commands), each covered by tests
 - Next action: wait for Star. The desktop app still needs the identity decision in MORNING "Needs Star's approval".
 - Open questions: Desktop identity (app id, profile, home dir, URL scheme).
 
-### 2026-10-06 — Claude (session 8) — polish 023: first steps in any order
-
-- Status: done
-- What changed: `polaris/dashboard/FirstSteps.tsx`: each step that is not done shows its action, not only the next one; the next step's button is `default` (filled), the others `outline`. Doc comment updated. Steps are still checked from real state only.
-- How verified: `vp test run apps/web/src/polaris/dashboard` 20 passed; web typecheck and lint clean. Isolated Playwright contexts, 1280 px light and dark and 400 px light: buttons "Open (⌘K) | Customize | Appearance" with only the first filled; Customize entered edit mode and Appearance opened `/settings/appearance`. Shots `.playwright-mcp/polish/023-*`.
-- Risks: None known.
-- Next action: next polish cycle (024).
-- Open questions: None.
-
 ## History
 
+- 2026-10-06 — Claude (session 8) — polish 023: first steps in any order. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 022: skills fit narrow windows. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 021: the note says it saved. Rolled up; see `git log`.
 - 2026-10-06 — Claude (session 8) — polish 020: links show where they go. Rolled up; see `git log`.

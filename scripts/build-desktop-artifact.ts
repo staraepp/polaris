@@ -131,6 +131,31 @@ export function resolveResourceMonitorRustTargets(
   return [arch === "arm64" ? "aarch64-pc-windows-msvc" : "x86_64-pc-windows-msvc"];
 }
 
+/**
+ * Polaris: cargo arguments for the resource monitor. A Windows (MSVC) target
+ * built on macOS or Linux goes through cargo-xwin (`cargo install cargo-xwin`;
+ * run with `XWIN_ACCEPT_LICENSE=1` to accept Microsoft's CRT/SDK license),
+ * which supplies the Windows libraries and linker that plain cargo lacks.
+ */
+export function resourceMonitorCargoArgs(input: {
+  readonly rustTarget: string;
+  readonly hostPlatform: string;
+  readonly manifestPath: string;
+}): string[] {
+  const build = [
+    "build",
+    "--locked",
+    "--release",
+    "--manifest-path",
+    input.manifestPath,
+    "--target",
+    input.rustTarget,
+  ];
+  return input.rustTarget.endsWith("-pc-windows-msvc") && input.hostPlatform !== "win32"
+    ? ["xwin", ...build]
+    : build;
+}
+
 export function resourceMonitorExecutableName(platform: typeof BuildPlatform.Type): string {
   return platform === "win" ? "t3-resource-monitor.exe" : "t3-resource-monitor";
 }
@@ -2236,17 +2261,13 @@ export const stageResourceMonitor = Effect.fn("stageResourceMonitor")(function* 
   );
   const builtBinaries: string[] = [];
 
+  const hostPlatform = yield* HostProcessPlatform;
   for (const rustTarget of rustTargets) {
     if (!reuseResourceMonitor) {
-      const spawnCommand = yield* resolveSpawnCommand("cargo", [
-        "build",
-        "--locked",
-        "--release",
-        "--manifest-path",
-        manifestPath,
-        "--target",
-        rustTarget,
-      ]);
+      const spawnCommand = yield* resolveSpawnCommand(
+        "cargo",
+        resourceMonitorCargoArgs({ rustTarget, hostPlatform, manifestPath }),
+      );
       yield* runCommand(
         ChildProcess.make(spawnCommand.command, spawnCommand.args, {
           cwd: input.repoRoot,
@@ -3155,6 +3176,8 @@ export const validateWindowsPackagedPayload = Effect.fn(
   readonly expectWslRuntime?: boolean;
   readonly fileLimit?: number;
   readonly verbose?: boolean;
+  /** Polaris: set when cross-building on a non-Windows host. */
+  readonly skipBundleProbe?: boolean;
 }) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -3371,10 +3394,19 @@ export const validateWindowsPackagedPayload = Effect.fn(
     verbose: input.verbose ?? false,
   });
 
-  yield* verifyPackagedBundleIsSelfContained({
-    asarPath,
-    verbose: input.verbose ?? false,
-  });
+  // Polaris: the probe runs the bundle on this machine, so its native modules
+  // must match the host. A Windows payload cross-built on macOS or Linux
+  // carries Windows binaries, so the build skips it there (like the fff probe).
+  if (input.skipBundleProbe === true) {
+    yield* Effect.log(
+      "[desktop-artifact] Skipping the bundle self-containment probe: a cross-built Windows payload cannot run on this host.",
+    );
+  } else {
+    yield* verifyPackagedBundleIsSelfContained({
+      asarPath,
+      verbose: input.verbose ?? false,
+    });
+  }
 
   yield* Effect.log(
     `[desktop-artifact] Validated Windows payload (${String(fileCount)} files, ${String(unpackedFiles.length)} sidecar natives).`,
@@ -3898,6 +3930,7 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
       appExecutableName: `${resolveDesktopProductName(appVersion)}.exe`,
       targetArch: options.arch,
       appVersion,
+      skipBundleProbe: hostPlatform !== "win32",
       expectWslRuntime: bundlesWslRuntime({
         platform: options.platform,
         runtimeArchivePath: options.wslRuntime,
