@@ -4,6 +4,7 @@ Star, this is the summary of the overnight run. Everything is local on this Mac:
 
 ## V 5.3.0 (the keyword level is on fire), tag `v5.3.0`
 
+- **Published 2026-10-07:** your friends' apps now get 5.3.0 (Mac and Windows) from the update feed. It includes everything since 4.7.1: the Workspace, Calm mode and the flames.
 - With Claude, type the top thinking keyword and the composer catches fire: real shader flames rise off its top edge and climb the sides, with embers and a warm glow. It keeps burning while that turn runs, and fades out when you remove the keyword.
 - See it any time in Settings → General → Effects → "Flames".
 - It only animates while Polaris is the focused window, picks a lighter quality on slow machines, and is a still ember ring with reduced motion or Calm mode on.
