@@ -1,6 +1,14 @@
 # MORNING.md — session 8 unattended run
 
-Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.3.0**. Start with "Look at these first" at the bottom.
+Star, this is the summary of the overnight run. Everything is local on this Mac: nothing was pushed, no remote was added, no real agent turn was started by me. Versions now follow V MAJOR.MINOR.PATCH (your rule); the latest is **V 5.4.0**. Start with "Look at these first" at the bottom.
+
+## V 5.4.0 (import OpenCode sessions), tag `v5.4.0`
+
+- The Import page (and the import step of onboarding) now finds OpenCode sessions too, next to Claude Code and Codex. Each folder shows an OpenCode icon when it has OpenCode sessions; importing turns each session into a thread you can keep talking to through OpenCode.
+- OpenCode needs to be turned on in Settings → Providers first (it is off by default).
+- OpenCode's database is only read, never changed. Sessions Polaris itself started in OpenCode are not imported a second time.
+- Checked against your real OpenCode data (805 sessions in 32 folders, read in milliseconds) and in the dev app (one folder imported, a second run added nothing).
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,028 tests pass, 16 new server tests pass, web and server builds pass. Not published to the update feed.
 
 ## V 5.3.0 (the keyword level is on fire), tag `v5.3.0`
 

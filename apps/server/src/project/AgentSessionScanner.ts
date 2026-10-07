@@ -19,6 +19,7 @@ import {
   AgentSessionScanError,
   ClaudeSettings,
   CodexSettings,
+  OpenCodeSettings,
   ProviderDriverKind,
   ProviderInstanceId,
   resolveProviderInstanceEnabled,
@@ -27,6 +28,7 @@ import {
   type AgentSessionProjectGit,
   type AgentSessionScanResult,
   type ProviderInstanceConfig,
+  type ServerSettings as ServerSettingsValue,
 } from "@t3tools/contracts";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
@@ -52,6 +54,18 @@ import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
 import { resolveCodexHomeLayout } from "../provider/Drivers/CodexHomeLayout.ts";
 import { expandHomePath } from "../pathExpansion.ts";
 import * as ServerSettings from "../serverSettings.ts";
+import {
+  getOpenCodeSession,
+  listOpenCodeDatabases,
+  listOpenCodeSessions,
+  openCodeSessionPath,
+  parseOpenCodeSessionPath,
+  readOpenCodeSession,
+} from "../polaris/openCodeSessions/openCodeSessionStore.ts";
+import {
+  openCodeImportIdentity,
+  openCodeSessionThread,
+} from "../polaris/openCodeSessions/openCodeSessionThread.ts";
 import {
   createTranscriptJsonReader,
   createTranscriptJsonSelector,
@@ -137,6 +151,7 @@ const TranscriptRecord = Schema.Struct({
 
 const decodeClaudeSettings = Schema.decodeUnknownOption(ClaudeSettings);
 const decodeCodexSettings = Schema.decodeUnknownOption(CodexSettings);
+const decodeOpenCodeSettings = Schema.decodeUnknownOption(OpenCodeSettings);
 const decodeTranscriptRecord = Schema.decodeUnknownOption(Schema.fromJsonString(TranscriptRecord));
 const decodeTranscriptValue = Schema.decodeUnknownOption(TranscriptRecord);
 const selectTranscriptPath = createTranscriptJsonSelector(TranscriptRecord);
@@ -1082,6 +1097,93 @@ export const make = Effect.gen(function* () {
     }));
   });
 
+  /**
+   * Polaris (V 5.4.0): directories OpenCode sessions ran in, from each enabled
+   * local OpenCode instance's data directory (`$XDG_DATA_HOME/opencode`, else
+   * `~/.local/share/opencode`). Instances on a remote `serverUrl` are skipped:
+   * their sessions are not in this computer's database.
+   */
+  const collectOpenCodeCandidates = Effect.fn("AgentSessionScanner.collectOpenCodeCandidates")(
+    function* (settings: ServerSettingsValue) {
+      const instances: Array<{
+        readonly instanceId: ProviderInstanceId;
+        readonly config: ProviderInstanceConfig;
+      }> = Object.entries(settings.providerInstances)
+        .filter(
+          ([, instance]) =>
+            instance.driver === "opencode" && resolveProviderInstanceEnabled(instance),
+        )
+        .map(([instanceId, config]) => ({
+          instanceId: ProviderInstanceId.make(instanceId),
+          config,
+        }));
+      if (!Object.hasOwn(settings.providerInstances, "opencode")) {
+        const legacy = {
+          driver: ProviderDriverKind.make("opencode"),
+          config: settings.providers.opencode,
+        };
+        if (resolveProviderInstanceEnabled(legacy)) {
+          instances.push({ instanceId: ProviderInstanceId.make("opencode"), config: legacy });
+        }
+      }
+      instances.sort(
+        (left, right) =>
+          (left.instanceId === "opencode" ? 0 : 1) - (right.instanceId === "opencode" ? 0 : 1),
+      );
+
+      const candidates: Array<RawCandidate> = [];
+      let truncated = false;
+      const seenDirectories = new Set<string>();
+      for (const { instanceId, config: instance } of instances) {
+        const decoded = decodeOpenCodeSettings(instance.config ?? {});
+        if (Option.isNone(decoded) || decoded.value.serverUrl.trim().length > 0) continue;
+        const dataHome =
+          instance.environment?.findLast((variable) => variable.name === "XDG_DATA_HOME")?.value ??
+          hostEnvironment["XDG_DATA_HOME"];
+        const dataDirectory = path.join(
+          dataHome?.trim() && path.isAbsolute(dataHome.trim())
+            ? dataHome.trim()
+            : path.join(homeDir, ".local", "share"),
+          "opencode",
+        );
+        const directoryKey = yield* directoryIdentity(dataDirectory);
+        if (seenDirectories.has(directoryKey)) continue;
+        seenDirectories.add(directoryKey);
+
+        const byDirectory = new Map<string, Array<{ filePath: string; mtimeMs: number }>>();
+        for (const databasePath of listOpenCodeDatabases(dataDirectory)) {
+          const sessions = yield* Effect.sync(() =>
+            listOpenCodeSessions(databasePath, MAX_TRANSCRIPTS_PER_SOURCE + 1),
+          );
+          if (sessions === null) {
+            truncated = true;
+            continue;
+          }
+          if (sessions.length > MAX_TRANSCRIPTS_PER_SOURCE) truncated = true;
+          for (const session of sessions.slice(0, MAX_TRANSCRIPTS_PER_SOURCE)) {
+            const transcripts = byDirectory.get(session.directory) ?? [];
+            transcripts.push({
+              filePath: openCodeSessionPath(databasePath, session.id),
+              mtimeMs: session.updatedAtMs,
+            });
+            byDirectory.set(session.directory, transcripts);
+          }
+        }
+        for (const [cwd, transcripts] of byDirectory) {
+          candidates.push({
+            cwd,
+            source: "opencode",
+            providerInstanceId: instanceId,
+            threadCount: transcripts.length,
+            lastActiveAtMs: Math.max(...transcripts.map((transcript) => transcript.mtimeMs)),
+            transcripts,
+          });
+        }
+      }
+      return { candidates, truncated };
+    },
+  );
+
   const collectCandidates = Effect.fn("AgentSessionScanner.collectCandidates")(function* () {
     const settings = yield* serverSettings.getSettings.pipe(
       Effect.mapError((cause) => new AgentSessionScanError({ operation: "read-settings", cause })),
@@ -1192,6 +1294,13 @@ export const make = Effect.gen(function* () {
       raw.push(...(yield* groupTranscriptsByCwd(source, selectedTranscripts, metadataBudget)));
       truncated ||= metadataBudget.truncated;
     }
+
+    // Polaris (V 5.4.0): OpenCode keeps its sessions in SQLite rather than
+    // transcript files. Each session stands in for a transcript, addressed as
+    // `<database>#session/<id>`.
+    const openCode = yield* collectOpenCodeCandidates(settings);
+    raw.push(...openCode.candidates);
+    truncated ||= openCode.truncated;
 
     return { candidates: raw, truncated };
   });
@@ -1390,6 +1499,76 @@ export const make = Effect.gen(function* () {
             (transcriptsRemaining === 0 || bytesRemaining === 0 || recordsRemaining === 0)
           ) {
             return Option.some<AgentSessionRecentThread>({ _tag: "Skipped" });
+          }
+          if (candidate.source === "opencode") {
+            // Polaris (V 5.4.0): read the session from OpenCode's database.
+            const location = parseOpenCodeSessionPath(transcript.filePath);
+            const session =
+              location === null
+                ? null
+                : yield* Effect.sync(() =>
+                    getOpenCodeSession(location.databasePath, location.sessionId),
+                  );
+            if (session === null) {
+              return Option.some<AgentSessionRecentThread>({ _tag: "Skipped" });
+            }
+            const identity = openCodeImportIdentity(session);
+            const completedSource = completed?.find(
+              (source) =>
+                source.provider === "opencode" && sameTranscriptIdentity(source, identity),
+            );
+            if (completedSource !== undefined) {
+              const sessionKey = `${completedSource.providerInstanceId}\0${completedSource.providerSessionId}`;
+              if (importedSessions.has(sessionKey)) return Option.none<AgentSessionRecentThread>();
+              importedSessions.add(sessionKey);
+              return Option.some<AgentSessionRecentThread>({
+                _tag: "AlreadyImported",
+                source: completedSource,
+              });
+            }
+            if (transcriptsRemaining === 0 || recordsRemaining === 0) {
+              return Option.some<AgentSessionRecentThread>({ _tag: "Skipped" });
+            }
+            transcriptsRemaining -= 1;
+            // The session can have moved since the scan; it must still belong here.
+            const expandedDirectory = expandHomePath(session.directory);
+            if (
+              !path.isAbsolute(expandedDirectory) ||
+              (yield* directoryIdentity(path.resolve(expandedDirectory))) !== rootIdentity
+            ) {
+              return Option.some<AgentSessionRecentThread>({ _tag: "Skipped" });
+            }
+            const contents = yield* Effect.sync(() =>
+              readOpenCodeSession(session.databasePath, session.id),
+            );
+            if (contents === null) {
+              return Option.some<AgentSessionRecentThread>({ _tag: "Skipped" });
+            }
+            recordsRemaining = Math.max(0, recordsRemaining - contents.messages.length);
+            const parsedThread = openCodeSessionThread({
+              session,
+              contents,
+              providerInstanceId: candidate.providerInstanceId,
+            });
+            if (parsedThread === null) {
+              return Option.some<AgentSessionRecentThread>({ _tag: "Skipped" });
+            }
+            const source: AgentSessionImportSource = {
+              ...identity,
+              provider: "opencode",
+              providerInstanceId: parsedThread.providerInstanceId,
+              providerSessionId: parsedThread.providerSessionId,
+            };
+            const sessionKey = `${parsedThread.providerInstanceId}\0${parsedThread.providerSessionId}`;
+            if (importedSessions.has(sessionKey)) {
+              return Option.some<AgentSessionRecentThread>({ _tag: "Duplicate", source });
+            }
+            importedSessions.add(sessionKey);
+            return Option.some<AgentSessionRecentThread>({
+              _tag: "Importable",
+              thread: parsedThread,
+              source,
+            });
           }
           const stats = yield* statOption(transcript.filePath);
           if (Option.isNone(stats) || stats.value.type !== "File") {

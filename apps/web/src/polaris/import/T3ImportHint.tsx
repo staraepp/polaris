@@ -7,7 +7,7 @@ import { useCalmMode } from "../calm/useCalmMode";
 
 /**
  * "Your T3 Code threads are not here yet" (Polaris, V 4.7.1). Shown on the
- * dashboard and on the Import page's Claude Code & Codex tab, because the T3
+ * dashboard and on the Import page's sessions tab, because the T3
  * Code import is easy to miss: it is the second tab, and the onboarding offer
  * only exists since V 4.4.0.
  */
@@ -36,8 +36,8 @@ export function T3ImportHint({
         </p>
         {calm ? null : (
           <p className="text-xs text-muted-foreground">
-            They live in the T3 Code app, not in the Claude Code and Codex session files, so they
-            are imported separately. T3 Code is only read, never changed.
+            They live in the T3 Code app, not in the Claude Code, Codex or OpenCode sessions, so
+            they are imported separately. T3 Code is only read, never changed.
           </p>
         )}
       </div>

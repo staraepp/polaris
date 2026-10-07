@@ -30,6 +30,7 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
+import * as SqlClient from "effect/unstable/sql/SqlClient";
 
 import * as EventSink from "../orchestration-v2/EventSink.ts";
 import * as IdAllocator from "../orchestration-v2/IdAllocator.ts";
@@ -79,6 +80,15 @@ class AgentSessionThreadModifiedError extends Schema.TaggedError<AgentSessionThr
 ) {
   override get message(): string {
     return `Imported thread '${this.threadId}' already contains non-imported activity.`;
+  }
+}
+
+class AgentSessionNativeThreadOwnedError extends Schema.TaggedError<AgentSessionNativeThreadOwnedError>()(
+  "AgentSessionNativeThreadOwnedError",
+  { threadId: ThreadId, ownerThreadId: Schema.String },
+) {
+  override get message(): string {
+    return `Session for '${this.threadId}' already belongs to thread '${this.ownerThreadId}'.`;
   }
 }
 
@@ -172,6 +182,7 @@ const make = Effect.gen(function* () {
   const eventSink = yield* EventSink.EventSinkV2;
   const idAllocator = yield* IdAllocator.IdAllocatorV2;
   const runtimes = yield* ProviderSessionRuntime.ProviderSessionRuntimeRepository;
+  const sql = yield* SqlClient.SqlClient;
   const importRecentAgentThreads = Effect.fn("importRecentAgentThreadsV2")(function* (
     input: AgentSessionImportInput,
   ) {
@@ -271,6 +282,23 @@ const make = Effect.gen(function* () {
             driver,
             nativeThreadId: thread.providerSessionId,
           });
+          // Polaris (V 5.4.0): OpenCode keeps Polaris's own OpenCode threads in
+          // the same database, under the same derived provider thread id. Leave
+          // those to the thread that already runs them.
+          if (driver === "opencode") {
+            const owners = yield* sql<{ readonly thread_id: string | null }>`
+              SELECT thread_id FROM orchestration_v2_projection_provider_threads
+              WHERE provider_thread_id = ${providerThreadId}
+              LIMIT 1
+            `;
+            const owner = owners[0]?.thread_id;
+            if (owner != null && owner !== threadId) {
+              return yield* new AgentSessionNativeThreadOwnedError({
+                threadId,
+                ownerThreadId: owner,
+              });
+            }
+          }
           const createdAt = dateTime(thread.createdAt);
           const updatedAt = dateTime(thread.updatedAt);
           const appThread: OrchestrationV2AppThread = {

@@ -21,6 +21,7 @@ import * as TestClock from "effect/testing/TestClock";
 import * as ServerConfig from "../config.ts";
 import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
 import * as ServerSettings from "../serverSettings.ts";
+import { seedOpenCodeDatabase } from "../polaris/openCodeSessions/openCodeSessions.testkit.ts";
 import * as AgentSessionScanner from "./AgentSessionScanner.ts";
 
 const makeProjectShell = (workspaceRoot: string): OrchestrationProjectShell => ({
@@ -2582,6 +2583,127 @@ it.layer(NodeServices.layer)("AgentSessionScanner", (it) => {
             outcome._tag === "Importable" ? [outcome.thread.providerSessionId] : [],
           ),
         ).toEqual(["recent-session"]);
+      }),
+    );
+  });
+
+  // Polaris (V 5.4.0): OpenCode keeps its sessions in SQLite under its data directory.
+  describe("OpenCode sessions", () => {
+    const openCodeInstances = (dataHome: string, config: Record<string, unknown> = {}) => ({
+      [ProviderInstanceId.make("opencode")]: {
+        driver: ProviderDriverKind.make("opencode"),
+        enabled: true,
+        environment: [{ name: "XDG_DATA_HOME", value: dataHome, sensitive: false }],
+        config,
+      },
+    });
+
+    const seedWorkspaceSessions = Effect.fn("AgentSessionScanner.test.seedOpenCode")(function* (
+      nowMs: number,
+    ) {
+      const path = yield* Path.Path;
+      const dataHome = yield* makeTempDir("polaris-opencode-data-");
+      const workspace = yield* makeTempDir("polaris-opencode-workspace-");
+      const other = yield* makeTempDir("polaris-opencode-other-");
+      yield* Effect.sync(() =>
+        seedOpenCodeDatabase(path.join(dataHome, "opencode", "opencode.db"), [
+          {
+            id: "ses_main",
+            directory: workspace,
+            title: "Tidy the parser",
+            updated: nowMs - 60_000,
+            messages: [
+              {
+                id: "msg_1",
+                at: nowMs - 120_000,
+                data: { role: "user", model: { providerID: "openai", modelID: "gpt-5.5" } },
+                parts: [{ type: "text", text: "Tidy it" }],
+              },
+              {
+                id: "msg_2",
+                at: nowMs - 60_000,
+                data: { role: "assistant", providerID: "openai", modelID: "gpt-5.5" },
+                parts: [{ type: "text", text: "Tidied" }],
+              },
+            ],
+          },
+          { id: "ses_child", parentId: "ses_main", directory: workspace, updated: nowMs },
+          { id: "ses_archived", archived: true, directory: workspace, updated: nowMs },
+          { id: "ses_other", directory: other, updated: nowMs - 30_000 },
+        ]),
+      );
+      return { dataHome, workspace, other };
+    });
+
+    it.effect("finds OpenCode projects for enabled local instances", () =>
+      Effect.gen(function* () {
+        const nowMs = Date.parse("2026-08-24T12:00:00.000Z");
+        yield* TestClock.setTime(nowMs);
+        const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
+        const codexHomePath = yield* makeTempDir("t3code-codex-home-");
+        const { dataHome, workspace, other } = yield* seedWorkspaceSessions(nowMs);
+
+        const result = yield* runScan({
+          claudeHomePath,
+          codexHomePath,
+          providerInstances: openCodeInstances(dataHome),
+        });
+        expect(
+          result.candidates.map((candidate) => ({
+            path: candidate.path,
+            sources: candidate.sources,
+            threadCount: candidate.threadCount,
+          })),
+        ).toEqual([
+          { path: other, sources: ["opencode"], threadCount: 1 },
+          { path: workspace, sources: ["opencode"], threadCount: 1 },
+        ]);
+
+        const remote = yield* runScan({
+          claudeHomePath,
+          codexHomePath,
+          providerInstances: openCodeInstances(dataHome, { serverUrl: "http://127.0.0.1:4096" }),
+        });
+        expect(remote.candidates).toEqual([]);
+      }),
+    );
+
+    it.effect("imports a session once and recognises it afterwards", () =>
+      Effect.gen(function* () {
+        const nowMs = Date.parse("2026-08-24T12:00:00.000Z");
+        yield* TestClock.setTime(nowMs);
+        const claudeHomePath = yield* makeTempDir("t3code-claude-home-");
+        const codexHomePath = yield* makeTempDir("t3code-codex-home-");
+        const { dataHome, workspace } = yield* seedWorkspaceSessions(nowMs);
+        const input = {
+          claudeHomePath,
+          codexHomePath,
+          providerInstances: openCodeInstances(dataHome),
+        };
+
+        const first = yield* runRecentThreadOutcomes({ ...input, workspaceRoot: workspace });
+        expect(first.map((outcome) => outcome._tag)).toEqual(["Importable"]);
+        const importable = first[0];
+        if (importable?._tag !== "Importable") return expect.unreachable();
+        expect(importable.thread).toMatchObject({
+          source: "opencode",
+          providerSessionId: "ses_main",
+          title: "Tidy the parser",
+          model: "openai/gpt-5.5",
+        });
+        expect(importable.thread.messages.map((message) => message.text)).toEqual([
+          "Tidy it",
+          "Tidied",
+        ]);
+
+        const second = yield* Effect.gen(function* () {
+          const scanner = yield* AgentSessionScanner.AgentSessionScanner;
+          return yield* scanner.recentThreads(workspace, [importable.source]).pipe(
+            Stream.runCollect,
+            Effect.map((outcomes) => Array.from(outcomes)),
+          );
+        }).pipe(Effect.provide(makeScannerTestLayer(input)));
+        expect(second.map((outcome) => outcome._tag)).toEqual(["AlreadyImported"]);
       }),
     );
   });

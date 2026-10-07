@@ -33,4 +33,13 @@ describe("AgentSessionScanResult", () => {
 
     expect(result.candidates[0]?.git).toEqual(git);
   });
+
+  it("accepts OpenCode as a session source (Polaris, V 5.4.0)", () => {
+    const result = decodeScanResult({
+      candidates: [{ ...candidate, sources: ["opencode", "claudeAgent"] }],
+      scannedAt: "2026-10-07T12:00:00.000Z",
+    });
+
+    expect(result.candidates[0]?.sources).toEqual(["opencode", "claudeAgent"]);
+  });
 });

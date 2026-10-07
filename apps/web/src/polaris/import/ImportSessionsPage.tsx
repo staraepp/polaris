@@ -45,7 +45,7 @@ export function ImportSessionsPage() {
   const scanning = source === "t3" ? t3Scan.isPending : scan !== null && scan.isPending;
   const t3New = t3NewThreadCount(t3Scan.data);
   const sources: readonly HubTab<ImportSource>[] = [
-    { id: "sessions", label: "Claude Code & Codex" },
+    { id: "sessions", label: "Claude Code, Codex & OpenCode" },
     { id: "t3", label: "T3 Code", badge: t3New > 0 ? `${t3New} new` : undefined },
   ];
   const showSource = (next: ImportSource) =>
