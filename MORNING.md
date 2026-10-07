@@ -8,7 +8,7 @@ Star, this is the summary of the overnight run. Everything is local on this Mac:
 - OpenCode needs to be turned on in Settings → Providers first (it is off by default).
 - OpenCode's database is only read, never changed. Sessions Polaris itself started in OpenCode are not imported a second time.
 - Checked against your real OpenCode data (805 sessions in 32 folders, read in milliseconds) and in the dev app (one folder imported, a second run added nothing).
-- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,028 tests pass, 16 new server tests pass, web and server builds pass. Not published to the update feed.
+- Gate: fmt clean, lint 0 errors and 868 warnings (unchanged), web 6,028 tests pass, 16 new server tests pass, web and server builds pass. **Published 2026-10-07:** friends' apps now get 5.4.0 (Mac and Windows) from the update feed.
 
 ## V 5.3.0 (the keyword level is on fire), tag `v5.3.0`
 
