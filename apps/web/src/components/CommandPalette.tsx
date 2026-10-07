@@ -2325,8 +2325,16 @@ function OpenCommandPaletteDialog(props: {
   actionItems.push({
     kind: "action",
     value: "action:import-sessions",
-    searchTerms: ["import", "claude code", "codex", "sessions", "history", "conversations"],
-    title: "Import Claude Code and Codex sessions",
+    searchTerms: [
+      "import",
+      "claude code",
+      "codex",
+      "opencode",
+      "sessions",
+      "history",
+      "conversations",
+    ],
+    title: "Import Claude Code, Codex and OpenCode sessions",
     icon: <FileInputIcon className={ITEM_ICON_CLASS} />,
     run: async () => {
       await navigate({ to: "/import" });

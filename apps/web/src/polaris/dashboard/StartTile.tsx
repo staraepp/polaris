@@ -52,7 +52,7 @@ function ImportGlyph() {
 const ROW_CLASS =
   "flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-muted-foreground outline-none hover:bg-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
-/** Sessions started in Claude Code or Codex outside Polaris come in from here. */
+/** Sessions started in Claude Code, Codex or OpenCode outside Polaris come in from here. */
 function ImportSessionsLink() {
   return (
     <Link to="/import" className={ROW_CLASS}>

@@ -21,7 +21,7 @@ const SCAN_LIMIT_MESSAGE = "Scan limit reached. Some projects or conversations m
 
 type ProjectScan = ReturnType<typeof useProjectScans>[number];
 
-/** Claude Code and Codex sessions from this computer (the welcome wizard's picker). */
+/** Claude Code, Codex and OpenCode sessions from this computer (the welcome wizard's picker). */
 export function SessionsPanel({
   environmentId,
   scan,
@@ -72,13 +72,13 @@ export function SessionsPanel({
     <div className="flex flex-col gap-5">
       <header className="space-y-2">
         <h2 className="text-2xl font-semibold tracking-tight">
-          Bring in Claude Code and Codex sessions
+          Bring in Claude Code, Codex and OpenCode sessions
         </h2>
         <p className="text-sm text-muted-foreground">
-          Polaris reads the session files those CLIs keep on this computer and turns each
-          conversation into a thread under its project. Nothing leaves your machine. Run it again
-          whenever you like: it never duplicates a thread. Finished conversations come in settled,
-          so look for them under Settled in the sidebar.
+          Polaris reads the sessions those CLIs keep on this computer and turns each conversation
+          into a thread under its project. Nothing leaves your machine. Run it again whenever you
+          like: it never duplicates a thread. Finished conversations come in settled, so look for
+          them under Settled in the sidebar.
         </p>
       </header>
 
@@ -103,7 +103,7 @@ export function SessionsPanel({
         </div>
       ) : candidates.length === 0 ? (
         <p className="py-2 text-sm text-muted-foreground">
-          No Claude Code or Codex sessions found on this computer.
+          No Claude Code, Codex or OpenCode sessions found on this computer.
         </p>
       ) : (
         <section aria-label="Folders with sessions" className="space-y-2">

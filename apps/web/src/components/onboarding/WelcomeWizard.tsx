@@ -1,6 +1,7 @@
 import { useAuth } from "@clerk/react";
 import { useAtomValue } from "@effect/atom-react";
 import type {
+  AgentSessionSource,
   AgentSessionProjectCandidate,
   EnvironmentId,
   ProjectId,
@@ -1366,7 +1367,7 @@ function ImportStep({
         <div className="flex flex-1 flex-col items-center justify-center gap-3 py-6">
           <Spinner size="lg" tone="muted" />
           <p className="text-center text-sm text-muted-foreground">
-            Looking for projects from Claude Code and Codex…
+            Looking for projects from Claude Code, Codex and OpenCode…
           </p>
         </div>
         <div className="flex justify-end">
@@ -1443,7 +1444,7 @@ function ImportStep({
                   </div>
                 ) : scanCandidates.length === 0 ? (
                   <p className="py-2 text-sm text-muted-foreground">
-                    No existing Claude Code or Codex projects found.
+                    No existing Claude Code, Codex or OpenCode projects found.
                   </p>
                 ) : null}
                 {scan.data?.truncated ? (
@@ -1668,12 +1669,19 @@ function ImportCandidateRow({
  * last activity. Each column has a fixed width and each icon has its own slot
  * so nothing shifts between rows that differ in sources or digit count.
  */
+/** Source icons in a fixed order, one slot each (Polaris, V 5.4.0: OpenCode). */
+const IMPORT_SOURCE_ICONS = [
+  { source: "claudeAgent", label: "Claude Code" },
+  { source: "codex", label: "Codex" },
+  { source: "opencode", label: "OpenCode" },
+] as const satisfies ReadonlyArray<{ source: AgentSessionSource; label: string }>;
+
 function ImportRowMeta({
   sources,
   threadCount,
   lastActiveAt,
 }: {
-  readonly sources: ReadonlyArray<"claudeAgent" | "codex"> | null;
+  readonly sources: ReadonlyArray<AgentSessionSource> | null;
   readonly threadCount: number;
   readonly lastActiveAt: string | null;
 }) {
@@ -1681,29 +1689,20 @@ function ImportRowMeta({
   // "just now" does not fit the fixed column, so collapse it.
   const age = relative === null ? "" : relative.suffix === null ? "now" : relative.value;
   return (
-    <span className="ml-auto grid shrink-0 grid-cols-[1rem_1rem_2.5rem_2.25rem] items-center gap-x-1 text-xs text-muted-foreground tabular-nums">
-      <span className="flex size-4 items-center justify-center">
-        {sources?.includes("claudeAgent") ? (
-          <span role="img" aria-label="Claude Code">
-            <ProviderInstanceIcon
-              driverKind={ProviderDriverKind.make("claudeAgent")}
-              displayName="Claude Code"
-              iconClassName="size-3"
-            />
-          </span>
-        ) : null}
-      </span>
-      <span className="flex size-4 items-center justify-center">
-        {sources?.includes("codex") ? (
-          <span role="img" aria-label="Codex">
-            <ProviderInstanceIcon
-              driverKind={ProviderDriverKind.make("codex")}
-              displayName="Codex"
-              iconClassName="size-3"
-            />
-          </span>
-        ) : null}
-      </span>
+    <span className="ml-auto grid shrink-0 grid-cols-[1rem_1rem_1rem_2.5rem_2.25rem] items-center gap-x-1 text-xs text-muted-foreground tabular-nums">
+      {IMPORT_SOURCE_ICONS.map(({ source, label }) => (
+        <span key={source} className="flex size-4 items-center justify-center">
+          {sources?.includes(source) ? (
+            <span role="img" aria-label={label}>
+              <ProviderInstanceIcon
+                driverKind={ProviderDriverKind.make(source)}
+                displayName={label}
+                iconClassName="size-3"
+              />
+            </span>
+          ) : null}
+        </span>
+      ))}
       <span className="text-right">{threadCount}</span>
       <span className="text-right whitespace-nowrap">{age}</span>
     </span>
