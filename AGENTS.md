@@ -2,7 +2,7 @@
 
 Polaris is a personal **hard fork** of T3 Code (MIT), a GUI that wraps coding-agent CLIs. It is meant to be easy for friends and their agents to fork and change.
 
-Read this file first, then `HANDOFF.md` (current state) and `blueprint.md` (plan). **Before touching server code, read [`docs/upstream-AGENTS.md`](docs/upstream-AGENTS.md)** (upstream's architecture notes, Effect rules, and dev-server safety rules). It is kept unchanged, so read its links as relative to the repo root. Do not delete or rewrite it.
+Read this file first, then `HANDOFF.md` (current state) and `blueprint.md` (plan) when they exist: they are the maintainer's local working notes, gitignored and not in the public repository. **Before touching server code, read [`docs/upstream-AGENTS.md`](docs/upstream-AGENTS.md)** (upstream's architecture notes, Effect rules, and dev-server safety rules). It is kept unchanged, so read its links as relative to the repo root. Do not delete or rewrite it.
 
 ## Commands
 
@@ -68,7 +68,7 @@ It refuses to continue if the dev runner ever picks 3773, and `stop` refuses a p
 - `docs/internals/` (start at `overview.md`, `glossary.md`, `effect-services.md`), `docs/user/`, `docs/operations/`, `docs/orchestration-v2/`. Read the matching doc before changing a subsystem.
 - `.agents/skills/` (also at `.claude/skills`): upstream skills `test-t3-app`, `test-t3-mobile`, `contribution-triage`.
 - `.github/workflows/ci.yml`: Polaris CI. `.github/upstream-workflows/`: upstream's workflows, inert.
-- Polaris docs at the root: `AGENTS.md` (`CLAUDE.md` is a symlink to it), `HANDOFF.md`, `blueprint.md`, `ref.md`, `clide-api-spec.md`.
+- Polaris docs at the root: `README.md`, `AGENTS.md` (`CLAUDE.md` is a symlink to it). Local only (gitignored): `HANDOFF.md`, `MORNING.md`, `blueprint.md`, `ref.md`, `clide-api-spec.md`.
 
 ## How it works
 
@@ -91,7 +91,7 @@ Clients send typed WebSocket requests. The server turns them into commands. The 
 
 ## Boundaries
 
-- Do: reuse existing components and helpers; add or update a test with every behavior change; update `HANDOFF.md` before ending a session.
+- Do: reuse existing components and helpers; add or update a test with every behavior change; update `HANDOFF.md` (local) before ending a session.
 - Ask first: adding a dependency, changing the database schema, touching more than one provider adapter, or anything that sends data off the user's machine.
 - Never: commit secrets, tokens or API keys; put repo, thread or file names into Discord presence; copy a shader or component without checking its license (Shadertoy defaults to CC BY-NC-SA 3.0, so only use CC0 or CC BY, or write our own); bundle a typeface unless it is OFL or Apache-style licensed, with the license checked and kept in the repo; modify files outside the task's scope.
 

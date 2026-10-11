@@ -48,3 +48,10 @@ node_modules/
 
 # Polaris: local dev auth token written by scripts/polaris-dev.mjs
 .polaris/
+
+# Polaris: private working notes, kept locally and out of the public repo
+/HANDOFF.md
+/MORNING.md
+/blueprint.md
+/ref.md
+/clide-api-spec.md

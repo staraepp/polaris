@@ -2,4 +2,4 @@
 description: Polaris agent instructions live in AGENTS.md
 alwaysApply: true
 ---
-Read AGENTS.md at the repo root before doing anything, then HANDOFF.md and blueprint.md. Do not follow older setup notes in docs/upstream-cursor-cloud.md; they are upstream's and may be stale.
+Read AGENTS.md at the repo root before doing anything (HANDOFF.md and blueprint.md are local notes and may be absent). Do not follow older setup notes in docs/upstream-cursor-cloud.md; they are upstream's and may be stale.
