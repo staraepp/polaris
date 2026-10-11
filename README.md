@@ -1,139 +1,99 @@
 # Polaris
 
-_Forked from [T3 Code](https://github.com/pingdotgg/t3code) by T3 Tools (MIT)._
+A desktop home for your coding agents. Polaris runs Claude Code, Codex, OpenCode, Cursor, Grok Build and Google Antigravity side by side, with your own subscriptions, and wraps them in a calmer, more personal workspace.
 
-> [!NOTE]
-> **Polaris** is a personal hard fork of [T3 Code](https://github.com/pingdotgg/t3code) (MIT), snapshotted at `3e6b450` and not merged with upstream. The original license and attribution are kept in [LICENSE](./LICENSE). Agents and contributors: start at [AGENTS.md](./AGENTS.md). The rest of this README is upstream's: it still describes T3 Code, and its install channels (Homebrew, winget, downloads, app stores) install upstream's app, not Polaris. Polaris currently runs from source (see `AGENTS.md`).
+Polaris is an open-source hard fork of [T3 Code](https://github.com/pingdotgg/t3code) by T3 Tools (MIT). It started from upstream commit `3e6b450` and is developed separately; it does not track upstream.
 
-T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile app ([iOS](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824), [Android](https://play.google.com/store/apps/details?id=com.t3tools.t3code)), [web app](https://app.t3.codes) and [Electron-based desktop app](https://t3.codes).
+## Download
 
-Works with your subscriptions on Claude Code, Codex, Cursor, Grok Build, OpenCode, and Google Antigravity. If they're set up on your computer, T3 Code can control them.
+| Platform              | Link                                                                             |
+| --------------------- | -------------------------------------------------------------------------------- |
+| macOS (Apple Silicon) | [Polaris-mac.dmg](https://polaris.sstarvfx.com/download/Polaris-mac.dmg)         |
+| Windows (x64)         | [Polaris-windows.exe](https://polaris.sstarvfx.com/download/Polaris-windows.exe) |
 
-## "Wait, what are you selling me?"
+Both links always point to the newest release. The builds are not code-signed yet, so the first launch needs one extra step:
 
-Nothing. We built T3 Code because we wanted the best possible development experience with agents. We were inspired by existing solutions like the Codex desktop app, Conductor, Claude Desktop and Cursor Glass, but none met our bar.
+- **macOS:** open the dmg and drag **Polaris (Alpha)** into Applications. The first time, right-click the app and choose **Open**, then **Open** again. If macOS says the app is damaged, run `xattr -dr com.apple.quarantine "/Applications/Polaris (Alpha).app"` in Terminal.
+- **Windows:** SmartScreen shows "Windows protected your PC". Click **More info**, then **Run anyway**.
 
-We wanted something performant, remote-ready, and truly open. If we ever go the wrong direction, we want you to have everything you need to fork and build the editor that you want.
+In-app updates come from a private feed and need an invite code (Settings → General → Updates). Without one, download the new version from the links above.
 
-## Installation
+## Before you start
 
-> [!WARNING]
-> T3 Code currently supports Codex, Claude, Cursor, Grok Build, OpenCode, and Antigravity. Install and authenticate at least one provider before use:
->
-> - Codex: install [Codex CLI](https://developers.openai.com/codex/cli) and run `codex login`
-> - Claude: install [Claude Code](https://claude.com/product/claude-code) and run `claude auth login`
-> - Cursor: install [Cursor CLI](https://cursor.com/cli) and run `agent login`
-> - Grok Build: install [Grok Build CLI](https://x.ai/cli) and run `grok login`
-> - OpenCode: install [OpenCode](https://opencode.ai) and run `opencode auth login`
-> - Antigravity: enable it in Settings, then use **Install Antigravity** and **Sign in with Google**. No CLI is required.
+Polaris drives the agent CLIs already on your computer. Install and sign in to at least one:
 
-### Command line
+- Claude Code: install [Claude Code](https://claude.com/product/claude-code) and run `claude auth login`
+- Codex: install the [Codex CLI](https://developers.openai.com/codex/cli) and run `codex login`
+- OpenCode: install [OpenCode](https://opencode.ai), run `opencode auth login`, then turn it on in Settings → Providers
+- Cursor: install the [Cursor CLI](https://cursor.com/cli) and run `agent login`
+- Grok Build: install the [Grok Build CLI](https://x.ai/cli) and run `grok login`
+- Google Antigravity: turn it on in Settings, then use **Install Antigravity** and **Sign in with Google**
 
-```bash
-curl -fsSL https://t3.codes/install.sh | sh
+## What Polaris adds
+
+- **A dashboard as home.** A greeting, the thread that is waiting on you, first steps, and widgets you can move, resize and remove (recent threads, usage, pull requests, notes, links).
+- **Calm mode.** A quieter look with warm neutrals, fewer words and no decorative motion (Settings → Appearance → Calm, or the command palette).
+- **Workspace.** Docs with a "/" menu and Markdown export, and Excalidraw whiteboards. They are stored in this app on your computer.
+- **Usage.** What each provider costs, tokens over time, how much of each limit is left, and a warning when a quota runs low.
+- **Composer effects.** A beam whose color follows the thinking effort, and real shader flames at the top thinking level. All of it respects Reduce Motion and turns off in Calm mode.
+- **Orbie.** A small bot for the assistant and for each project, with thinking orbs while an agent works.
+- **Make it yours.** Per-theme fonts, your own image or video background, and icons for chats.
+- **Voice input.** Dictate into the composer through [Clide](https://github.com/staraepp/clide_stt) or any OpenAI-compatible transcription server.
+- **Import your history.** Bring in sessions from Claude Code, Codex and OpenCode, and threads from the T3 Code app. Their files are only read, never changed.
+- **Skill studio and Tools hub.** Write agent skills (`SKILL.md`) from templates, and find the extra tools in one place.
+
+Everything runs on your machine. Polaris talks to the providers you sign in to and, for updates, to its update feed.
+
+## Build from source
+
+You need macOS or Linux, [Node.js 24.13.1](./.nvmrc) and [pnpm](https://pnpm.io) 11.
+
+```sh
+pnpm install
+node scripts/polaris-dev.mjs start    # isolated dev stack in a temporary home; prints the pairing URL
+node scripts/polaris-dev.mjs stop <pgid>
 ```
 
-On Windows, in PowerShell:
+The dev stack keeps its state in a temporary folder, so it never touches an installed Polaris or T3 Code. Open the printed `pairingUrl` once in your browser.
 
-```powershell
-irm https://t3.codes/install.ps1 | iex
+Checks, with the repository's own tools in `node_modules/.bin`:
+
+```sh
+node_modules/.bin/vp fmt
+node_modules/.bin/vp lint
+cd apps/web && ../../node_modules/.bin/vp test run
 ```
 
-Then run `t3` to start the server and open the local web app. `t3 service install` keeps it running in the background, `t3 update` moves to a newer release, and `t3 --help` has the full reference.
+Packaging the desktop app (needs Rust 1.95):
 
-To try it once without installing, run `npx t3@latest` instead.
+```sh
+# macOS Apple Silicon: writes release/Polaris-<version>-arm64.dmg
+RUSTUP_TOOLCHAIN=1.95.0 node_modules/.bin/vp run dist:desktop:dmg:arm64
 
-### Desktop app
-
-Install the latest version of the desktop app from [GitHub Releases](https://github.com/pingdotgg/t3code/releases), or from your favorite package registry:
-
-#### Windows (`winget`)
-
-```bash
-winget install T3Tools.T3Code
+# Windows x64, cross-built on a Mac (needs cargo-xwin): writes release/Polaris-<version>-x64.exe
+XWIN_ACCEPT_LICENSE=1 RUSTUP_TOOLCHAIN=1.95.0 node scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64
 ```
 
-#### macOS (Homebrew)
+Set `POLARIS_UPDATE_FEED=off` to build without the private update feed.
 
-```bash
-brew install --cask t3-code
-```
+## Repository map
 
-#### Debian, Ubuntu (`.deb`)
+| Path           | What lives there                                                      |
+| -------------- | --------------------------------------------------------------------- |
+| `apps/web`     | The React app (most Polaris features are in `apps/web/src/polaris/`)  |
+| `apps/server`  | The local server that runs the agents (Effect, SQLite)                |
+| `apps/desktop` | The Electron shell, packaging and updates                             |
+| `packages/`    | Shared contracts, client runtime and helpers                          |
+| `infra/`       | The update server's configuration                                     |
+| `docs/`        | Upstream's user and internals docs, still mostly accurate for Polaris |
+| `AGENTS.md`    | How to work on this repository (for people and coding agents)         |
 
-Download the `.deb` from [GitHub Releases](https://github.com/pingdotgg/t3code/releases), then:
+Internal package names (`@t3tools/*`, the `t3` server) are kept from upstream on purpose.
 
-```bash
-sudo apt install ./T3-Code-*.deb
-```
+## Contributing
 
-#### Arch Linux (AUR)
+Polaris is a personal project shared in the open. Issues and small pull requests are welcome; read [AGENTS.md](./AGENTS.md) first for the conventions and checks. For bugs in T3 Code itself, please go to [upstream](https://github.com/pingdotgg/t3code).
 
-Stable:
+## License
 
-```bash
-yay -S t3code-bin
-```
-
-Nightly:
-
-```bash
-yay -S t3code-nightly-bin
-```
-
-The AUR packaging is maintained in this repository under [`packaging/aur`](./packaging/aur).
-
-## Some notes
-
-We are very very early in this project. Expect bugs.
-
-We are (mostly) not accepting contributions yet. Small fixes may be considered. Big features will not be.
-
-## Documentation
-
-Full docs live in [docs/](./docs). There's no docs site yet.
-
-- [Install and first run](./docs/user/install.md)
-- [Permission modes](./docs/user/permission-modes.md)
-- [Keyboard shortcuts](./docs/user/keybindings.md)
-- [Project settings](./docs/user/project-settings.md)
-- [Appearance preferences](./docs/user/appearance.md)
-- [Remote access from a phone or another machine](./docs/user/remote-access.md)
-- [Keeping app and server in sync](./docs/user/updating.md)
-- [Source control integrations](./docs/user/source-control.md)
-- Multiple accounts: [Codex](./docs/user/providers-codex.md) · [Claude](./docs/user/providers-claude.md)
-- [Run T3 Code as a background service](./docs/user/background-service.md)
-
-Building from source? Start at [docs/internals/overview.md](./docs/internals/overview.md).
-
-## If you REALLY want to contribute still.... read this first
-
-### Install `vp`
-
-T3 Code uses Vite+ so you'll need to install the global `vp` command-line tool.
-
-#### macOS / Linux
-
-```bash
-curl -fsSL https://vite.plus | bash
-```
-
-#### Windows
-
-```bash
-irm https://vite.plus/ps1 | iex
-```
-
-Checkout their getting started guide for more information: https://viteplus.dev/guide/
-
-### Install dependencies
-
-```bash
-vp i
-```
-
-Read [CONTRIBUTING.md](./CONTRIBUTING.md) before reporting a bug or opening a PR.
-
-Have a feature request? Start an [Ideas discussion](https://github.com/pingdotgg/t3code/discussions/categories/ideas).
-
-Need support? Join the [Discord](https://discord.gg/jn4EGJjrvv).
+[MIT](./LICENSE). Copyright T3 Tools Inc. for T3 Code, and staraepp for the Polaris changes. Third-party notices for bundled code are kept next to that code (for example `apps/web/src/polaris/vendor/border-beam/NOTICE.md`).

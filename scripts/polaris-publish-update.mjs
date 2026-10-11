@@ -8,8 +8,10 @@
 // Copies the installers from release/ to the VPS (ssh host `hostinger-vps`, or
 // POLARIS_UPDATE_HOST) under /opt/polaris/updates/. Installers go first and the
 // latest*.yml lists last, so a client never sees a version whose files are not
-// there yet. Keeps the three newest versions of each installer. Needs only ssh
-// and scp; never touches anything else on the server.
+// there yet. Keeps the three newest versions of each installer and points the
+// public links (/download/Polaris-mac.dmg, /download/Polaris-windows.exe) at
+// this version. Needs only ssh and scp; never touches anything else on the
+// server.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
@@ -88,6 +90,12 @@ for (const manifest of manifests) {
   run("scp", ["-q", manifest, `${host}:${remoteDir}/.${name}.tmp`]);
   run("ssh", [host, `mv ${remoteDir}/.${name}.tmp ${remoteDir}/${name}`]);
 }
+// The public download links (V 5.4.0) follow the newest version. The link
+// names do not match the prune patterns below, so they are never removed.
+run("ssh", [
+  host,
+  `ln -sfn Polaris-${version}-arm64.dmg ${remoteDir}/Polaris-mac.dmg && ln -sfn Polaris-${version}-x64.exe ${remoteDir}/Polaris-windows.exe`,
+]);
 // Prune: keep the newest versions of each installer kind.
 const prune = ["arm64.dmg", "x64.exe"]
   .map(
