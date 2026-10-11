@@ -5,6 +5,7 @@ The private side of Polaris, on the VPS reached as `ssh hostinger-vps`. Since V 
 | Piece                       | Where on the VPS                                                    | What it does                                                                          |
 | --------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `polaris-updates` container | `/opt/polaris/docker-compose.yml`, listens on `127.0.0.1:3095` only | nginx: `/health` (public), `/updates/*` only with a valid `X-Polaris-Invite` header   |
+| Public download links       | `/download/*` on the same container                                 | the installers only, no code needed (V 5.4.0); see "Download links" below             |
 | Invite codes                | `/opt/polaris/nginx/invites.map` (never in git)                     | one `"<code>" 1;` line per code                                                       |
 | Release files               | `/opt/polaris/updates/`                                             | `latest-mac.yml`, `latest.yml`, the dmg and exe (+ blockmaps), newest 3 versions      |
 | Tunnel                      | `cloudflared-polaris.service`, `/etc/cloudflared/polaris.yml`       | its own tunnel `polaris` → `https://polaris.sstarvfx.com`; no other tunnel is touched |
@@ -22,6 +23,17 @@ node scripts/polaris-publish-update.mjs             # upload the version in apps
 
 Installers go up first and the `latest*.yml` lists last, so clients never see a version whose files are missing.
 
+## Download links
+
+Links to share with friends; they need no invite code and always serve the newest version:
+
+- macOS: `https://polaris.sstarvfx.com/download/Polaris-mac.dmg`
+- Windows: `https://polaris.sstarvfx.com/download/Polaris-windows.exe`
+
+They are symlinks in `/opt/polaris/updates/` that the publish script points at each new version. A specific version is `/download/Polaris-<version>-arm64.dmg` or `/download/Polaris-<version>-x64.exe`. Nothing else is public under `/download/`: no `latest*.yml`, blockmaps or listing.
+
+`default.conf` is bind-mounted as a single file, so after copying a new one run `docker restart polaris-updates` (a reload keeps reading the old file).
+
 ## Invite codes
 
 Add a code: append `"<code>" 1;` to `/opt/polaris/nginx/invites.map`, then `docker exec polaris-updates nginx -s reload`. Remove a line and reload to revoke one. Codes must match `POLARIS_INVITE_CODE_PATTERN` (`packages/shared/src/polarisUpdateFeed.ts`): 8 to 64 letters, digits or dashes.
@@ -38,6 +50,7 @@ Add a code: append `"<code>" 1;` to `/opt/polaris/nginx/invites.map`, then `dock
 ```sh
 curl -s https://polaris.sstarvfx.com/health                                    # ok
 curl -s -o /dev/null -w '%{http_code}\n' https://polaris.sstarvfx.com/updates/latest-mac.yml   # 401
+curl -sI https://polaris.sstarvfx.com/download/Polaris-windows.exe | head -1         # 200
 ```
 
 Cleanup still owed (2026-10-06): a mistaken DNS record `polaris.staraep.fun.sstarvfx.com` (CNAME to the `deepseek-harness` tunnel, which answers 404) was created during setup; delete it in the Cloudflare dashboard.
