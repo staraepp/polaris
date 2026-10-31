@@ -1580,13 +1580,26 @@ export function createStageWorkspaceConfig(input: {
           cpu: hostCpu,
         };
 
+  // A stage installs without the workspace lockfile. A caret range can now
+  // resolve a newer release and silently miss the checked-in versioned patch
+  // (or fail ERR_PNPM_UNUSED_PATCH). Keep patched runtimes on that exact version.
+  const stageOverrides = { ...overrides };
+  for (const patchKey of Object.keys(patchedDependencies ?? {})) {
+    const separator = patchKey.lastIndexOf("@");
+    if (separator <= 0) continue;
+    const version = patchKey.slice(separator + 1);
+    if (/^\d+\.\d+\.\d+(?:[-+].*)?$/.test(version)) {
+      stageOverrides[patchKey.slice(0, separator)] = version;
+    }
+  }
+
   return {
     supportedArchitectures,
     ...(allowBuilds && Object.keys(allowBuilds).length > 0 ? { allowBuilds } : {}),
     ...(patchedDependencies && Object.keys(patchedDependencies).length > 0
       ? { patchedDependencies }
       : {}),
-    ...(overrides && Object.keys(overrides).length > 0 ? { overrides } : {}),
+    ...(Object.keys(stageOverrides).length > 0 ? { overrides: stageOverrides } : {}),
   };
 }
 

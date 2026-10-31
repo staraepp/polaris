@@ -486,6 +486,24 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     });
   });
 
+  it("pins staged patched dependencies when the registry has newer releases", () => {
+    const config = createStageWorkspaceConfig({
+      platform: "mac",
+      arch: "arm64",
+      patchedDependencies: {
+        "node-pty@1.2.0-beta.15": "patches/pty.patch",
+        "@scope/runtime@2.3.4": "patches/runtime.patch",
+        unversioned: "patches/unversioned.patch",
+      },
+      overrides: { unrelated: "3.0.0" },
+    });
+    assert.deepStrictEqual(config.overrides, {
+      unrelated: "3.0.0",
+      "node-pty": "1.2.0-beta.15",
+      "@scope/runtime": "2.3.4",
+    });
+  });
+
   it("stages pnpm 11 allowBuilds and patchedDependencies in the workspace yaml", () => {
     assert.deepStrictEqual(
       createStageWorkspaceConfig({
