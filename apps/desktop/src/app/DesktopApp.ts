@@ -1,3 +1,5 @@
+import { readBackgroundServicePort } from "../polaris/tailnet/backgroundService.ts";
+
 import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -207,7 +209,16 @@ const bootstrap = Effect.gen(function* () {
     return yield* new DesktopDevelopmentBackendPortRequiredError();
   }
 
-  const backendPortSelection = yield* resolveDesktopBackendPort(environment.configuredBackendPort);
+  const persistentPort =
+    environment.isPackaged &&
+    environment.platform === "darwin" &&
+    Option.isNone(environment.configuredBackendPort)
+      ? yield* Effect.promise(() => readBackgroundServicePort(environment.baseDir))
+      : null;
+  const backendPortSelection =
+    persistentPort === null
+      ? yield* resolveDesktopBackendPort(environment.configuredBackendPort)
+      : { port: persistentPort, selectedByScan: false };
   const backendPort = backendPortSelection.port;
   yield* logBootstrapInfo(
     backendPortSelection.selectedByScan

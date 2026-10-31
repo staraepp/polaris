@@ -16,6 +16,11 @@ const SetTailscaleServeEnabledInput = Schema.Struct({
   port: Schema.optionalKey(Schema.Number),
 });
 
+const SetTailnetTrustInput = Schema.Struct({
+  enabled: Schema.Boolean,
+  nodeNames: Schema.optionalKey(Schema.Array(Schema.String)),
+});
+
 export const getServerExposureState = DesktopIpc.makeIpcMethod({
   channel: IpcChannels.GET_SERVER_EXPOSURE_STATE_CHANNEL,
   payload: Schema.Void,
@@ -52,6 +57,24 @@ export const setTailscaleServeEnabled = DesktopIpc.makeIpcMethod({
     if (change.requiresRelaunch) {
       yield* lifecycle.relaunch(
         change.state.tailscaleServeEnabled ? "tailscale-serve-enabled" : "tailscale-serve-disabled",
+      );
+    }
+    return change.state;
+  }),
+});
+
+// Polaris "Trust my tailnet". The backend rebinds and changes auth policy, so it restarts.
+export const setTailnetTrust = DesktopIpc.makeIpcMethod({
+  channel: IpcChannels.SET_TAILNET_TRUST_CHANNEL,
+  payload: SetTailnetTrustInput,
+  result: DesktopServerExposureStateSchema,
+  handler: Effect.fn("desktop.ipc.serverExposure.setTailnetTrust")(function* (input) {
+    const lifecycle = yield* DesktopLifecycle.DesktopLifecycle;
+    const serverExposure = yield* DesktopServerExposure.DesktopServerExposure;
+    const change = yield* serverExposure.setTailnetTrust(input);
+    if (change.requiresRelaunch) {
+      yield* lifecycle.relaunch(
+        change.state.tailnetTrustEnabled ? "tailnet-trust-enabled" : "tailnet-trust-disabled",
       );
     }
     return change.state;

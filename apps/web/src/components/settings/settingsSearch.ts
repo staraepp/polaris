@@ -906,6 +906,15 @@ export const SETTINGS_SEARCH_ITEMS = [
     localBackendManagementOnly: true,
   },
   {
+    id: "tailnet-trust",
+    title: "Trust my tailnet",
+    to: "/settings/connections",
+    targetId: "connections-environment",
+    searchTerms: ["tailscale phone mobile pairing token login remote devices"],
+    desktopOnly: true,
+    localBackendManagementOnly: true,
+  },
+  {
     id: "wsl-backend",
     title: "WSL backend",
     to: "/settings/connections",

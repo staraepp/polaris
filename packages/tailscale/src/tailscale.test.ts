@@ -149,7 +149,19 @@ describe("tailscale", () => {
       assert.deepEqual(status, {
         magicDnsName: "desktop.tail.ts.net",
         tailnetIpv4Addresses: ["100.100.100.100"],
+        httpsCertificatesEnabled: false,
       });
+    }),
+  );
+
+  it.effect("reports HTTPS certificates only when the tailnet lists a cert domain", () =>
+    Effect.gen(function* () {
+      const withCerts = yield* parseTailscaleStatus('{"CertDomains":["desktop.tail.ts.net"]}');
+      assert.equal(withCerts.httpsCertificatesEnabled, true);
+      const disabled = yield* parseTailscaleStatus('{"CertDomains":null}');
+      assert.equal(disabled.httpsCertificatesEnabled, false);
+      const empty = yield* parseTailscaleStatus('{"CertDomains":[]}');
+      assert.equal(empty.httpsCertificatesEnabled, false);
     }),
   );
 
@@ -191,6 +203,7 @@ describe("tailscale", () => {
       assert.deepEqual(status, {
         magicDnsName: "desktop.tail.ts.net",
         tailnetIpv4Addresses: ["100.90.1.2"],
+        httpsCertificatesEnabled: false,
       });
     });
   });

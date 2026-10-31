@@ -23,6 +23,11 @@
 //     pulls from `DesktopBackendOutputLogFactory.forInstance(spec.id)`,
 //     so each instance lands in its own rotating file.
 
+import {
+  ensureBackgroundService,
+  type BackgroundServicePlan,
+} from "../polaris/tailnet/backgroundService.ts";
+
 import * as Brand from "effect/Brand";
 import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
@@ -86,6 +91,7 @@ export interface BackendProcessContext {
 export type DesktopBackendBootstrapDelivery = "fd3" | "stdin";
 
 export interface DesktopBackendStartConfig extends BackendProcessContext {
+  readonly backgroundService?: Pick<BackgroundServicePlan, "baseDir" | "homeDirectory">;
   readonly args: ReadonlyArray<string>;
   readonly env: Record<string, string | undefined>;
   // When true the spawner merges the desktop process.env on top of `env`;
@@ -214,6 +220,7 @@ export class BackendProcessExitStatusError extends Schema.TaggedError<BackendPro
 }
 
 export const BackendProcessError = Schema.Union([
+  BackendReadinessTimeoutError,
   BackendProcessBootstrapEncodeError,
   BackendProcessSpawnError,
   BackendProcessExitStatusError,
@@ -453,6 +460,37 @@ export const runBackendProcess = Effect.fn("runBackendProcess")(function* (
         }),
     ),
   );
+  const backgroundService = options.backgroundService;
+  if (backgroundService !== undefined) {
+    yield* Effect.tryPromise({
+      try: () =>
+        ensureBackgroundService({
+          ...backgroundService,
+          executablePath: options.executablePath,
+          args: options.args,
+          cwd: options.cwd,
+          env: { PATH: process.env.PATH, ...options.env },
+          bootstrap: options.bootstrap,
+        }),
+      // Do not attach launchctl output or the secret-bearing plan to errors.
+      catch: () =>
+        new BackendProcessSpawnError({
+          executablePath: options.executablePath,
+          entryPath: options.entryPath,
+          cwd: options.cwd,
+          httpBaseUrl: options.httpBaseUrl,
+          cause: "Could not install the Polaris launch agent.",
+        }),
+    });
+    yield* waitForHttpReady({
+      ...options,
+      timeout: options.readinessTimeout ?? DEFAULT_BACKEND_READINESS_TIMEOUT,
+    });
+    yield* options.onReady?.() ?? Effect.void;
+    // launchd owns crash recovery. Closing the desktop scope detaches, it
+    // never sends a signal to the service or any of its agent children.
+    return yield* Effect.never;
+  }
   const onOutput = options.onOutput ?? (() => Effect.void);
   const bootstrapStream = Stream.encodeText(Stream.make(`${bootstrapJson}\n`));
   const additionalFds: Record<`fd${number}`, ChildProcess.AdditionalFdConfig> = {};

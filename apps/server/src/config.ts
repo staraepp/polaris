@@ -101,6 +101,14 @@ export class ServerConfig extends Context.Service<
     readonly logWebSocketEvents: boolean;
     readonly tailscaleServeEnabled: boolean;
     readonly tailscaleServePort: number;
+    /**
+     * Polaris "Trust my tailnet": listen on loopback plus this machine's
+     * Tailscale addresses, and give the owner's tailnet devices a session
+     * without pairing. Absent means off.
+     */
+    readonly tailnetTrustEnabled?: boolean | undefined;
+    /** Extra node names (short or fully qualified) trusted in the same tailnet. */
+    readonly tailnetTrustedNodeNames?: ReadonlyArray<string> | undefined;
   }
 >()("t3/config/ServerConfig") {
   /** @deprecated Import and use `layerTest` from this module. */

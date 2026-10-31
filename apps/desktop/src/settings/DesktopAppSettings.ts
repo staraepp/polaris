@@ -35,6 +35,11 @@ export interface DesktopSettings {
   readonly serverExposureMode: DesktopServerExposureMode;
   readonly tailscaleServeEnabled: boolean;
   readonly tailscaleServePort: number;
+  // Polaris "Trust my tailnet": off by default. When on, the backend listens
+  // only on loopback and this machine's Tailscale addresses, and the owner's
+  // tailnet devices (plus the named nodes) skip pairing.
+  readonly tailnetTrustEnabled: boolean;
+  readonly tailnetTrustedNodeNames: ReadonlyArray<string>;
   readonly updateChannel: DesktopUpdateChannel;
   readonly updateChannelConfiguredByUser: boolean;
   // Was a "local" | "wsl" swap mode in an earlier iteration of the WSL
@@ -85,6 +90,8 @@ export const DEFAULT_DESKTOP_SETTINGS: DesktopSettings = {
   serverExposureMode: "local-only",
   tailscaleServeEnabled: false,
   tailscaleServePort: DEFAULT_TAILSCALE_SERVE_PORT,
+  tailnetTrustEnabled: false,
+  tailnetTrustedNodeNames: [],
   updateChannel: "latest",
   updateChannelConfiguredByUser: false,
   wslBackendEnabled: false,
@@ -108,6 +115,8 @@ const DesktopSettingsDocument = Schema.Struct({
   serverExposureMode: Schema.optionalKey(DesktopServerExposureModeSchema),
   tailscaleServeEnabled: Schema.optionalKey(Schema.Boolean),
   tailscaleServePort: Schema.optionalKey(Schema.Number),
+  tailnetTrustEnabled: Schema.optionalKey(Schema.Boolean),
+  tailnetTrustedNodeNames: Schema.optionalKey(Schema.Array(Schema.Unknown)),
   updateChannel: Schema.optionalKey(DesktopUpdateChannelSchema),
   updateChannelConfiguredByUser: Schema.optionalKey(Schema.Boolean),
   // Newer form of the WSL toggle. `wslMode` is still accepted on load so
@@ -178,6 +187,10 @@ export class DesktopAppSettings extends Context.Service<
       readonly enabled: boolean;
       readonly port: Option.Option<number>;
     }) => Effect.Effect<DesktopSettingsChange, DesktopSettingsWriteError>;
+    readonly setTailnetTrust: (input: {
+      readonly enabled: boolean;
+      readonly nodeNames: Option.Option<ReadonlyArray<string>>;
+    }) => Effect.Effect<DesktopSettingsChange, DesktopSettingsWriteError>;
     readonly setUpdateChannel: (
       channel: DesktopUpdateChannel,
     ) => Effect.Effect<DesktopSettingsChange, DesktopSettingsWriteError>;
@@ -209,6 +222,27 @@ function normalizeTailscaleServePort(value: unknown): number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 65_535
     ? value
     : DEFAULT_TAILSCALE_SERVE_PORT;
+}
+
+const MAX_TAILNET_NODE_NAME_LENGTH = 253;
+const TAILNET_NODE_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/u;
+
+/** Trimmed, lower-cased, de-duplicated DNS-style names; anything else is dropped. */
+export function normalizeTailnetNodeNames(value: unknown): ReadonlyArray<string> {
+  if (!Array.isArray(value)) return [];
+  const names = new Set<string>();
+  for (const entry of value) {
+    if (typeof entry !== "string") continue;
+    const name = entry.trim().toLowerCase().replace(/\.$/u, "");
+    const isNodeName =
+      name.length <= MAX_TAILNET_NODE_NAME_LENGTH && TAILNET_NODE_NAME_PATTERN.test(name);
+    if (isNodeName) names.add(name);
+  }
+  return [...names];
+}
+
+function sameNodeNames(left: ReadonlyArray<string>, right: ReadonlyArray<string>): boolean {
+  return left.length === right.length && left.every((name, index) => name === right[index]);
 }
 
 function normalizeWslDistro(value: unknown): string | null {
@@ -248,6 +282,8 @@ function normalizeDesktopSettingsDocument(
       parsed.serverExposureMode === "network-accessible" ? "network-accessible" : "local-only",
     tailscaleServeEnabled: parsed.tailscaleServeEnabled === true,
     tailscaleServePort: normalizeTailscaleServePort(parsed.tailscaleServePort),
+    tailnetTrustEnabled: parsed.tailnetTrustEnabled === true,
+    tailnetTrustedNodeNames: normalizeTailnetNodeNames(parsed.tailnetTrustedNodeNames),
     updateChannel: updateChannelConfiguredByUser
       ? Option.getOrElse(parsedUpdateChannel, () => defaultSettings.updateChannel)
       : defaultSettings.updateChannel,
@@ -288,6 +324,12 @@ function toDesktopSettingsDocument(
   }
   if (settings.tailscaleServePort !== defaults.tailscaleServePort) {
     document.tailscaleServePort = settings.tailscaleServePort;
+  }
+  if (settings.tailnetTrustEnabled !== defaults.tailnetTrustEnabled) {
+    document.tailnetTrustEnabled = settings.tailnetTrustEnabled;
+  }
+  if (settings.tailnetTrustedNodeNames.length > 0) {
+    document.tailnetTrustedNodeNames = [...settings.tailnetTrustedNodeNames];
   }
   if (settings.updateChannel !== defaults.updateChannel) {
     document.updateChannel = settings.updateChannel;
@@ -351,6 +393,22 @@ function setTailscaleServe(
         tailscaleServeEnabled: input.enabled,
         tailscaleServePort: port,
       };
+}
+
+function setTailnetTrust(
+  settings: DesktopSettings,
+  input: { readonly enabled: boolean; readonly nodeNames: Option.Option<ReadonlyArray<string>> },
+): DesktopSettings {
+  const nodeNames = Option.match(input.nodeNames, {
+    onNone: () => settings.tailnetTrustedNodeNames,
+    onSome: normalizeTailnetNodeNames,
+  });
+  const unchanged =
+    settings.tailnetTrustEnabled === input.enabled &&
+    sameNodeNames(settings.tailnetTrustedNodeNames, nodeNames);
+  return unchanged
+    ? settings
+    : { ...settings, tailnetTrustEnabled: input.enabled, tailnetTrustedNodeNames: nodeNames };
 }
 
 function setUpdateChannel(
@@ -579,6 +637,18 @@ export const make = Effect.gen(function* () {
       persist((settings) => setTailscaleServe(settings, input)).pipe(
         Effect.withSpan("desktop.settings.setTailscaleServe", { attributes: input }),
       ),
+    setTailnetTrust: (input) =>
+      persist((settings) => setTailnetTrust(settings, input)).pipe(
+        Effect.withSpan("desktop.settings.setTailnetTrust", {
+          attributes: {
+            enabled: input.enabled,
+            nodeNameCount: Option.match(input.nodeNames, {
+              onNone: () => -1,
+              onSome: (names) => names.length,
+            }),
+          },
+        }),
+      ),
     setUpdateChannel: (channel) =>
       persist((settings) => setUpdateChannel(settings, channel)).pipe(
         Effect.withSpan("desktop.settings.setUpdateChannel", { attributes: { channel } }),
@@ -637,6 +707,7 @@ export const layerTest = (initialSettings: DesktopSettings = DEFAULT_DESKTOP_SET
         setServerExposureMode: (mode) =>
           update((settings) => setServerExposureMode(settings, mode)),
         setTailscaleServe: (input) => update((settings) => setTailscaleServe(settings, input)),
+        setTailnetTrust: (input) => update((settings) => setTailnetTrust(settings, input)),
         setUpdateChannel: (channel) => update((settings) => setUpdateChannel(settings, channel)),
         setWslBackendEnabled: (enabled) =>
           update((settings) => setWslBackendEnabled(settings, enabled)),

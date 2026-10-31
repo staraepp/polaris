@@ -8,8 +8,13 @@ import {
   type AdvertisedEndpointProvider,
   type DesktopServerExposureMode,
   type DesktopServerExposureState,
+  type DesktopTailscaleHttpsCertificates,
 } from "@t3tools/contracts";
-import { isTailscaleIpv4Address, readTailscaleStatus } from "@t3tools/tailscale";
+import {
+  isTailscaleIpv4Address,
+  readTailscaleStatus,
+  type TailscaleStatus,
+} from "@t3tools/tailscale";
 import * as Context from "effect/Context";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -241,6 +246,18 @@ export class DesktopTailscaleServePersistenceError extends Schema.TaggedError<De
   }
 }
 
+export class DesktopTailnetTrustPersistenceError extends Schema.TaggedError<DesktopTailnetTrustPersistenceError>()(
+  "DesktopTailnetTrustPersistenceError",
+  {
+    enabled: Schema.Boolean,
+    cause: Schema.instanceOf(DesktopAppSettings.DesktopSettingsWriteError),
+  },
+) {
+  override get message(): string {
+    return `Failed to persist the Trust my tailnet setting (enabled: ${this.enabled}).`;
+  }
+}
+
 export const DesktopServerExposureSetModeError = Schema.Union([
   DesktopServerExposureNoNetworkAddressError,
   DesktopServerExposureModePersistenceError,
@@ -251,6 +268,7 @@ export const DesktopServerExposureError = Schema.Union([
   DesktopServerExposureNoNetworkAddressError,
   DesktopServerExposureModePersistenceError,
   DesktopTailscaleServePersistenceError,
+  DesktopTailnetTrustPersistenceError,
 ]);
 export type DesktopServerExposureError = typeof DesktopServerExposureError.Type;
 
@@ -260,6 +278,8 @@ export interface DesktopServerExposureBackendConfig {
   readonly httpBaseUrl: URL;
   readonly tailscaleServeEnabled: boolean;
   readonly tailscaleServePort: number;
+  readonly tailnetTrustEnabled: boolean;
+  readonly tailnetTrustedNodeNames: ReadonlyArray<string>;
 }
 
 export interface DesktopServerExposureChange {
@@ -282,6 +302,10 @@ export class DesktopServerExposure extends Context.Service<
       readonly enabled: boolean;
       readonly port?: number;
     }) => Effect.Effect<DesktopServerExposureChange, DesktopTailscaleServePersistenceError>;
+    readonly setTailnetTrust: (input: {
+      readonly enabled: boolean;
+      readonly nodeNames?: ReadonlyArray<string>;
+    }) => Effect.Effect<DesktopServerExposureChange, DesktopTailnetTrustPersistenceError>;
     readonly getAdvertisedEndpoints: Effect.Effect<readonly AdvertisedEndpoint[]>;
   }
 >()("@t3tools/desktop/backend/DesktopServerExposure") {}
@@ -298,6 +322,8 @@ interface RuntimeState {
   readonly advertisedHost: Option.Option<string>;
   readonly tailscaleServeEnabled: boolean;
   readonly tailscaleServePort: number;
+  readonly tailnetTrustEnabled: boolean;
+  readonly tailnetTrustedNodeNames: ReadonlyArray<string>;
 }
 
 interface ResolvedRuntimeState {
@@ -317,13 +343,22 @@ const initialRuntimeState = (): RuntimeState =>
     port: 0,
   });
 
-const toContractState = (state: RuntimeState): DesktopServerExposureState => ({
+const toContractState = (
+  state: RuntimeState,
+  tailscaleHttpsCertificates: DesktopTailscaleHttpsCertificates,
+): DesktopServerExposureState => ({
   mode: state.mode,
   endpointUrl: Option.getOrNull(state.endpointUrl),
   advertisedHost: Option.getOrNull(state.advertisedHost),
   tailscaleServeEnabled: state.tailscaleServeEnabled,
   tailscaleServePort: state.tailscaleServePort,
+  tailnetTrustEnabled: state.tailnetTrustEnabled,
+  tailnetTrustedNodeNames: state.tailnetTrustedNodeNames,
+  tailscaleHttpsCertificates,
 });
+
+const usesTailscale = (state: RuntimeState): boolean =>
+  state.mode === "network-accessible" || state.tailscaleServeEnabled || state.tailnetTrustEnabled;
 
 const toBackendConfig = (state: RuntimeState): DesktopServerExposureBackendConfig => ({
   port: state.port,
@@ -331,6 +366,8 @@ const toBackendConfig = (state: RuntimeState): DesktopServerExposureBackendConfi
   httpBaseUrl: state.httpBaseUrl,
   tailscaleServeEnabled: state.tailscaleServeEnabled,
   tailscaleServePort: state.tailscaleServePort,
+  tailnetTrustEnabled: state.tailnetTrustEnabled,
+  tailnetTrustedNodeNames: state.tailnetTrustedNodeNames,
 });
 
 const toResolvedExposure = (state: RuntimeState): ResolvedDesktopServerExposure => ({
@@ -360,6 +397,8 @@ function runtimeStateFromResolvedExposure(input: {
     advertisedHost: Option.fromNullishOr(input.exposure.advertisedHost),
     tailscaleServeEnabled: input.settings.tailscaleServeEnabled,
     tailscaleServePort: input.settings.tailscaleServePort,
+    tailnetTrustEnabled: input.settings.tailnetTrustEnabled,
+    tailnetTrustedNodeNames: input.settings.tailnetTrustedNodeNames,
   };
 }
 
@@ -371,14 +410,17 @@ function resolveRuntimeState(input: {
   readonly advertisedHostOverride: Option.Option<string>;
 }): ResolvedRuntimeState {
   const advertisedHostOverride = Option.getOrUndefined(input.advertisedHostOverride);
+  // Polaris "Trust my tailnet": the backend binds loopback plus its Tailscale
+  // addresses itself, so the LAN endpoint is neither bound nor advertised.
+  const effectiveMode = input.settings.tailnetTrustEnabled ? "local-only" : input.requestedMode;
   const requestedExposure = resolveDesktopServerExposure({
-    mode: input.requestedMode,
+    mode: effectiveMode,
     port: input.port,
     networkInterfaces: input.networkInterfaces,
     ...(advertisedHostOverride ? { advertisedHostOverride } : {}),
   });
   const unavailable =
-    input.requestedMode === "network-accessible" &&
+    effectiveMode === "network-accessible" &&
     requestedExposure.endpointUrl === null &&
     !Object.values(input.networkInterfaces).some((addresses) =>
       addresses?.some(
@@ -423,18 +465,36 @@ export const make = Effect.gen(function* () {
   // Cache the `tailscale status` spawn for the TTL. On macOS, the Mac App
   // Store Tailscale CLI lives inside Tailscale's sandbox container, so each
   // spawn re-triggers the "Other apps" TCC prompt.
-  const cachedReadMagicDnsName = yield* Effect.cachedWithTTL(
+  const cachedReadStatus = yield* Effect.cachedWithTTL(
     readTailscaleStatus.pipe(
-      Effect.map((status) => status.magicDnsName),
-      Effect.orElseSucceed(() => null),
+      Effect.orElseSucceed((): TailscaleStatus | null => null),
       Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, childProcessSpawner),
     ),
     TAILSCALE_STATUS_CACHE_TTL,
   );
+  const cachedReadMagicDnsName = cachedReadStatus.pipe(
+    Effect.map((status) => status?.magicDnsName ?? null),
+  );
 
   const readNetworkInterfaces = networkInterfaces.read;
 
-  const getState = Ref.get(stateRef).pipe(Effect.map(toContractState));
+  const readHttpsCertificates = (
+    state: RuntimeState,
+  ): Effect.Effect<DesktopTailscaleHttpsCertificates> =>
+    usesTailscale(state)
+      ? cachedReadStatus.pipe(
+          Effect.map((status) =>
+            status === null ? "unknown" : status.httpsCertificatesEnabled ? "enabled" : "disabled",
+          ),
+        )
+      : Effect.succeed("unknown");
+
+  const contractState = (state: RuntimeState) =>
+    readHttpsCertificates(state).pipe(
+      Effect.map((certificates) => toContractState(state, certificates)),
+    );
+
+  const getState = Ref.get(stateRef).pipe(Effect.flatMap(contractState));
   const backendConfig = Ref.get(stateRef).pipe(Effect.map(toBackendConfig));
 
   const configureFromSettings = Effect.fn("desktop.serverExposure.configureFromSettings")(
@@ -450,7 +510,7 @@ export const make = Effect.gen(function* () {
         advertisedHostOverride: config.desktopLanHostOverride,
       });
       yield* Ref.set(stateRef, resolved.state);
-      return toContractState(resolved.state);
+      return yield* contractState(resolved.state);
     },
   );
 
@@ -489,7 +549,7 @@ export const make = Effect.gen(function* () {
 
     yield* Ref.set(stateRef, resolved.state);
     return {
-      state: toContractState(resolved.state),
+      state: yield* contractState(resolved.state),
       requiresRelaunch: change.changed || requiresBackendRelaunch(previous, resolved.state),
     };
   });
@@ -523,11 +583,42 @@ export const make = Effect.gen(function* () {
       }));
 
       return {
-        state: toContractState(nextState),
+        state: yield* contractState(nextState),
         requiresRelaunch: result.changed,
       };
     },
   );
+
+  const setTailnetTrust = Effect.fn("desktop.serverExposure.setTailnetTrust")(function* (input: {
+    readonly enabled: boolean;
+    readonly nodeNames?: ReadonlyArray<string>;
+  }) {
+    yield* Effect.annotateCurrentSpan({ enabled: input.enabled });
+    const previous = yield* Ref.get(stateRef);
+    const result = yield* desktopSettings
+      .setTailnetTrust({
+        enabled: input.enabled,
+        nodeNames: Option.fromNullishOr(input.nodeNames),
+      })
+      .pipe(
+        Effect.mapError(
+          (cause) => new DesktopTailnetTrustPersistenceError({ enabled: input.enabled, cause }),
+        ),
+      );
+    const currentNetworkInterfaces = yield* readNetworkInterfaces;
+    const resolved = resolveRuntimeState({
+      requestedMode: result.settings.serverExposureMode,
+      settings: result.settings,
+      port: previous.port,
+      networkInterfaces: currentNetworkInterfaces,
+      advertisedHostOverride: config.desktopLanHostOverride,
+    });
+    yield* Ref.set(stateRef, resolved.state);
+    return {
+      state: yield* contractState(resolved.state),
+      requiresRelaunch: result.changed || requiresBackendRelaunch(previous, resolved.state),
+    };
+  });
 
   const getAdvertisedEndpoints = Effect.gen(function* () {
     const state = yield* Ref.get(stateRef);
@@ -541,7 +632,7 @@ export const make = Effect.gen(function* () {
     // Don't spawn the Tailscale CLI when the user hasn't opted into any
     // network exposure. The spawn itself triggers a macOS "Other apps"
     // TCC prompt on Mac App Store Tailscale builds.
-    if (state.mode !== "network-accessible" && !state.tailscaleServeEnabled) {
+    if (!usesTailscale(state)) {
       return coreEndpoints;
     }
 
@@ -564,6 +655,7 @@ export const make = Effect.gen(function* () {
     configureFromSettings,
     setMode,
     setTailscaleServeEnabled,
+    setTailnetTrust,
     getAdvertisedEndpoints,
   });
 });

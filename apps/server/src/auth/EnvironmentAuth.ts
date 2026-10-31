@@ -41,6 +41,8 @@ import { verifyRequestDpopProof } from "./dpop.ts";
 import * as SqlitePersistence from "../persistence/Layers/Sqlite.ts";
 
 const DEFAULT_SESSION_SUBJECT = "cli-issued-session";
+/** Polaris: sessions given to the owner's tailnet devices under "Trust my tailnet". */
+export const TAILNET_TRUSTED_SESSION_SUBJECT = "tailnet-trusted";
 export const INTERNAL_ADMINISTRATIVE_BOOTSTRAP_SUBJECT = "administrative-bootstrap";
 
 export interface IssuedPairingLink {
@@ -434,6 +436,17 @@ export class EnvironmentAuth extends Context.Service<
       },
       ServerAuthInvalidCredentialError | ServerAuthInternalError
     >;
+    /**
+     * Polaris: a browser session for a device the tailnet trust check already
+     * confirmed. Same cookie session as pairing produces, without a credential.
+     */
+    readonly createTailnetBrowserSession: (input: {
+      readonly label: string;
+      readonly requestMetadata: AuthClientMetadata;
+    }) => Effect.Effect<
+      { readonly response: AuthBrowserSessionResult; readonly sessionToken: string },
+      ServerAuthInternalError
+    >;
     readonly exchangeBootstrapCredentialForAccessToken: (
       credential: string,
       requestedScopes: ReadonlyArray<AuthEnvironmentScope> | undefined,
@@ -770,6 +783,33 @@ export const make = Effect.gen(function* () {
     );
   };
 
+  const createTailnetBrowserSession: EnvironmentAuth["Service"]["createTailnetBrowserSession"] = (
+    input,
+  ) =>
+    sessions
+      .issue({
+        method: "browser-session-cookie",
+        subject: TAILNET_TRUSTED_SESSION_SUBJECT,
+        scopes: AuthAdministrativeScopes,
+        client: { ...input.requestMetadata, label: input.label },
+      })
+      .pipe(
+        Effect.mapError((cause) => new ServerAuthAuthenticatedSessionIssueError({ cause })),
+        Effect.map(
+          (session) =>
+            ({
+              response: {
+                authenticated: true,
+                scopes: session.scopes,
+                sessionMethod: session.method,
+                expiresAt: DateTime.toUtc(session.expiresAt),
+              } satisfies AuthBrowserSessionResult,
+              sessionToken: session.token,
+            }) satisfies BootstrapExchangeResult,
+        ),
+        Effect.withSpan("EnvironmentAuth.createTailnetBrowserSession"),
+      );
+
   type ResolvedBootstrapGrant = Pick<
     PairingGrantStore.BootstrapGrant,
     "scopes" | "subject" | "label"
@@ -1099,6 +1139,7 @@ export const make = Effect.gen(function* () {
       Effect.succeed(descriptor).pipe(Effect.withSpan("EnvironmentAuth.getDescriptor")),
     getSessionState,
     createBrowserSession,
+    createTailnetBrowserSession,
     exchangeBootstrapCredentialForAccessToken,
     createPairingLink,
     issuePairingCredential,

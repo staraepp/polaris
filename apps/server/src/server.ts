@@ -115,6 +115,11 @@ import * as ServerEnvironment from "./environment/ServerEnvironment.ts";
 import * as DirectEndpoints from "./environment/DirectEndpoints.ts";
 import * as RemoteOpenTargets from "./environment/RemoteOpenTargets.ts";
 import { authHttpApiLayer, environmentAuthenticatedAuthLayer } from "./auth/http.ts";
+import { serveProxyGate } from "./polaris/tailnetTrust/serveProxy.ts";
+import * as TailnetTrust from "./polaris/tailnetTrust/TailnetTrust.ts";
+import * as TailnetListeners from "./polaris/tailnetTrust/tailnetListeners.ts";
+import * as TailscaleIdentity from "./polaris/tailnetTrust/tailscaleIdentity.ts";
+import { revokeTailnetSessionsOnStartup } from "./polaris/tailnetTrust/revokeTailnetSessions.ts";
 import * as ReplayMarkers from "./auth/replayMarkers.ts";
 import * as ServerSecretStore from "./auth/ServerSecretStore.ts";
 import * as EnvironmentAuth from "./auth/EnvironmentAuth.ts";
@@ -246,7 +251,15 @@ const RelayClientLive = Layer.unwrap(
 const HttpServerLive = Layer.unwrap(
   Effect.gen(function* () {
     const config = yield* ServerConfig.ServerConfig;
-    return NodeHttpServer.layer(() => guardHttpResponseWriteErrors(NodeHttp.createServer()), {
+    // Created here so Polaris tailnet listeners can hand their sockets to it.
+    const nodeServer = guardHttpResponseWriteErrors(NodeHttp.createServer());
+    if (config.tailnetTrustEnabled === true && config.tailscaleServeEnabled)
+      serveProxyGate.install(nodeServer);
+    const primaryNodeServerLayer = Layer.succeed(
+      TailnetListeners.PrimaryNodeHttpServer,
+      nodeServer,
+    );
+    return NodeHttpServer.layer(() => nodeServer, {
       host: config.host ?? "127.0.0.1",
       port: config.port,
       gracefulShutdownTimeout: HTTP_PREEMPTIVE_SHUTDOWN_GRACE_MS,
@@ -257,7 +270,7 @@ const HttpServerLive = Layer.unwrap(
       // to compress, so no size threshold is set (ws only honors
       // `threshold` when context takeover is disabled).
       websocket: { perMessageDeflate: true },
-    });
+    }).pipe(Layer.merge(primaryNodeServerLayer));
   }),
 );
 
@@ -429,6 +442,10 @@ const ProjectFaviconResolverLayerLive = ProjectFaviconResolver.layer.pipe(
 const ServerEnvironmentLayerLive = ServerEnvironment.layer.pipe(
   Layer.provide(ServerSecretStore.layer),
 );
+
+// Polaris "Trust my tailnet": one instance, shared by the auth routes and the
+// tailnet listeners so both see the same Tailscale identity.
+const TailnetTrustLive = TailnetTrust.layer.pipe(Layer.provide(TailscaleIdentity.layer));
 
 const AuthLayerLive = EnvironmentAuth.layer.pipe(
   Layer.provideMerge(PersistenceLayerLive),
@@ -644,7 +661,9 @@ const makeRoutesLayer = Layer.mergeAll(
       Layer.provide(projectHttpApiLayer),
       Layer.provide(serverEnvironmentHttpApiLayer),
       Layer.provide(environmentAuthenticatedAuthLayer),
+      Layer.provide(TailnetTrustLive),
     ),
+    Layer.effectDiscard(revokeTailnetSessionsOnStartup),
     otlpTracesProxyRouteLayer,
     assetRouteLayer,
     attachmentUploadRouteLayer,
@@ -745,6 +764,9 @@ const makeServerLayer = Layer.unwrap(
                 localPort,
                 servePort: config.tailscaleServePort,
                 localHost: "127.0.0.1",
+                ...(config.tailnetTrustEnabled === true
+                  ? { localPath: serveProxyGate.backendPath }
+                  : {}),
               }).pipe(
                 Effect.as({ localPort, servePort: config.tailscaleServePort }),
                 Effect.tap(() =>
@@ -755,7 +777,7 @@ const makeServerLayer = Layer.unwrap(
                 ),
                 Effect.catch((cause) =>
                   Effect.logWarning("Failed to configure Tailscale Serve", {
-                    cause,
+                    error: cause._tag,
                     localPort,
                     servePort: config.tailscaleServePort,
                   }).pipe(Effect.as(null)),
@@ -1018,6 +1040,7 @@ const makeServerLayer = Layer.unwrap(
       httpListeningLayer,
       runtimeStateLayer.pipe(Layer.provide(launcherLayer)),
       tailscaleServeLayer,
+      TailnetListeners.layer.pipe(Layer.provide(TailnetTrustLive)),
       cloudDesiredLinkReconcileLayer,
       HeapSnapshot.layer,
     );

@@ -43,10 +43,13 @@ const serverExposureLayer = Layer.succeed(DesktopServerExposure.DesktopServerExp
     httpBaseUrl: new URL("http://127.0.0.1:4888"),
     tailscaleServeEnabled: true,
     tailscaleServePort: 8443,
+    tailnetTrustEnabled: false,
+    tailnetTrustedNodeNames: [],
   }),
   configureFromSettings: () => Effect.die("unexpected configureFromSettings"),
   setMode: () => Effect.die("unexpected setMode"),
   setTailscaleServeEnabled: () => Effect.die("unexpected setTailscaleServeEnabled"),
+  setTailnetTrust: () => Effect.die("unexpected setTailnetTrust"),
   getAdvertisedEndpoints: Effect.succeed([]),
 } satisfies DesktopServerExposure.DesktopServerExposure["Service"]);
 
@@ -877,12 +880,11 @@ describe("DesktopBackendConfiguration", () => {
       const logger = Logger.make(({ message }) => {
         messages.push(message);
       });
-      const failingFileSystemLayer = Layer.succeed(
-        FileSystem.FileSystem,
-        FileSystem.makeNoop({
-          readFileString: () => Effect.fail(cause),
-        }),
-      );
+      const failingFileSystemLayer = Layer.succeed(FileSystem.FileSystem, {
+        ...fileSystem,
+        readFileString: (file) =>
+          file === settingsPath ? Effect.fail(cause) : fileSystem.readFileString(file),
+      });
 
       const config = yield* Effect.gen(function* () {
         const configuration = yield* DesktopBackendConfiguration.DesktopBackendConfiguration;

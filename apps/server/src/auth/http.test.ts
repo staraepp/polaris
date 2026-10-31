@@ -19,6 +19,8 @@ import { SqlitePersistenceMemory } from "../persistence/Layers/Sqlite.ts";
 import * as EnvironmentAuth from "./EnvironmentAuth.ts";
 import * as ServerSecretStore from "./ServerSecretStore.ts";
 import { authHttpApiLayer, environmentAuthenticatedAuthLayer } from "./http.ts";
+import * as TailnetTrust from "../polaris/tailnetTrust/TailnetTrust.ts";
+import * as TailscaleIdentity from "../polaris/tailnetTrust/tailscaleIdentity.ts";
 
 const DEV_TOKEN = "reusable-dev-auth-token-that-is-long-enough";
 class AuthTestApi extends HttpApi.make("environment").add(EnvironmentHttpApi.groups.auth) {}
@@ -42,9 +44,20 @@ const environmentAuthLayer = EnvironmentAuth.layer.pipe(
   Layer.provide(ServerEnvironment.identityLayer),
   Layer.provide(configLayer),
 );
+// "Trust my tailnet" is off in this config; Tailscale must never be asked.
+const tailnetTrustLayer = TailnetTrust.layer.pipe(
+  Layer.provide(
+    Layer.succeed(TailscaleIdentity.TailscaleIdentityCli, {
+      readSelf: Effect.die("tailscale status must not run with tailnet trust off"),
+      whois: () => Effect.die("tailscale whois must not run with tailnet trust off"),
+    }),
+  ),
+  Layer.provide(configLayer),
+);
 const routesLayer = HttpApiBuilder.layer(AuthTestApi).pipe(
   Layer.provide(authHttpApiLayer),
   Layer.provide(environmentAuthenticatedAuthLayer),
+  Layer.provide(tailnetTrustLayer),
   Layer.provideMerge(environmentAuthLayer),
   Layer.provide(configLayer),
   Layer.provideMerge(

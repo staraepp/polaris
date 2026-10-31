@@ -58,6 +58,11 @@ import {
 } from "./desktopLocal";
 import { connectionStorageLayer } from "./storage";
 import { clientPresentationMetadata } from "./clientMetadata";
+import {
+  isTouchFirstBrowser,
+  webResumeWakeup,
+  type WebResumeWakeup,
+} from "../polaris/resume/webResumeWakeup";
 
 let nextObservedRpcRequestId = 0;
 
@@ -127,20 +132,34 @@ const networkPathChanges = Stream.callback<"network-changed">((queue) =>
 const wakeupsLayer = Wakeups.layer({
   changes: Stream.mergeAll(
     [
-      Stream.callback<"application-active">((queue) =>
+      Stream.callback<WebResumeWakeup>((queue) =>
         Effect.acquireRelease(
           Effect.sync(() => {
-            const listener = () => {
-              if (document.visibilityState === "visible") {
-                Queue.offerUnsafe(queue, "application-active");
+            const touchFirst = isTouchFirstBrowser();
+            let hiddenAtMs: number | null = null;
+            const visibility = () => {
+              if (document.visibilityState === "hidden") {
+                hiddenAtMs = Date.now();
+                return;
               }
+              Queue.offerUnsafe(
+                queue,
+                webResumeWakeup({ touchFirst, hiddenAtMs, visibleAtMs: Date.now() }),
+              );
+              hiddenAtMs = null;
             };
-            document.addEventListener("visibilitychange", listener);
-            return listener;
+            // A page restored from the back-forward cache never kept its socket.
+            const pageShow = (event: PageTransitionEvent) => {
+              if (event.persisted) Queue.offerUnsafe(queue, "application-active-reconnect");
+            };
+            document.addEventListener("visibilitychange", visibility);
+            window.addEventListener("pageshow", pageShow);
+            return { visibility, pageShow };
           }),
-          (listener) =>
+          (listeners) =>
             Effect.sync(() => {
-              document.removeEventListener("visibilitychange", listener);
+              document.removeEventListener("visibilitychange", listeners.visibility);
+              window.removeEventListener("pageshow", listeners.pageShow);
             }),
         ).pipe(Effect.asVoid),
       ),

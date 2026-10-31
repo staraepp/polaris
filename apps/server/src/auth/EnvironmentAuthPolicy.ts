@@ -20,19 +20,23 @@ export const make = Effect.gen(function* () {
   const serverEnvironment = yield* ServerEnvironment.ServerEnvironmentIdentity;
   const isRemoteReachable = isRemoteReachableHost(config.host);
 
-  const policy =
-    config.mode === "desktop"
-      ? isRemoteReachable
-        ? "remote-reachable"
-        : "desktop-managed-local"
-      : isRemoteReachable
-        ? "remote-reachable"
-        : "loopback-browser";
+  // Polaris: "Trust my tailnet" names itself honestly. Owner devices on the
+  // tailnet get a session without pairing; every other client still pairs.
+  const policy: ServerAuthDescriptor["policy"] =
+    config.tailnetTrustEnabled === true
+      ? "tailnet-trusted"
+      : config.mode === "desktop"
+        ? isRemoteReachable
+          ? "remote-reachable"
+          : "desktop-managed-local"
+        : isRemoteReachable
+          ? "remote-reachable"
+          : "loopback-browser";
 
   const bootstrapMethods: ServerAuthDescriptor["bootstrapMethods"] =
     policy === "desktop-managed-local"
       ? ["desktop-bootstrap"]
-      : config.mode === "desktop" && policy === "remote-reachable"
+      : config.mode === "desktop" && (policy === "remote-reachable" || policy === "tailnet-trusted")
         ? ["desktop-bootstrap", "one-time-token"]
         : ["one-time-token"];
 

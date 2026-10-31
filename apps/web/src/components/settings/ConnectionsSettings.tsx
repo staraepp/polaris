@@ -74,6 +74,8 @@ import {
   useRelativeTimeTick,
 } from "./settingsLayout";
 import { LocalEnvironmentSetting } from "./LocalEnvironmentSetting";
+import { OpenToTailnetBadge, TailnetTrustSetting } from "~/polaris/tailnet/TailnetTrustSetting";
+import { isOpenToTailnet } from "~/polaris/tailnet/tailnetTrust";
 import { searchableSetting } from "./settingsSearch";
 import { EnvironmentIconMenu } from "./EnvironmentIconPicker";
 import { EnvironmentRoutesList } from "./EnvironmentRoutesList";
@@ -2173,9 +2175,15 @@ export function ConnectionsSettings() {
       ),
     );
   }, [authAccessChanges.data]);
+  // Polaris: with "Trust my tailnet" on, the backend is reachable over Tailscale
+  // (never the LAN), so its Tailscale endpoints count as network access.
+  const isTailnetTrusted = isOpenToTailnet({
+    desktopState: desktopBridge ? (desktopServerExposureState ?? null) : null,
+    authPolicy: currentAuthPolicy,
+  });
   const isLocalBackendNetworkAccessible = desktopBridge
-    ? desktopServerExposureState?.mode === "network-accessible"
-    : currentAuthPolicy === "remote-reachable";
+    ? desktopServerExposureState?.mode === "network-accessible" || isTailnetTrusted
+    : currentAuthPolicy === "remote-reachable" || isTailnetTrusted;
   const trimmedTailscaleServePortInput = tailscaleServePortInput.trim();
   const parsedTailscaleServePort = Number(trimmedTailscaleServePortInput);
   const isTailscaleServePortValid =
@@ -2968,7 +2976,7 @@ export function ConnectionsSettings() {
   const renderNetworkAccessToggle = () => (
     <Switch
       checked={desktopServerExposureState?.mode === "network-accessible"}
-      disabled={!desktopServerExposureState || isUpdatingDesktopServerExposure}
+      disabled={!desktopServerExposureState || isUpdatingDesktopServerExposure || isTailnetTrusted}
       onCheckedChange={(checked) => {
         setPendingDesktopServerExposureMode(checked ? "network-accessible" : "local-only");
         setIsDesktopServerExposureDialogOpen(true);
@@ -3363,7 +3371,9 @@ export function ConnectionsSettings() {
     <SettingsRow
       title={searchableSetting("network-access").title}
       description={
-        isLocalBackendNetworkAccessible ? (
+        isTailnetTrusted ? (
+          "Off while Trust my tailnet is on: only this machine and Tailscale can connect."
+        ) : isLocalBackendNetworkAccessible ? (
           <NetworkAccessDescription
             endpoint={defaultDesktopNetworkAdvertisedEndpoint}
             hiddenEndpointCount={Math.max(visibleDesktopNetworkAdvertisedEndpoints.length - 1, 0)}
@@ -3395,9 +3405,16 @@ export function ConnectionsSettings() {
     <SettingsRow
       title={searchableSetting("network-access").title}
       description={
-        currentAuthPolicy === "remote-reachable"
-          ? "Remote access is already configured. Change network exposure where the server starts."
-          : "Only this machine can connect. Restart with a non-loopback host for remote pairing."
+        isTailnetTrusted ? (
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <OpenToTailnetBadge />
+            Your Tailscale devices connect without pairing. Change this on the host machine.
+          </span>
+        ) : currentAuthPolicy === "remote-reachable" ? (
+          "Remote access is already configured. Change network exposure where the server starts."
+        ) : (
+          "Only this machine can connect. Restart with a non-loopback host for remote pairing."
+        )
       }
       control={
         <Tooltip>
@@ -3518,6 +3535,13 @@ export function ConnectionsSettings() {
                 {renderNetworkAccessRow()}
                 {renderEndpointRows("endpoint-rail")}
                 {renderTailscaleRow()}
+                {desktopServerExposureState ? (
+                  <TailnetTrustSetting
+                    bridge={desktopBridge}
+                    state={desktopServerExposureState}
+                    endpoints={desktopAdvertisedEndpoints}
+                  />
+                ) : null}
                 {renderWslRow()}
                 <CloudLinkRow canManageRelay={canManageRelay} />
               </>

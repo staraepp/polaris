@@ -137,6 +137,40 @@ tailscale serve --https=443 off
 If that port is already in use, choose another with
 `--tailscale-serve-port`. See `t3 pair --help` for other pairing options.
 
+### Polaris: Trust my tailnet
+
+On the Mac, open **Settings → Connections → Trust my tailnet** and confirm the
+restart. It is off by default. With Tailscale connected on both devices, open the
+phone address shown there in Safari. Your own tailnet devices get a normal session
+without a pairing link. Other users' devices need pairing unless you add their
+node names under **Also trust these devices**. Devices from other tailnets are
+never auto-approved. The **Open to your tailnet** badge shows when this is enabled.
+
+Polaris then listens only on loopback and its Tailscale IPs, not your Wi-Fi or LAN
+address. The address is refreshed when Tailscale changes it. If HTTPS certificates
+are unavailable, use the displayed `http://<tailnet-ip>:<port>` address; Tailscale
+encrypts the connection. To use HTTPS, enable **HTTPS Certificates** in the
+[Tailscale DNS settings](https://login.tailscale.com/admin/dns), then enable
+**Tailscale HTTPS** in Polaris. Plain HTTP does not support browser features that
+require a secure context, such as microphone capture and some notifications.
+
+On packaged macOS builds, Polaris installs a per-user launch agent when it starts.
+The backend runs at login and restarts after a crash, including after you quit the
+UI. Keep the Mac awake and logged in for access; a launch agent cannot serve while
+the Mac sleeps or the user is logged out. Your UI login item is unchanged.
+
+Turn **Trust my tailnet** off to require pairing again. Sessions issued through
+this setting are discarded on server restart; existing paired sessions keep working.
+Local programs cannot gain access by forging forwarding or identity headers.
+The installed app and Tailscale configuration belong to your local user account;
+this option does not protect against that account being compromised.
+
+For a CLI server, use `t3 serve --trust-tailnet` (optionally
+`--tailnet-trusted-nodes phone,kiosk`). The environment equivalents are
+`T3CODE_TRUST_TAILNET=true` and `T3CODE_TAILNET_TRUSTED_NODES=phone,kiosk`.
+Explicit CLI flags take precedence over the environment and desktop bootstrap.
+CLI development runs do not install a launch agent.
+
 ### Hosted web app
 
 [app.t3.codes](https://app.t3.codes) needs an HTTPS endpoint. It connects directly

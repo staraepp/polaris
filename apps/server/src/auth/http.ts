@@ -22,7 +22,7 @@ import {
   EnvironmentAuthenticatedAuth,
   EnvironmentAuthenticatedPrincipal,
 } from "@t3tools/contracts";
-import type { AuthEnvironmentScope, DpopFailureReason } from "@t3tools/contracts";
+import type { AuthEnvironmentScope, AuthSessionState, DpopFailureReason } from "@t3tools/contracts";
 import { parseAllowedOAuthScope } from "@t3tools/shared/oauthScope";
 import { causeErrorTag } from "@t3tools/shared/observability";
 import * as DateTime from "effect/DateTime";
@@ -36,6 +36,7 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import * as EnvironmentAuth from "./EnvironmentAuth.ts";
 import * as SessionStore from "./SessionStore.ts";
+import * as TailnetTrust from "../polaris/tailnetTrust/TailnetTrust.ts";
 import { traceAuthenticatedRelayRequest, traceRelayRequest } from "../cloud/traceRelayRequest.ts";
 import { deriveAuthClientMetadata } from "./utils.ts";
 import { verifyRequestDpopProof } from "./dpop.ts";
@@ -233,6 +234,42 @@ export const authHttpApiLayer = HttpApiBuilder.group(
   Effect.fnUntraced(function* (handlers) {
     const serverAuth = yield* EnvironmentAuth.EnvironmentAuth;
     const sessions = yield* SessionStore.SessionStore;
+    const tailnetTrust = yield* TailnetTrust.TailnetTrust;
+
+    // Polaris "Trust my tailnet": an unsigned-in owner device on the tailnet
+    // gets the same cookie session pairing would give it. Any denial leaves
+    // the response unauthenticated, so the client shows pairing as before.
+    const signInTrustedTailnetDevice = Effect.fn("environment.auth.tailnetTrust")(function* (
+      request: HttpServerRequest.HttpServerRequest,
+      unauthenticated: AuthSessionState,
+    ) {
+      const verdict = yield* tailnetTrust.evaluate(request);
+      if (!verdict.trusted) {
+        yield* Effect.logDebug("Tailnet trust denied.", { reason: verdict.reason });
+        return unauthenticated;
+      }
+      const issued = yield* serverAuth.createTailnetBrowserSession({
+        label: `${verdict.computedName} (tailnet)`,
+        requestMetadata: deriveAuthClientMetadata({ request }),
+      });
+      yield* appendSessionCookie(
+        sessions.cookieName,
+        issued.sessionToken,
+        issued.response.expiresAt,
+      );
+      yield* appendCredentialResponseHeaders;
+      yield* Effect.logInfo("Signed in a tailnet device without pairing.", {
+        node: verdict.computedName,
+        via: verdict.via,
+      });
+      return {
+        authenticated: true,
+        auth: unauthenticated.auth,
+        scopes: issued.response.scopes,
+        sessionMethod: issued.response.sessionMethod,
+        expiresAt: issued.response.expiresAt,
+      } satisfies AuthSessionState;
+    });
 
     return handlers
       .handle(
@@ -255,6 +292,9 @@ export const authHttpApiLayer = HttpApiBuilder.group(
             ) {
               yield* appendSessionCookie(sessions.cookieName, credential.token, result.expiresAt);
               yield* appendCredentialResponseHeaders;
+            }
+            if (!result.authenticated && tailnetTrust.enabled) {
+              return yield* signInTrustedTailnetDevice(request, result);
             }
             return result;
           },

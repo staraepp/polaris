@@ -133,6 +133,7 @@ const TailscaleStatusSelf = Schema.Struct({
 
 const TailscaleStatusJson = Schema.Struct({
   Self: Schema.optional(TailscaleStatusSelf),
+  CertDomains: Schema.optional(Schema.Unknown),
 });
 
 export type TailscaleStatusJson = typeof TailscaleStatusJson.Type;
@@ -140,6 +141,8 @@ export type TailscaleStatusJson = typeof TailscaleStatusJson.Type;
 export interface TailscaleStatus {
   readonly magicDnsName: string | null;
   readonly tailnetIpv4Addresses: readonly string[];
+  /** Polaris: whether the tailnet can issue HTTPS certificates (needed by Tailscale Serve). */
+  readonly httpsCertificatesEnabled: boolean;
 }
 
 const collectStdout = <E>(stream: Stream.Stream<Uint8Array, E>): Effect.Effect<string, E> =>
@@ -210,6 +213,8 @@ export const parseTailscaleStatus = (
       return {
         magicDnsName: normalizeMagicDnsName(parsed),
         tailnetIpv4Addresses,
+        httpsCertificatesEnabled:
+          Array.isArray(parsed.CertDomains) && parsed.CertDomains.length > 0,
       };
     }),
   );
@@ -342,10 +347,16 @@ export const ensureTailscaleServe = (input: {
   readonly localPort: number;
   readonly servePort?: number;
   readonly localHost?: string;
+  readonly localPath?: string;
 }): Effect.Effect<void, TailscaleCommandError, ChildProcessSpawner.ChildProcessSpawner> => {
   const servePort = input.servePort ?? DEFAULT_TAILSCALE_SERVE_PORT;
   const localHost = input.localHost ?? "127.0.0.1";
-  const args = ["serve", "--bg", `--https=${servePort}`, `http://${localHost}:${input.localPort}`];
+  const args = [
+    "serve",
+    "--bg",
+    `--https=${servePort}`,
+    `http://${localHost}:${input.localPort}${input.localPath ?? ""}`,
+  ];
   return runTailscaleCommand(args, TAILSCALE_SERVE_TIMEOUT);
 };
 

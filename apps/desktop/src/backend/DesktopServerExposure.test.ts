@@ -5,6 +5,7 @@ import { assert, describe, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
 import * as Sink from "effect/Sink";
 import * as Stream from "effect/Stream";
 import * as ChildProcessSpawner from "effect/unstable/process/ChildProcessSpawner";
@@ -37,6 +38,8 @@ const tailnetNetworkInterfaces: DesktopNetworkInterfaces.NetworkInterfaces = {
     },
   ],
 };
+
+const encodeJson = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
 
 function mockSpawnerLayer(statusJson = "{}") {
   return Layer.succeed(
@@ -197,6 +200,10 @@ describe("DesktopServerExposure", () => {
           advertisedHost: "192.168.1.20",
           tailscaleServeEnabled: false,
           tailscaleServePort: 443,
+          tailnetTrustEnabled: false,
+          tailnetTrustedNodeNames: [],
+          // The mock status carries no CertDomains.
+          tailscaleHttpsCertificates: "disabled",
         });
 
         const backendConfig = yield* serverExposure.backendConfig;
@@ -206,6 +213,75 @@ describe("DesktopServerExposure", () => {
         const persisted = yield* settings.get;
         assert.equal(persisted.serverExposureMode, "network-accessible");
       }),
+    ),
+  );
+
+  it.effect("trusting the tailnet binds loopback only and stops advertising the LAN", () =>
+    withHarness(
+      { ...lanNetworkInterfaces, ...tailnetNetworkInterfaces },
+      Effect.gen(function* () {
+        const serverExposure = yield* DesktopServerExposure.DesktopServerExposure;
+        const settings = yield* DesktopAppSettings.DesktopAppSettings;
+
+        yield* settings.load;
+        yield* serverExposure.configureFromSettings({ port: 4173 });
+        yield* serverExposure.setMode("network-accessible");
+        assert.equal((yield* serverExposure.backendConfig).bindHost, "0.0.0.0");
+
+        const change = yield* serverExposure.setTailnetTrust({
+          enabled: true,
+          nodeNames: [" Kiosk ", "kiosk", "not a name!"],
+        });
+        assert.equal(change.requiresRelaunch, true);
+        assert.equal(change.state.tailnetTrustEnabled, true);
+        assert.deepEqual(change.state.tailnetTrustedNodeNames, ["kiosk"]);
+        assert.equal(change.state.endpointUrl, null);
+        assert.equal(change.state.tailscaleHttpsCertificates, "enabled");
+
+        const backendConfig = yield* serverExposure.backendConfig;
+        assert.equal(backendConfig.bindHost, "127.0.0.1");
+        assert.equal(backendConfig.tailnetTrustEnabled, true);
+        assert.deepEqual(backendConfig.tailnetTrustedNodeNames, ["kiosk"]);
+
+        const endpoints = yield* serverExposure.getAdvertisedEndpoints;
+        assert.isFalse(endpoints.some((endpoint) => endpoint.reachability === "lan"));
+        assert.isTrue(endpoints.some((endpoint) => endpoint.label === "Tailscale IP"));
+
+        const persisted = yield* settings.get;
+        assert.equal(persisted.tailnetTrustEnabled, true);
+        assert.equal(persisted.serverExposureMode, "network-accessible");
+
+        const unchanged = yield* serverExposure.setTailnetTrust({ enabled: true });
+        assert.equal(unchanged.requiresRelaunch, false);
+
+        const off = yield* serverExposure.setTailnetTrust({ enabled: false });
+        assert.equal(off.requiresRelaunch, true);
+        assert.equal((yield* serverExposure.backendConfig).bindHost, "0.0.0.0");
+        assert.equal(off.state.endpointUrl, "http://192.168.1.20:4173");
+      }),
+      {},
+      mockSpawnerLayer(
+        encodeJson({
+          Self: { DNSName: "desktop.tail.ts.net.", TailscaleIPs: ["100.90.1.2"] },
+          CertDomains: ["desktop.tail.ts.net"],
+        }),
+      ),
+    ),
+  );
+
+  it.effect("does not ask Tailscale about certificates while nothing remote is on", () =>
+    withHarness(
+      lanNetworkInterfaces,
+      Effect.gen(function* () {
+        const serverExposure = yield* DesktopServerExposure.DesktopServerExposure;
+        const settings = yield* DesktopAppSettings.DesktopAppSettings;
+        yield* settings.load;
+        const state = yield* serverExposure.configureFromSettings({ port: 4173 });
+        assert.equal(state.tailnetTrustEnabled, false);
+        assert.equal(state.tailscaleHttpsCertificates, "unknown");
+      }),
+      {},
+      dieOnSpawnLayer(),
     ),
   );
 
@@ -253,6 +329,7 @@ describe("DesktopServerExposure", () => {
       setMainWindowBounds: () => Effect.die("unexpected main window bounds update"),
       setServerExposureMode: () => Effect.fail(settingsFailure),
       setTailscaleServe: () => Effect.fail(settingsFailure),
+      setTailnetTrust: () => Effect.fail(settingsFailure),
       setUpdateChannel: () => Effect.die("unexpected update channel change"),
       setWslBackendEnabled: () => Effect.die("unexpected WSL backend toggle"),
       setWslDistro: () => Effect.die("unexpected WSL distro change"),

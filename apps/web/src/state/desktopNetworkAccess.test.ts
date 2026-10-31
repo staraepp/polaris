@@ -12,6 +12,9 @@ const serverExposureState: DesktopServerExposureState = {
   mode: "network-accessible",
   tailscaleServeEnabled: false,
   tailscaleServePort: 443,
+  tailnetTrustEnabled: false,
+  tailnetTrustedNodeNames: [],
+  tailscaleHttpsCertificates: "unknown",
 };
 
 const advertisedEndpoints: ReadonlyArray<AdvertisedEndpoint> = [];

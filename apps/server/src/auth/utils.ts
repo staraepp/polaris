@@ -178,6 +178,13 @@ function readRemoteAddressFromSource(source: unknown): string | undefined {
   return normalizeIpAddress(candidate.socket?.remoteAddress ?? candidate.remoteAddress);
 }
 
+/** The TCP peer's address, from the socket only (never a forwarding header). */
+export function readRequestPeerAddress(
+  request: HttpServerRequest.HttpServerRequest,
+): string | undefined {
+  return readRemoteAddressFromSource(request.source);
+}
+
 export function deriveAuthClientMetadata(input: {
   readonly request: HttpServerRequest.HttpServerRequest;
   readonly presented?: AuthClientPresentationMetadata;

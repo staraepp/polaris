@@ -14,6 +14,9 @@ export const DesktopBackendBootstrap = Schema.Struct({
   desktopBootstrapToken: Schema.String,
   tailscaleServeEnabled: Schema.Boolean,
   tailscaleServePort: PortSchema,
+  // Polaris: "Trust my tailnet". Absent means off.
+  tailnetTrustEnabled: Schema.optionalKey(Schema.Boolean),
+  tailnetTrustedNodeNames: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
   otlpTracesUrl: Schema.optional(Schema.String),
   otlpMetricsUrl: Schema.optional(Schema.String),
   otlpLogsUrl: Schema.optional(Schema.String),

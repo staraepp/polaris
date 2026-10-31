@@ -145,6 +145,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: Option.none<boolean>(),
         tailscaleServeEnabled: Option.none<boolean>(),
         tailscaleServePort: Option.none<number>(),
+        tailnetTrustEnabled: Option.none(),
+        tailnetTrustedNodes: Option.none(),
       };
       const configLayer = ConfigProvider.layer(
         ConfigProvider.fromEnv({
@@ -189,6 +191,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: Option.none<boolean>(),
         tailscaleServeEnabled: Option.none<boolean>(),
         tailscaleServePort: Option.none<number>(),
+        tailnetTrustEnabled: Option.none(),
+        tailnetTrustedNodes: Option.none(),
       };
       const configLayer = ConfigProvider.layer(
         ConfigProvider.fromEnv({ env: { T3CODE_DEV_AUTH_TOKEN: secret } }),
@@ -236,6 +240,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -282,6 +288,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: true,
         tailscaleServeEnabled: false,
         tailscaleServePort: 443,
+        tailnetTrustEnabled: false,
+        tailnetTrustedNodeNames: [],
       });
       assert.equal(resolved.stateDir, join(baseDir, "userdata"));
     }),
@@ -309,6 +317,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.some(true),
           tailscaleServeEnabled: Option.some(true),
           tailscaleServePort: Option.some(8443),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.some("Debug"),
       ).pipe(
@@ -352,6 +362,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: true,
         tailscaleServeEnabled: true,
         tailscaleServePort: 8443,
+        tailnetTrustEnabled: false,
+        tailnetTrustedNodeNames: [],
       });
       assert.equal(resolved.dbPath, join(baseDir, "userdata", "statev2.sqlite"));
     }),
@@ -387,6 +399,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.some(false),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -425,6 +439,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: false,
         tailscaleServeEnabled: false,
         tailscaleServePort: 443,
+        tailnetTrustEnabled: false,
+        tailnetTrustedNodeNames: [],
       });
     }),
   );
@@ -467,6 +483,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -508,6 +526,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: false,
         tailscaleServeEnabled: false,
         tailscaleServePort: 443,
+        tailnetTrustEnabled: false,
+        tailnetTrustedNodeNames: [],
       });
       assert.equal(join(baseDir, "userdata"), resolved.stateDir);
       assert.equal(resolved.desktopTelemetryFd, 4);
@@ -536,6 +556,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -597,6 +619,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.some("Debug"),
       ).pipe(
@@ -637,7 +661,75 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: true,
         tailscaleServeEnabled: false,
         tailscaleServePort: 443,
+        tailnetTrustEnabled: false,
+        tailnetTrustedNodeNames: [],
       });
+    }),
+  );
+
+  it.effect("trusting the tailnet binds loopback only and reads node names from env", () =>
+    Effect.gen(function* () {
+      const { join } = yield* Path.Path;
+      const baseDir = join(NodeOS.tmpdir(), "t3-cli-config-tailnet-trust");
+      const flags = {
+        mode: Option.none(),
+        port: Option.none(),
+        host: Option.none(),
+        baseDir: Option.none(),
+        cwd: Option.none(),
+        devUrl: Option.none(),
+        noBrowser: Option.none(),
+        bootstrapFd: Option.none(),
+        autoBootstrapProjectFromCwd: Option.none(),
+        logWebSocketEvents: Option.none(),
+        tailscaleServeEnabled: Option.none(),
+        tailscaleServePort: Option.none(),
+        tailnetTrustEnabled: Option.none<boolean>(),
+        tailnetTrustedNodes: Option.none<string>(),
+      };
+      const resolveWith = (
+        overrides: Partial<typeof flags>,
+        env: Readonly<Record<string, string>>,
+      ) =>
+        Effect.gen(function* () {
+          // The server reads a bootstrap fd once, so each resolution gets its own.
+          const fd = yield* openBootstrapFd(
+            makeDesktopBootstrap({
+              host: "0.0.0.0",
+              t3Home: baseDir,
+              tailnetTrustEnabled: true,
+              tailnetTrustedNodeNames: ["from-bootstrap"],
+            }),
+          );
+          return yield* resolveServerConfig({ ...flags, ...overrides }, Option.none()).pipe(
+            Effect.provide(
+              Layer.mergeAll(
+                ConfigProvider.layer(
+                  ConfigProvider.fromEnv({ env: { T3CODE_BOOTSTRAP_FD: String(fd), ...env } }),
+                ),
+                NetService.layer,
+              ),
+            ),
+          );
+        });
+
+      const fromEnv = yield* resolveWith(
+        {},
+        { T3CODE_TAILNET_TRUSTED_NODES: " iphone174, ,ipad.tail72660c.ts.net " },
+      );
+      expect(fromEnv.tailnetTrustEnabled).toBe(true);
+      expect(fromEnv.tailnetTrustedNodeNames).toEqual(["iphone174", "ipad.tail72660c.ts.net"]);
+      expect(fromEnv.host).toBe("127.0.0.1");
+
+      const flagWins = yield* resolveWith(
+        { tailnetTrustEnabled: Option.some(false) },
+        { T3CODE_TRUST_TAILNET: "true" },
+      );
+      expect(flagWins.tailnetTrustEnabled).toBe(false);
+      expect(flagWins.host).toBe("0.0.0.0");
+
+      const fromBootstrap = yield* resolveWith({}, {});
+      expect(fromBootstrap.tailnetTrustedNodeNames).toEqual(["from-bootstrap"]);
     }),
   );
 
@@ -674,6 +766,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -709,6 +803,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: false,
         tailscaleServeEnabled: false,
         tailscaleServePort: 443,
+        tailnetTrustEnabled: false,
+        tailnetTrustedNodeNames: [],
       });
     }),
   );
@@ -746,6 +842,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -796,6 +894,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -836,6 +936,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
         {
@@ -875,6 +977,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
         logWebSocketEvents: false,
         tailscaleServeEnabled: false,
         tailscaleServePort: 443,
+        tailnetTrustEnabled: false,
+        tailnetTrustedNodeNames: [],
       });
     }),
   );
@@ -898,6 +1002,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -941,6 +1047,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -986,6 +1094,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -1026,6 +1136,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
           logWebSocketEvents: Option.none(),
           tailscaleServeEnabled: Option.none(),
           tailscaleServePort: Option.none(),
+          tailnetTrustEnabled: Option.none(),
+          tailnetTrustedNodes: Option.none(),
         },
         Option.none(),
       ).pipe(
@@ -1058,6 +1170,8 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
     logWebSocketEvents: Option.none<boolean>(),
     tailscaleServeEnabled: Option.none<boolean>(),
     tailscaleServePort: Option.none<number>(),
+    tailnetTrustEnabled: Option.none(),
+    tailnetTrustedNodes: Option.none(),
   });
 
   it.effect(

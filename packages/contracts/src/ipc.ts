@@ -490,12 +490,28 @@ export const DesktopServerExposureModeSchema = Schema.Literals([
   "network-accessible",
 ]);
 
+/**
+ * Polaris: whether the tailnet can issue HTTPS certificates, which Tailscale
+ * Serve needs. `unknown` when Tailscale was not asked (no remote access is on)
+ * or could not answer.
+ */
+export type DesktopTailscaleHttpsCertificates = "enabled" | "disabled" | "unknown";
+
+export const DesktopTailscaleHttpsCertificatesSchema = Schema.Literals([
+  "enabled",
+  "disabled",
+  "unknown",
+]);
+
 export interface DesktopServerExposureState {
   mode: DesktopServerExposureMode;
   endpointUrl: string | null;
   advertisedHost: string | null;
   tailscaleServeEnabled: boolean;
   tailscaleServePort: number;
+  tailnetTrustEnabled: boolean;
+  tailnetTrustedNodeNames: ReadonlyArray<string>;
+  tailscaleHttpsCertificates: DesktopTailscaleHttpsCertificates;
 }
 
 export const DesktopServerExposureStateSchema = Schema.Struct({
@@ -504,6 +520,9 @@ export const DesktopServerExposureStateSchema = Schema.Struct({
   advertisedHost: Schema.NullOr(Schema.String),
   tailscaleServeEnabled: Schema.Boolean,
   tailscaleServePort: Schema.Number,
+  tailnetTrustEnabled: Schema.Boolean,
+  tailnetTrustedNodeNames: Schema.Array(Schema.String),
+  tailscaleHttpsCertificates: DesktopTailscaleHttpsCertificatesSchema,
 });
 
 export interface PickFolderOptions {
@@ -1192,6 +1211,10 @@ export interface DesktopBridge {
   setTailscaleServeEnabled: (input: {
     readonly enabled: boolean;
     readonly port?: number;
+  }) => Promise<DesktopServerExposureState>;
+  setTailnetTrust: (input: {
+    readonly enabled: boolean;
+    readonly nodeNames?: ReadonlyArray<string>;
   }) => Promise<DesktopServerExposureState>;
   getAdvertisedEndpoints: () => Promise<readonly AdvertisedEndpoint[]>;
   getWslState: () => Promise<DesktopWslState>;

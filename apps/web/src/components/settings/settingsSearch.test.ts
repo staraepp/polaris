@@ -171,6 +171,7 @@ describe("searchSettings", () => {
       "source-control-writing-style",
       "t3-connect",
       "tailscale-https",
+      "tailnet-trust",
       "wsl-backend",
       "auto-settle-inactive-threads",
       "auto-settle-merged-threads",

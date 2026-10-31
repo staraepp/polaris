@@ -84,6 +84,27 @@ const tailscaleServePortFlag = Flag.Int("tailscale-serve-port").pipe(
   Flag.optional,
 );
 
+const trustTailnetFlag = Flag.Boolean("trust-tailnet").pipe(
+  Flag.withDescription(
+    "Polaris: listen only on loopback and Tailscale, and let your own tailnet devices in without pairing.",
+  ),
+  Flag.optional,
+);
+const tailnetTrustedNodesFlag = Flag.String("tailnet-trusted-nodes").pipe(
+  Flag.withDescription(
+    "Polaris: comma-separated node names in your tailnet to trust as well (with --trust-tailnet).",
+  ),
+  Flag.optional,
+);
+
+/** Comma-separated node names, blanks dropped. */
+export function parseTailnetNodeNames(value: string): ReadonlyArray<string> {
+  return value
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name.length > 0);
+}
+
 // Trace file location, shared by the server and `t3 trace summary`.
 export const traceFileConfig = Config.String("T3CODE_TRACE_FILE").pipe(
   Config.option,
@@ -164,6 +185,14 @@ const EnvServerConfig = Config.all({
     Config.option,
     Config.map(Option.getOrUndefined),
   ),
+  tailnetTrustEnabled: Config.Boolean("T3CODE_TRUST_TAILNET").pipe(
+    Config.option,
+    Config.map(Option.getOrUndefined),
+  ),
+  tailnetTrustedNodes: Config.String("T3CODE_TAILNET_TRUSTED_NODES").pipe(
+    Config.option,
+    Config.map(Option.getOrUndefined),
+  ),
 });
 
 const DevAuthTokenConfig = Config.Redacted("T3CODE_DEV_AUTH_TOKEN").pipe(
@@ -199,6 +228,8 @@ export interface CliServerFlags {
   readonly logWebSocketEvents: Option.Option<boolean>;
   readonly tailscaleServeEnabled: Option.Option<boolean>;
   readonly tailscaleServePort: Option.Option<number>;
+  readonly tailnetTrustEnabled: Option.Option<boolean>;
+  readonly tailnetTrustedNodes: Option.Option<string>;
 }
 
 export interface CliAuthLocationFlags {
@@ -233,6 +264,8 @@ export const sharedServerCommandFlags = {
   logWebSocketEvents: logWebSocketEventsFlag,
   tailscaleServeEnabled: tailscaleServeFlag,
   tailscaleServePort: tailscaleServePortFlag,
+  tailnetTrustEnabled: trustTailnetFlag,
+  tailnetTrustedNodes: tailnetTrustedNodesFlag,
 } as const;
 
 const resolveOptionPrecedence = <Value>(
@@ -277,6 +310,8 @@ export const resolveServerConfig = (
       logWebSocketEvents: flags.logWebSocketEvents ?? Option.none(),
       tailscaleServeEnabled: flags.tailscaleServeEnabled ?? Option.none(),
       tailscaleServePort: flags.tailscaleServePort ?? Option.none(),
+      tailnetTrustEnabled: flags.tailnetTrustEnabled ?? Option.none(),
+      tailnetTrustedNodes: flags.tailnetTrustedNodes ?? Option.none(),
     } satisfies CliServerFlags;
     const bootstrapFd = Option.getOrUndefined(normalizedFlags.bootstrapFd) ?? env.bootstrapFd;
     const bootstrapEnvelope =
@@ -394,15 +429,36 @@ export const resolveServerConfig = (
       ),
       () => 443,
     );
-    const staticDir = devUrl ? undefined : yield* ServerConfig.resolveStaticDir();
-    const host = Option.getOrElse(
+    const tailnetTrustEnabled = Option.getOrElse(
       resolveOptionPrecedence(
-        normalizedFlags.host,
-        Option.fromUndefinedOr(env.host),
-        Option.fromUndefinedOr(bootstrap?.host),
+        normalizedFlags.tailnetTrustEnabled,
+        Option.fromUndefinedOr(env.tailnetTrustEnabled),
+        Option.fromUndefinedOr(bootstrap?.tailnetTrustEnabled),
       ),
-      () => (mode === "desktop" ? "127.0.0.1" : undefined),
+      () => false,
     );
+    const tailnetTrustedNodeNames = Option.getOrElse(
+      Option.firstSomeOf([
+        Option.map(normalizedFlags.tailnetTrustedNodes, parseTailnetNodeNames),
+        Option.map(Option.fromUndefinedOr(env.tailnetTrustedNodes), parseTailnetNodeNames),
+        Option.fromUndefinedOr(bootstrap?.tailnetTrustedNodeNames),
+      ]),
+      (): ReadonlyArray<string> => [],
+    );
+    const staticDir = devUrl ? undefined : yield* ServerConfig.resolveStaticDir();
+    // Trusting the tailnet replaces every other exposure: the main listener
+    // stays on loopback and the server adds its own Tailscale addresses, so
+    // the LAN never reaches the port.
+    const host = tailnetTrustEnabled
+      ? "127.0.0.1"
+      : Option.getOrElse(
+          resolveOptionPrecedence(
+            normalizedFlags.host,
+            Option.fromUndefinedOr(env.host),
+            Option.fromUndefinedOr(bootstrap?.host),
+          ),
+          () => (mode === "desktop" ? "127.0.0.1" : undefined),
+        );
     const logLevel = Option.getOrElse(cliLogLevel, () => env.logLevel);
 
     const otel = yield* OtelEnvironment.load;
@@ -471,6 +527,8 @@ export const resolveServerConfig = (
       logWebSocketEvents,
       tailscaleServeEnabled,
       tailscaleServePort,
+      tailnetTrustEnabled,
+      tailnetTrustedNodeNames,
     };
 
     return config;
@@ -494,6 +552,8 @@ export const resolveCliAuthConfig = (
       logWebSocketEvents: Option.none(),
       tailscaleServeEnabled: Option.none(),
       tailscaleServePort: Option.none(),
+      tailnetTrustEnabled: Option.none(),
+      tailnetTrustedNodes: Option.none(),
     },
     cliLogLevel,
   );

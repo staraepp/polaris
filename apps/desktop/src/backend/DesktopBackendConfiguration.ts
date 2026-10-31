@@ -1,3 +1,5 @@
+import { serviceDirectory } from "../polaris/tailnet/backgroundService.ts";
+
 import * as NodeOS from "node:os";
 
 import { parsePersistedServerObservabilitySettings } from "@t3tools/shared/serverSettings";
@@ -558,6 +560,8 @@ const resolvePrimaryStartConfig = Effect.fn("desktop.backendConfiguration.resolv
       desktopBootstrapToken: input.bootstrapToken,
       tailscaleServeEnabled: backendExposure.tailscaleServeEnabled,
       tailscaleServePort: backendExposure.tailscaleServePort,
+      tailnetTrustEnabled: backendExposure.tailnetTrustEnabled,
+      tailnetTrustedNodeNames: backendExposure.tailnetTrustedNodeNames,
       desktopTelemetryFd: 4,
       desktopTelemetryControlFd: 5,
       ...Option.match(input.resourceMonitorPath, {
@@ -568,6 +572,14 @@ const resolvePrimaryStartConfig = Effect.fn("desktop.backendConfiguration.resolv
     };
 
     return {
+      ...(environment.isPackaged && environment.platform === "darwin"
+        ? {
+            backgroundService: {
+              baseDir: environment.baseDir,
+              homeDirectory: environment.homeDirectory,
+            },
+          }
+        : {}),
       executablePath: process.execPath,
       // Packaged builds only, so a dev instance never shares the cache with the
       // prod app it is often run from. `--require` rather than NODE_COMPILE_CACHE,
@@ -840,12 +852,25 @@ export const make = Effect.gen(function* () {
     Option.match(current, {
       onSome: (token) => Effect.succeed([token, current] as const),
       onNone: () =>
-        crypto.randomBytes(24).pipe(
-          Effect.map((bytes) => {
-            const token = Encoding.encodeHex(bytes);
-            return [token, Option.some(token)] as const;
-          }),
-        ),
+        Effect.gen(function* () {
+          const persistent = environment.isPackaged && environment.platform === "darwin";
+          const directory = serviceDirectory(environment.baseDir);
+          const tokenPath = environment.path.join(directory, "bootstrap-token");
+          if (persistent) {
+            yield* fileSystem.makeDirectory(directory, { recursive: true, mode: 0o700 });
+            if (yield* fileSystem.exists(tokenPath)) {
+              const token = (yield* fileSystem.readFileString(tokenPath)).trim();
+              if (!/^[0-9a-f]{48}$/.test(token))
+                return yield* Effect.die("Invalid background bootstrap credential.");
+              return [token, Option.some(token)] as const;
+            }
+          }
+          const bytes = yield* crypto.randomBytes(24);
+          const token = Encoding.encodeHex(bytes);
+          if (persistent)
+            yield* fileSystem.writeFileString(tokenPath, token, { mode: 0o600, flag: "wx" });
+          return [token, Option.some(token)] as const;
+        }),
     }),
   );
 

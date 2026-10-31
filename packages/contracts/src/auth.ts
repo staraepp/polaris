@@ -30,12 +30,16 @@ import {
  *   or networks, where explicit pairing/auth is expected
  * - `unsafe-no-auth`: intentionally unauthenticated mode; this is an explicit
  *   unsafe escape hatch, not a normal deployment mode
+ * - `tailnet-trusted` (Polaris): reachable only on loopback and this machine's
+ *   Tailscale addresses; devices that Tailscale confirms belong to the owner
+ *   get a session without pairing, every other client still pairs
  */
 export const ServerAuthPolicy = Schema.Literals([
   "desktop-managed-local",
   "loopback-browser",
   "remote-reachable",
   "unsafe-no-auth",
+  "tailnet-trusted",
 ]);
 export type ServerAuthPolicy = typeof ServerAuthPolicy.Type;
 
