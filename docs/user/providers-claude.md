@@ -8,7 +8,9 @@ shared provider settings.
 
 Select **Claude Fable 5.2** in the model picker. It requires Claude Code 2.1.321
 or newer on the connected environment; run `claude update` there if it is missing.
-New Claude selections default to Fable 5.2. Existing threads keep their model.
+Select it explicitly; existing defaults and threads keep their model.
+A custom gateway must support this exact model ID. Adding it to Polaris does not
+add the model to a gateway or grant account access.
 
 Its context window is always 1M tokens. Reasoning defaults to Medium, matching
 Claude Code, with Low through Max available. Fast Mode is optional, costs more,
