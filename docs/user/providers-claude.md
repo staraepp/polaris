@@ -4,6 +4,17 @@ T3 Code uses Claude Code's login and configuration. Start with the default provi
 for one account; [provider setup](./install.md#providers) covers installation and
 shared provider settings.
 
+## Claude Fable 5.2
+
+Select **Claude Fable 5.2** in the model picker. It requires Claude Code 2.1.321
+or newer on the connected environment; run `claude update` there if it is missing.
+New Claude selections default to Fable 5.2. Existing threads keep their model.
+
+Its context window is always 1M tokens. Reasoning defaults to Medium, matching
+Claude Code, with Low through Max available. Fast Mode is optional, costs more,
+and requires access through your Claude account. See
+[Anthropic’s Fast Mode guide](https://code.claude.com/docs/en/fast-mode).
+
 ## Separate accounts or configurations
 
 Use a separate Claude config directory for each account. This also works for named
